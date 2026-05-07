@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { BookingMode } from '../enums/booking-mode.js';
 import { ServiceType } from '../enums/service-type.js';
 
 /** Provider's general profile (no prices here — those live in offerings). */
@@ -11,7 +12,7 @@ export const UpsertServiceProviderProfileDto = z.object({
 });
 export type UpsertServiceProviderProfileDto = z.infer<typeof UpsertServiceProviderProfileDto>;
 
-/** Add or update one service offering with its own price. */
+/** Add or update one service offering with its own price + booking style. */
 export const UpsertServiceOfferingDto = z.object({
   serviceType: z.enum([
     ServiceType.Walking,
@@ -28,5 +29,9 @@ export const UpsertServiceOfferingDto = z.object({
   ]),
   hourlyRateCents: z.number().int().nonnegative().max(100_00_000),
   active: z.boolean().default(true),
+  /** Optional — if omitted on insert, the backend picks the per-service default. */
+  bookingMode: z.enum([BookingMode.Window, BookingMode.Slot]).optional(),
+  /** Slot length in minutes for slot mode (15–1440). Backend defaults if omitted. */
+  slotDurationMin: z.number().int().min(15).max(1440).optional(),
 });
 export type UpsertServiceOfferingDto = z.infer<typeof UpsertServiceOfferingDto>;

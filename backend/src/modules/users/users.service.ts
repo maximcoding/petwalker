@@ -14,9 +14,12 @@ import {
   type UserRow,
 } from '../../db/schema/index.js';
 import { mapUserRow } from '../auth/user.mapper.js';
+import { SlotGeneratorService } from '../providers/slot-generator.service.js';
 
 import { mapServiceOfferingRow } from './service-offering.mapper.js';
 import { mapServiceProviderProfileRow } from './service-provider-profile.mapper.js';
+
+import { DEFAULT_BOOKING_MODE, DEFAULT_SLOT_DURATION_MIN } from '@petwalker/shared/enums';
 
 import type {
   ReplaceAvailabilityDto,
@@ -34,7 +37,10 @@ import type {
 
 @Injectable()
 export class UsersService {
-  constructor(@Inject(DRIZZLE_DB) private readonly db: Database) {}
+  constructor(
+    @Inject(DRIZZLE_DB) private readonly db: Database,
+    @Inject(SlotGeneratorService) private readonly slots: SlotGeneratorService,
+  ) {}
 
   async updateMe(userId: string, dto: UpdateUserDto): Promise<User> {
     const [updated] = await this.db
@@ -124,6 +130,13 @@ export class UsersService {
     // Provider must have a service profile first — implicitly created with defaults.
     await this.upsertServiceProfile(userId, {});
 
+    // Defaults derived from the service type the very first time this
+    // (provider × service) is upserted. Subsequent upserts respect the DB's
+    // current value via COALESCE-on-update — see set:{} below.
+    const bookingMode = dto.bookingMode ?? DEFAULT_BOOKING_MODE[dto.serviceType];
+    const slotDurationMin =
+      dto.slotDurationMin ?? DEFAULT_SLOT_DURATION_MIN[dto.serviceType];
+
     const [row] = await this.db
       .insert(providerServiceOfferings)
       .values({
@@ -131,14 +144,49 @@ export class UsersService {
         serviceType: dto.serviceType,
         hourlyRateCents: dto.hourlyRateCents,
         active: dto.active,
+        bookingMode,
+        slotDurationMin,
       })
       .onConflictDoUpdate({
         target: [providerServiceOfferings.providerId, providerServiceOfferings.serviceType],
-        set: { hourlyRateCents: dto.hourlyRateCents, active: dto.active },
+        // Only overwrite booking-mode / slot-duration when the caller
+        // actually sent them. Otherwise existing rows keep their settings
+        // even when a price-only edit comes through.
+        set: {
+          hourlyRateCents: dto.hourlyRateCents,
+          active: dto.active,
+          ...(dto.bookingMode != null ? { bookingMode: dto.bookingMode } : {}),
+          ...(dto.slotDurationMin != null
+            ? { slotDurationMin: dto.slotDurationMin }
+            : {}),
+        },
       })
       .returning();
     if (!row) throw new Error('upsert returned no row');
+
+    // If the saved offering is in slot mode, materialize the next 90 days of
+    // slots from the weekly availability template. Idempotent — re-saving an
+    // offering twice doesn't duplicate slot rows.
+    if (row.bookingMode === 'slot' && row.active) {
+      try {
+        await this.slots.generate(userId, dto.serviceType);
+      } catch (err) {
+        // Non-fatal: the offering save succeeded. Provider can re-trigger
+        // via "Publish slots now" if generation hiccupped.
+        // eslint-disable-next-line no-console
+        console.warn('[upsertOffering] slot generate failed:', (err as Error).message);
+      }
+    }
+
     return mapServiceOfferingRow(row as ServiceOfferingRow);
+  }
+
+  /**
+   * Manual trigger for slot publication — used by the "Publish slots now"
+   * button. Returns the count of new slots inserted.
+   */
+  async publishSlots(userId: string, serviceType: ServiceType): Promise<number> {
+    return this.slots.generate(userId, serviceType);
   }
 
   async removeOffering(userId: string, serviceType: ServiceType): Promise<void> {

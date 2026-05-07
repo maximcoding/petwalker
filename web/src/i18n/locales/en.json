@@ -40,7 +40,9 @@
     "email": "Email",
     "phone": "Phone",
     "notes": "Notes",
-    "language": "Language"
+    "language": "Language",
+    "add": "Add",
+    "remove": "Remove"
   },
   "pets": {
     "title": "My pets",
@@ -110,7 +112,32 @@
     "weeklyAvailability": "Weekly availability",
     "payouts": "Payouts (Stripe Connect)",
     "becomeProvider": "Become a provider",
-    "becomeProviderHint": "Switch your role to Provider or Both above to set up your bio, prices, and weekly schedule."
+    "becomeProviderHint": "Switch your role to Provider or Both above to set up your bio, prices, and weekly schedule.",
+    "offeringActive": "active",
+    "bookingMode": "Booking mode",
+    "modeWindow": "Window — owner picks any time",
+    "modeSlot": "Slot — fixed appointments",
+    "slotDuration": "Slot length",
+    "minutes": "min",
+    "publishSlots": "Publish slots now",
+    "slotsPublished_one": "Published {{count}} new slot",
+    "slotsPublished_other": "Published {{count}} new slots",
+    "calendar": {
+      "title": "External calendar",
+      "subtitle": "Connect a calendar feed so busy times are excluded from booking slots.",
+      "hint": "Paste an iCal URL from Google, Apple, or Outlook. We'll re-sync every 30 minutes; you can also trigger a sync now.",
+      "icalUrl": "iCal URL",
+      "urlHint": "Public iCal URL ending in .ics. webcal:// links are accepted.",
+      "enabled": "Enabled",
+      "testFetch": "Sync now",
+      "disconnect": "Disconnect",
+      "disconnectTitle": "Disconnect calendar?",
+      "disconnectBody": "We'll delete the URL and any synced busy times. Bookings already taken stay.",
+      "lastSyncedAt": "Last synced",
+      "lastError": "Last error",
+      "syncedCount_one": "Synced {{count}} event",
+      "syncedCount_other": "Synced {{count}} events"
+    }
   },
   "errors": {
     "generic": "Something went wrong",
@@ -122,6 +149,7 @@
     "nothingChanged": "Nothing to update.",
     "outsideAvailability": "Provider isn't available at this time.",
     "overlappingBooking": "That slot is already booked. Pick another time.",
+    "externalCalendarConflict": "Provider is busy on their calendar at this time.",
     "providerNoOffering": "This provider doesn't offer this service.",
     "scheduledTooSoon": "Pick a time at least 5 minutes from now.",
     "providerNotOnboarded": "Provider hasn't finished payout setup yet."
@@ -150,6 +178,29 @@
     "es": "Español",
     "zh": "中文",
     "he": "עברית"
+  },
+  "booking": {
+    "pickSlot": "Pick a time",
+    "pickDate": "Jump to date",
+    "noSlots": "No free slots in this window. Try the next 7 days.",
+    "prevDays_one": "Prev day",
+    "prevDays_other": "Prev {{count}} days",
+    "nextDays_one": "Next day",
+    "nextDays_other": "Next {{count}} days",
+    "earliestAvailable": "Earliest available",
+    "bookEarliest": "Book this",
+    "jump": {
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "nextWeek": "Next week",
+      "in1mo": "In 1 month",
+      "in3mo": "In 3 months"
+    },
+    "partOfDay": {
+      "morning": "Morning",
+      "afternoon": "Afternoon",
+      "evening": "Evening"
+    }
   },
   "services": {
     "all": "All services",

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 import { AccountSection } from '@/components/profile/account-section';
 import { AvailabilitySection } from '@/components/profile/availability-section';
+import { CalendarFeedSection } from '@/components/profile/calendar-feed-section';
 import { OfferingsSection } from '@/components/profile/offerings-section';
 import { RoleSection } from '@/components/profile/role-section';
 import { ServiceProfileSection } from '@/components/profile/service-profile-section';
@@ -90,6 +91,13 @@ export default function ProfilePage(): JSX.Element {
 
             <Card title={t('profile.weeklyAvailability')}>
               <AvailabilitySection />
+            </Card>
+
+            <Card
+              title={t('profile.calendar.title')}
+              hint={t('profile.calendar.subtitle')}
+            >
+              <CalendarFeedSection />
             </Card>
 
             <Card title={t('profile.payouts')}>

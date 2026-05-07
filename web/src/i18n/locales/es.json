@@ -110,7 +110,23 @@
     "weeklyAvailability": "Disponibilidad semanal",
     "payouts": "Pagos (Stripe Connect)",
     "becomeProvider": "Ser proveedor",
-    "becomeProviderHint": "Cambia tu rol a Proveedor o Ambos para configurar bio, precios y horario."
+    "becomeProviderHint": "Cambia tu rol a Proveedor o Ambos para configurar bio, precios y horario.",
+    "calendar": {
+      "title": "Calendario externo",
+      "subtitle": "Conecta un feed de calendario para excluir las horas ocupadas de los huecos disponibles.",
+      "hint": "Pega una URL iCal de Google, Apple u Outlook. Sincronizamos cada 30 min; también puedes hacerlo manualmente.",
+      "icalUrl": "URL iCal",
+      "urlHint": "URL pública iCal (.ics). Se aceptan enlaces webcal://.",
+      "enabled": "Activado",
+      "testFetch": "Sincronizar ahora",
+      "disconnect": "Desconectar",
+      "disconnectTitle": "¿Desconectar calendario?",
+      "disconnectBody": "Borraremos la URL y los periodos sincronizados. Las reservas ya hechas se mantienen.",
+      "lastSyncedAt": "Última sincronización",
+      "lastError": "Último error",
+      "syncedCount_one": "Sincronizado {{count}} evento",
+      "syncedCount_other": "Sincronizados {{count}} eventos"
+    }
   },
   "errors": {
     "generic": "Algo salió mal",
@@ -122,6 +138,7 @@
     "nothingChanged": "Nada que actualizar.",
     "outsideAvailability": "El proveedor no está disponible a esta hora.",
     "overlappingBooking": "Ese horario ya está reservado. Elige otro.",
+    "externalCalendarConflict": "El proveedor está ocupado en su calendario a esa hora.",
     "providerNoOffering": "Este proveedor no ofrece este servicio.",
     "scheduledTooSoon": "Elige un horario al menos 5 minutos en el futuro.",
     "providerNotOnboarded": "El proveedor aún no completó la configuración de pagos."
@@ -150,6 +167,14 @@
     "es": "Español",
     "zh": "中文",
     "he": "עברית"
+  },
+  "booking": {
+    "pickSlot": "Elige una hora",
+    "noSlots": "No hay huecos libres en esta ventana. Prueba los próximos 7 días.",
+    "prevDays_one": "Día anterior",
+    "prevDays_other": "{{count}} días antes",
+    "nextDays_one": "Día siguiente",
+    "nextDays_other": "{{count}} días siguientes"
   },
   "services": {
     "all": "Todos los servicios",

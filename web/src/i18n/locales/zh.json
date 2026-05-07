@@ -110,7 +110,23 @@
     "weeklyAvailability": "周可用时间",
     "payouts": "收款 (Stripe Connect)",
     "becomeProvider": "成为服务者",
-    "becomeProviderHint": "将您的角色切换到服务者或两者以设置简介、价格和日程。"
+    "becomeProviderHint": "将您的角色切换到服务者或两者以设置简介、价格和日程。",
+    "calendar": {
+      "title": "外部日历",
+      "subtitle": "连接日历订阅,使忙碌时段从可预订时段中排除。",
+      "hint": "粘贴来自 Google、Apple 或 Outlook 的 iCal 链接。每 30 分钟同步一次,也可手动触发。",
+      "icalUrl": "iCal 链接",
+      "urlHint": "公开的 iCal (.ics) 链接,支持 webcal:// 协议。",
+      "enabled": "启用",
+      "testFetch": "立即同步",
+      "disconnect": "断开连接",
+      "disconnectTitle": "断开日历连接?",
+      "disconnectBody": "我们将删除链接和已同步的忙碌时段。已确认的预订不受影响。",
+      "lastSyncedAt": "上次同步",
+      "lastError": "上次错误",
+      "syncedCount_one": "已同步 {{count}} 个事件",
+      "syncedCount_other": "已同步 {{count}} 个事件"
+    }
   },
   "errors": {
     "generic": "出了点问题",
@@ -122,6 +138,7 @@
     "nothingChanged": "没有需要更新的内容。",
     "outsideAvailability": "服务者在此时间不可用。",
     "overlappingBooking": "该时段已被预订,请选择其他时间。",
+    "externalCalendarConflict": "服务者在其日历中此时段已有安排。",
     "providerNoOffering": "此服务者不提供该服务。",
     "scheduledTooSoon": "请选择至少 5 分钟之后的时间。",
     "providerNotOnboarded": "服务者尚未完成收款设置。"
@@ -150,6 +167,14 @@
     "es": "Español",
     "zh": "中文",
     "he": "עברית"
+  },
+  "booking": {
+    "pickSlot": "选择时间",
+    "noSlots": "该时间段内无可用时段。请查看接下来 7 天。",
+    "prevDays_one": "上一天",
+    "prevDays_other": "前 {{count}} 天",
+    "nextDays_one": "下一天",
+    "nextDays_other": "后 {{count}} 天"
   },
   "services": {
     "all": "全部服务",

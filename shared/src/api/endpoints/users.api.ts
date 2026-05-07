@@ -38,6 +38,15 @@ export class UsersApi {
     return this.http.delete(`/users/me/offerings/${serviceType}`);
   }
 
+  /**
+   * Manually trigger slot publication for a slot-mode offering. Idempotent —
+   * returns the count of new slots actually inserted (existing rows
+   * collide on the (provider, service, start) unique index and are kept).
+   */
+  publishSlots(serviceType: string): Promise<{ inserted: number }> {
+    return this.http.post(`/users/me/offerings/${serviceType}/publish-slots`, {});
+  }
+
   /** Recurring weekly availability (UTC). PUT replaces ALL slots. */
   getAvailability(): Promise<AvailabilitySlot[]> {
     return this.http.get('/users/me/availability');
