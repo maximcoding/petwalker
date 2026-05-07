@@ -150,5 +150,19 @@
     "es": "Español",
     "zh": "中文",
     "he": "עברית"
+  },
+  "services": {
+    "all": "All services",
+    "walking": "Walking",
+    "grooming": "Grooming",
+    "sitting": "Sitting",
+    "boarding": "Boarding",
+    "training": "Training",
+    "daycare": "Daycare",
+    "photography": "Photography & Art",
+    "massage_wellness": "Massage & Wellness",
+    "senior_care": "Senior Care",
+    "veterinary": "Veterinary",
+    "fitness": "Fitness"
   }
 }

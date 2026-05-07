@@ -152,5 +152,19 @@
     "es": "Español",
     "zh": "中文",
     "he": "עברית"
+  },
+  "services": {
+    "all": "Все услуги",
+    "walking": "Выгул",
+    "grooming": "Груминг",
+    "sitting": "Передержка",
+    "boarding": "Гостиница",
+    "training": "Дрессировка",
+    "daycare": "Дневной уход",
+    "photography": "Фото и арт",
+    "massage_wellness": "Массаж и велнес",
+    "senior_care": "Уход за пожилыми",
+    "veterinary": "Ветеринар",
+    "fitness": "Фитнес"
   }
 }

@@ -269,7 +269,7 @@ export default function BookingsPage(): JSX.Element {
                     className="flex-1 hover:opacity-80"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="font-medium capitalize">{b.serviceType}</span>
+                      <span className="font-medium">{tr(`services.${b.serviceType}`)}</span>
                       <StatusPill status={b.status} />
                     </div>
                     <p className="mt-0.5 text-sm text-slate-500">

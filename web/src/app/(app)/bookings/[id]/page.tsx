@@ -166,7 +166,7 @@ export default function BookingDetailPage(): JSX.Element {
         </div>
 
       <header className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-semibold capitalize">{b.serviceType}</h1>
+        <h1 className="text-2xl font-semibold">{t(`services.${b.serviceType}`)}</h1>
         <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_TONE[b.status]}`}>
           {t(`bookings.${statusKey(b.status)}`)}
         </span>

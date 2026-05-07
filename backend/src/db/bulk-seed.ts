@@ -45,15 +45,51 @@ const BATCH = 500;
 const OLIVIA_COGNITO_SUB = 'b5f5ddb1-effd-4845-a8e6-052ec0140c0e';
 
 // ────────────── data pools ──────────────
-const SERVICE_TYPES = ['walking', 'grooming', 'sitting', 'boarding', 'training'] as const;
+const SERVICE_TYPES = [
+  'walking',
+  'grooming',
+  'sitting',
+  'boarding',
+  'training',
+  'daycare',
+  'photography',
+  'massage_wellness',
+  'senior_care',
+  'veterinary',
+  'fitness',
+] as const;
 type ServiceType = typeof SERVICE_TYPES[number];
 
+// Hourly rates in cents — niche/professional services price higher.
 const PRICES: Record<ServiceType, [number, number]> = {
   walking: [1500, 4500],
   grooming: [3000, 9000],
   sitting: [1800, 5000],
   boarding: [5000, 15000],
   training: [3500, 12000],
+  daycare: [2000, 3500],
+  photography: [8000, 15000],
+  massage_wellness: [5000, 10000],
+  senior_care: [2500, 5000],
+  veterinary: [8000, 20000],
+  fitness: [3000, 6000],
+};
+
+// Weights for offering distribution. Mass-market services get most providers,
+// specialist services stay rare but visible. Total isn't normalized here —
+// `pickWeighted` does that.
+const SERVICE_WEIGHTS: Record<ServiceType, number> = {
+  walking: 60,
+  sitting: 25,
+  grooming: 20,
+  boarding: 15,
+  training: 15,
+  daycare: 12,
+  fitness: 8,
+  massage_wellness: 8,
+  senior_care: 8,
+  photography: 5,
+  veterinary: 3,
 };
 
 // Greater-NYC bbox.
@@ -100,6 +136,12 @@ const ROLE_LABEL: Record<ServiceType, string> = {
   sitting: 'sitter',
   boarding: 'boarder',
   training: 'trainer',
+  daycare: 'daycare host',
+  photography: 'pet photographer',
+  massage_wellness: 'wellness specialist',
+  senior_care: 'senior-care specialist',
+  veterinary: 'veterinarian',
+  fitness: 'fitness coach',
 };
 
 const BREED_FAMILIES = [
@@ -186,6 +228,29 @@ const pick = <T>(arr: readonly T[]): T => arr[Math.floor(rng() * arr.length)]!;
 const randInt = (lo: number, hi: number) => lo + Math.floor(rng() * (hi - lo + 1));
 const randFloat = (lo: number, hi: number) => lo + rng() * (hi - lo);
 
+/**
+ * Weighted random pick from a [value, weight][] list. `excludeSet` filters out
+ * already-picked values without mutating inputs — used to draw N distinct
+ * services for one provider while still respecting the weight distribution.
+ */
+function pickWeighted<T>(
+  pool: readonly (readonly [T, number])[],
+  excludeSet?: Set<T>,
+): T {
+  const filtered = excludeSet ? pool.filter(([v]) => !excludeSet.has(v)) : pool;
+  const total = filtered.reduce((s, [, w]) => s + w, 0);
+  let r = rng() * total;
+  for (const [v, w] of filtered) {
+    r -= w;
+    if (r <= 0) return v;
+  }
+  return filtered[filtered.length - 1]![0];
+}
+
+const SERVICE_POOL: readonly (readonly [ServiceType, number])[] = SERVICE_TYPES.map(
+  (s) => [s, SERVICE_WEIGHTS[s]] as const,
+);
+
 // ────────────── batched insert helper ──────────────
 async function chunkInsert<T>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -214,13 +279,20 @@ function buildProvider(i: number) {
   const first = pick(FIRST_NAMES);
   const last = pick(LAST_NAMES);
   const r = rng();
-  const numServices = r < 0.4 ? 1 : r < 0.75 ? 2 : r < 0.92 ? 3 : r < 0.98 ? 4 : 5;
-  const shuffled = [...SERVICE_TYPES].sort(() => rng() - 0.5).slice(0, numServices);
-  const offerings = shuffled.map((s) => ({
+  // Most providers are specialists (1-2 services); a long tail does 3+.
+  const numServices = r < 0.45 ? 1 : r < 0.78 ? 2 : r < 0.93 ? 3 : r < 0.99 ? 4 : 5;
+  const picked = new Set<ServiceType>();
+  const services: ServiceType[] = [];
+  for (let n = 0; n < numServices; n++) {
+    const s = pickWeighted(SERVICE_POOL, picked);
+    picked.add(s);
+    services.push(s);
+  }
+  const offerings = services.map((s) => ({
     serviceType: s,
     hourlyRateCents: randInt(PRICES[s][0], PRICES[s][1]),
   }));
-  const primary = shuffled[0]!;
+  const primary = services[0]!;
   const bio = pick(BIO_TEMPLATES)
     .replace('{role}', ROLE_LABEL[primary])
     .replace('{years}', String(randInt(2, 18)))

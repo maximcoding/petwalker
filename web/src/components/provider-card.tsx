@@ -2,8 +2,10 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 
 import { placeholderAvatarUrl } from '@/lib/placeholder-images';
+import { ICONS } from '@/lib/service-icons';
 
 import type { ServiceProviderListing } from '@petwalker/shared/types';
 
@@ -21,6 +23,7 @@ function formatHourly(cents: number): string {
 }
 
 export function ProviderCard({ provider: p }: Props): JSX.Element {
+  const { t } = useTranslation();
   return (
     <Link
       href={`/providers/${p.userId}`}
@@ -49,14 +52,18 @@ export function ProviderCard({ provider: p }: Props): JSX.Element {
       </div>
       {p.bio ? <p className="mt-3 line-clamp-3 text-sm text-slate-600">{p.bio}</p> : null}
       <div className="mt-3 flex flex-wrap gap-2">
-        {p.offerings.map((o) => (
-          <span
-            key={o.serviceType}
-            className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-          >
-            {o.serviceType} · {formatHourly(o.hourlyRateCents)}
-          </span>
-        ))}
+        {p.offerings.map((o) => {
+          const Icon = ICONS[o.serviceType];
+          return (
+            <span
+              key={o.serviceType}
+              className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+            >
+              <Icon className="h-3 w-3" aria-hidden="true" />
+              {t(`services.${o.serviceType}`)} · {formatHourly(o.hourlyRateCents)}
+            </span>
+          );
+        })}
       </div>
     </Link>
   );

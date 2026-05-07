@@ -1,11 +1,13 @@
 'use client';
 
-import { SERVICE_TYPES, ServiceType } from '@petwalker/shared/enums';
+import { ServiceType } from '@petwalker/shared/enums';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
+import { ALL_SERVICE_TYPES, ICONS } from '@/lib/service-icons';
 
 import type { UpsertServiceOfferingDto } from '@petwalker/shared/dto';
 import type { ServiceOffering } from '@petwalker/shared/types';
@@ -18,6 +20,8 @@ interface RowProps {
 
 function OfferingRow({ serviceType, offering, onSaved }: RowProps): JSX.Element {
   const qc = useQueryClient();
+  const { t } = useTranslation();
+  const Icon = ICONS[serviceType];
   const [hourly, setHourly] = useState<string>(
     offering ? (offering.hourlyRateCents / 100).toFixed(2) : '',
   );
@@ -44,8 +48,11 @@ function OfferingRow({ serviceType, offering, onSaved }: RowProps): JSX.Element 
   const valid = !Number.isNaN(cents) && cents >= 0;
 
   return (
-    <li className="grid grid-cols-1 items-center gap-3 rounded-xl border border-slate-200 p-3 sm:grid-cols-[120px_1fr_auto_auto] dark:border-slate-800">
-      <span className="font-medium capitalize">{serviceType}</span>
+    <li className="grid grid-cols-1 items-center gap-3 rounded-xl border border-slate-200 p-3 sm:grid-cols-[160px_1fr_auto_auto] dark:border-slate-800">
+      <span className="flex items-center gap-2 font-medium">
+        <Icon className="h-4 w-4 text-slate-500" aria-hidden="true" />
+        {t(`services.${serviceType}`)}
+      </span>
 
       <label className="flex items-center gap-2 text-sm">
         <span className="w-10 text-slate-500">$/h</span>
@@ -115,11 +122,11 @@ export function OfferingsSection(): JSX.Element {
 
   return (
     <ul className="space-y-2">
-      {SERVICE_TYPES.map((t) => (
+      {ALL_SERVICE_TYPES.map((s) => (
         <OfferingRow
-          key={t}
-          serviceType={t}
-          offering={byType.get(t)}
+          key={s}
+          serviceType={s}
+          offering={byType.get(s)}
           onSaved={() => {
             void qc.invalidateQueries({ queryKey: ['offerings'] });
           }}

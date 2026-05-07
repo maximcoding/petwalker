@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
+import { useTranslation } from 'react-i18next';
+
 import { BookingForm } from '@/components/booking-form';
 import { ScrollPage } from '@/components/scroll-page';
 import { api } from '@/lib/api';
@@ -18,6 +20,7 @@ export default function BookProviderPage(): JSX.Element {
   const sp = useSearchParams();
   const serviceType = (sp.get('service') as ServiceType) || ServiceType.Walking;
   const [err, setErr] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const provider = useQuery<ServiceProviderDetail>({
     queryKey: ['provider', id],
@@ -86,7 +89,7 @@ export default function BookProviderPage(): JSX.Element {
           </Link>
         </div>
         <h1 className="text-2xl font-semibold">
-          Book {serviceType} with {provider.data.fullName}
+          Book {t(`services.${serviceType}`)} with {provider.data.fullName}
         </h1>
 
         <BookingForm

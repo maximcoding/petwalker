@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 
 import { ProviderCard } from '@/components/provider-card';
 import { ProviderSearchForm, type SearchValues } from '@/components/provider-search-form';
+import { ServiceChipRow } from '@/components/service-chip-row';
 import { Button } from '@/components/ui/button';
 import { ErrorState } from '@/components/ui/error-state';
 import { SkeletonGrid } from '@/components/ui/skeleton';
@@ -92,10 +93,23 @@ export default function ProvidersPage(): JSX.Element {
       <header className="flex shrink-0 flex-wrap items-baseline justify-between gap-3">
         <h1 className="text-2xl font-semibold">{t('providers.title')}</h1>
         <p className="text-xs text-slate-500">
-          {t('providers.showing', { service: values.serviceType, radius: values.radiusKm })} ·{' '}
-          {t('providers.sortedByProximity')}
+          {t('providers.showing', {
+            service: t(`services.${values.serviceType}`),
+            radius: values.radiusKm,
+          })}{' '}
+          · {t('providers.sortedByProximity')}
         </p>
       </header>
+
+      <div className="shrink-0">
+        <ServiceChipRow
+          value={values.serviceType}
+          onChange={(s) => {
+            const next = writeSearch({ ...values, serviceType: s });
+            router.push(`/providers?${next.toString()}`);
+          }}
+        />
+      </div>
 
       <div className="shrink-0 rounded-2xl border border-slate-200 dark:border-slate-800">
         <button
@@ -130,7 +144,10 @@ export default function ProvidersPage(): JSX.Element {
       ) : items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 p-10 text-center dark:border-slate-700">
           <p className="text-sm text-slate-500">
-            {t('providers.empty', { service: values.serviceType, radius: values.radiusKm })}
+            {t('providers.empty', {
+              service: t(`services.${values.serviceType}`),
+              radius: values.radiusKm,
+            })}
           </p>
           <p className="mt-1 text-xs text-slate-400">{t('providers.tryWiden')}</p>
         </div>

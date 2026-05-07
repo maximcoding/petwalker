@@ -2,10 +2,12 @@
 
 import { ServiceType } from '@petwalker/shared/enums';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { getBrowserLocation, SEED_LOCATION } from '@/lib/geolocation';
+import { ALL_SERVICE_TYPES } from '@/lib/service-icons';
 
 export interface SearchValues {
   serviceType: ServiceType;
@@ -27,6 +29,7 @@ interface Props {
 export function ProviderSearchForm({ initial, onSubmit, busy }: Props): JSX.Element {
   const [v, setV] = useState<SearchValues>(initial);
   const [geoBusy, setGeoBusy] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => setV(initial), [initial]);
 
@@ -56,9 +59,9 @@ export function ProviderSearchForm({ initial, onSubmit, busy }: Props): JSX.Elem
           onChange={(e) => patch('serviceType', e.target.value as ServiceType)}
           className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
         >
-          {Object.values(ServiceType).map((s) => (
+          {ALL_SERVICE_TYPES.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {t(`services.${s}`)}
             </option>
           ))}
         </select>

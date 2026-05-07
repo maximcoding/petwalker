@@ -14,9 +14,17 @@ export const CreateBookingDto = z.object({
     ServiceType.Sitting,
     ServiceType.Boarding,
     ServiceType.Training,
+    ServiceType.Daycare,
+    ServiceType.Photography,
+    ServiceType.MassageWellness,
+    ServiceType.SeniorCare,
+    ServiceType.Veterinary,
+    ServiceType.Fitness,
   ]),
   scheduledAt: z.string().datetime(),
-  durationMin: z.number().int().min(15).max(240),
+  // Bumped from 240 → 1440 (24h) so daycare/boarding fit; per-service caps
+  // can layer on later in a constraints map.
+  durationMin: z.number().int().min(15).max(1440),
   notes: z.string().max(2000).nullable().optional(),
 });
 export type CreateBookingDto = z.infer<typeof CreateBookingDto>;

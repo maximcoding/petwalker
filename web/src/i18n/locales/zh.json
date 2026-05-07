@@ -150,5 +150,19 @@
     "es": "Español",
     "zh": "中文",
     "he": "עברית"
+  },
+  "services": {
+    "all": "全部服务",
+    "walking": "遛狗",
+    "grooming": "美容",
+    "sitting": "上门照护",
+    "boarding": "寄宿",
+    "training": "训练",
+    "daycare": "日间托管",
+    "photography": "宠物摄影与艺术",
+    "massage_wellness": "按摩与健康",
+    "senior_care": "老年宠物照护",
+    "veterinary": "兽医",
+    "fitness": "运动健身"
   }
 }

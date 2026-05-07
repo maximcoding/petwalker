@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { ChatPanel } from '@/components/chat-panel';
 import { ScrollPage } from '@/components/scroll-page';
@@ -25,6 +26,7 @@ export default function ActiveWalkPage(): JSX.Element {
   const router = useRouter();
   const qc = useQueryClient();
   const { id } = useParams<{ id: string }>();
+  const { t } = useTranslation();
 
   const me = useQuery<User>({
     queryKey: ['me'],
@@ -141,7 +143,7 @@ export default function ActiveWalkPage(): JSX.Element {
         </div>
 
         <header>
-          <h1 className="text-2xl font-semibold capitalize">{b.serviceType} walk</h1>
+          <h1 className="text-2xl font-semibold">{t(`services.${b.serviceType}`)}</h1>
           <p className="mt-1 text-sm text-slate-500">
             {inProgress
               ? 'Live tracking — pings update as the provider moves.'

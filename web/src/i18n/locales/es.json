@@ -150,5 +150,19 @@
     "es": "Español",
     "zh": "中文",
     "he": "עברית"
+  },
+  "services": {
+    "all": "Todos los servicios",
+    "walking": "Paseo",
+    "grooming": "Peluquería",
+    "sitting": "Cuidado en casa",
+    "boarding": "Alojamiento",
+    "training": "Adiestramiento",
+    "daycare": "Guardería",
+    "photography": "Fotografía y arte",
+    "massage_wellness": "Masaje y bienestar",
+    "senior_care": "Cuidado senior",
+    "veterinary": "Veterinaria",
+    "fitness": "Fitness"
   }
 }

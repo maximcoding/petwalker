@@ -1,10 +1,12 @@
 'use client';
 
 import { type FormEvent, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from './ui/button';
 import { Field, TextareaField } from './ui/field';
 
+import type { ServiceType } from '@petwalker/shared/enums';
 import type { Pet, ServiceProviderDetail } from '@petwalker/shared/types';
 
 const DURATIONS = [15, 30, 45, 60, 90, 120] as const;
@@ -31,10 +33,12 @@ export function BookingForm({
   error,
   onSubmit,
 }: Props): JSX.Element {
+  const { t } = useTranslation();
   const offering = useMemo(
     () => provider.offerings.find((o) => o.serviceType === serviceType),
     [provider, serviceType],
   );
+  const serviceLabel = t(`services.${serviceType as ServiceType}`);
   const [petId, setPetId] = useState(pets[0]?.id ?? '');
   const [localDt, setLocalDt] = useState('');
   const [duration, setDuration] = useState<number>(60);
@@ -52,7 +56,7 @@ export function BookingForm({
   if (!offering) {
     return (
       <p className="text-sm text-red-600">
-        This provider doesn&apos;t offer {serviceType} (anymore).
+        This provider doesn&apos;t offer {serviceLabel} (anymore).
       </p>
     );
   }
@@ -119,7 +123,7 @@ export function BookingForm({
 
       <div className="rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-900">
         <p>
-          {serviceType} · {duration} min · {provider.fullName}
+          {serviceLabel} · {duration} min · {provider.fullName}
         </p>
         <p className="mt-1 font-medium">
           Total ≈ ${(previewCents / 100).toFixed(2)} ({offering.hourlyRateCents / 100}/h)

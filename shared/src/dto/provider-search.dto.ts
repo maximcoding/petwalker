@@ -10,6 +10,12 @@ export const SearchProvidersQuery = z.object({
     ServiceType.Sitting,
     ServiceType.Boarding,
     ServiceType.Training,
+    ServiceType.Daycare,
+    ServiceType.Photography,
+    ServiceType.MassageWellness,
+    ServiceType.SeniorCare,
+    ServiceType.Veterinary,
+    ServiceType.Fitness,
   ]),
 
   lat: z.coerce.number().min(-90).max(90),
@@ -18,7 +24,7 @@ export const SearchProvidersQuery = z.object({
 
   /** Optional desired booking time. If set, narrow to providers free in that slot. */
   scheduledAt: z.string().datetime().optional(),
-  durationMin: z.coerce.number().int().min(15).max(240).optional(),
+  durationMin: z.coerce.number().int().min(15).max(1440).optional(),
 
   minRating: z.coerce.number().min(1).max(5).optional(),
   maxHourlyCents: z.coerce.number().int().nonnegative().optional(),

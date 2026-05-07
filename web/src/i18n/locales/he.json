@@ -151,5 +151,19 @@
     "es": "Español",
     "zh": "中文",
     "he": "עברית"
+  },
+  "services": {
+    "all": "כל השירותים",
+    "walking": "טיולים",
+    "grooming": "טיפוח",
+    "sitting": "השגחה בבית",
+    "boarding": "פנסיון",
+    "training": "אילוף",
+    "daycare": "מעון יום",
+    "photography": "צילום ואמנות",
+    "massage_wellness": "עיסוי ובריאות",
+    "senior_care": "טיפול בכלבים מבוגרים",
+    "veterinary": "וטרינר",
+    "fitness": "כושר"
   }
 }

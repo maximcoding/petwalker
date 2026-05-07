@@ -5,11 +5,13 @@ import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 
 import { ScrollPage } from '@/components/scroll-page';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { placeholderAvatarUrl } from '@/lib/placeholder-images';
+import { ICONS } from '@/lib/service-icons';
 
 function formatHourly(cents: number): string {
   return `$${(cents / 100).toFixed(2)}/h`;
@@ -17,6 +19,7 @@ function formatHourly(cents: number): string {
 
 export default function ProviderDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
+  const { t } = useTranslation();
 
   const q = useQuery<ServiceProviderDetail>({
     queryKey: ['provider', id],
@@ -88,22 +91,26 @@ export default function ProviderDetailPage(): JSX.Element {
             <p className="text-sm text-slate-500">This provider has no active services.</p>
           ) : (
             <ul className="space-y-2">
-              {p.offerings.map((o) => (
-                <li
-                  key={o.serviceType}
-                  className="flex items-center justify-between rounded-xl border border-slate-200 p-3 dark:border-slate-800"
-                >
-                  <div>
-                    <p className="font-medium capitalize">{o.serviceType}</p>
-                    <p className="text-sm text-slate-500">{formatHourly(o.hourlyRateCents)}</p>
-                  </div>
-                  <Link
-                    href={`/providers/${p.userId}/book?service=${o.serviceType}`}
+              {p.offerings.map((o) => {
+                const Icon = ICONS[o.serviceType];
+                return (
+                  <li
+                    key={o.serviceType}
+                    className="flex items-center justify-between rounded-xl border border-slate-200 p-3 dark:border-slate-800"
                   >
-                    <Button>Book</Button>
-                  </Link>
-                </li>
-              ))}
+                    <div className="flex items-center gap-3">
+                      <Icon className="h-5 w-5 text-slate-500" aria-hidden="true" />
+                      <div>
+                        <p className="font-medium">{t(`services.${o.serviceType}`)}</p>
+                        <p className="text-sm text-slate-500">{formatHourly(o.hourlyRateCents)}</p>
+                      </div>
+                    </div>
+                    <Link href={`/providers/${p.userId}/book?service=${o.serviceType}`}>
+                      <Button>Book</Button>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
