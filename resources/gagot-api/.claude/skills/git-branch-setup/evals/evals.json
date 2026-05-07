@@ -1,0 +1,45 @@
+{
+  "skill_name": "git-branch-setup",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "start working on issue #47, it's a fix for the JWT expiry bug",
+      "expected_output": "Creates branch fix/47-jwt-expiry (or similar) from master, checks git status first, offers remote push, mentions finishing-a-development-branch for completion",
+      "files": [],
+      "assertions": [
+        {"text": "Branch name uses fix/ prefix"},
+        {"text": "Branch name includes the issue number 47"},
+        {"text": "Branch name is in kebab-case (no spaces or underscores)"},
+        {"text": "Git status check is mentioned or performed"},
+        {"text": "Remote push is offered or discussed"},
+        {"text": "Handoff to finishing-a-development-branch is mentioned"}
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "create a feature branch, no ticket, for adding property filtering",
+      "expected_output": "Creates branch feature/property-filtering (or similar) without issue number prefix, checks git status, offers remote push",
+      "files": [],
+      "assertions": [
+        {"text": "Branch name uses feature/ prefix"},
+        {"text": "Branch name does not include an issue number (no ticket was given)"},
+        {"text": "Branch name references property filtering in kebab-case"},
+        {"text": "Git status check is mentioned or performed"},
+        {"text": "Remote push is offered or discussed"}
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I need a hotfix branch for the login crash in production",
+      "expected_output": "Creates branch hotfix/login-crash (or similar) using hotfix/ prefix, emphasizes urgency/master base, checks git status, offers remote push",
+      "files": [],
+      "assertions": [
+        {"text": "Branch name uses hotfix/ prefix"},
+        {"text": "Branch name is in kebab-case"},
+        {"text": "Branch name references login or crash"},
+        {"text": "Git status check is mentioned or performed"},
+        {"text": "Base branch is master (appropriate for hotfixes)"}
+      ]
+    }
+  ]
+}

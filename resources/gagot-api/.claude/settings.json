@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npx jest *)",
+      "Bash(npx tsc *)",
+      "Bash(npx prettier *)",
+      "Bash(git status)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Bash(git branch *)",
+      "Bash(git stash list)",
+      "Bash(find . *)",
+      "Bash(ls *)",
+      "Bash(docker-compose *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath // empty' | grep -E '\\.ts$' | { read -r f && npx prettier --write \"$f\"; } 2>/dev/null || true",
+            "statusMessage": "Formatting TypeScript..."
+          }
+        ]
+      }
+    ]
+  },
+  "worktree": {
+    "symlinkDirectories": ["node_modules"]
+  }
+}

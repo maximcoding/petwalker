@@ -1,0 +1,26 @@
+{
+  "Clients": {
+    "petwalker_local_client": {
+      "UserPoolId": "local_petwalker",
+      "ClientId": "petwalker_local_client",
+      "ClientName": "petwalker-local-client",
+      "ExplicitAuthFlows": [
+        "ALLOW_USER_PASSWORD_AUTH",
+        "ALLOW_USER_SRP_AUTH",
+        "ALLOW_REFRESH_TOKEN_AUTH"
+      ],
+      "AllowedOAuthFlows": [],
+      "AllowedOAuthScopes": [],
+      "CallbackURLs": [],
+      "RefreshTokenValidity": 30,
+      "AccessTokenValidity": 24,
+      "IdTokenValidity": 24,
+      "TokenValidityUnits": {
+        "AccessToken": "hours",
+        "IdToken": "hours",
+        "RefreshToken": "days"
+      },
+      "GenerateSecret": false
+    }
+  }
+}

@@ -33,17 +33,25 @@ out/
 .next/
 .nuxt/
 .turbo/
+.expo/
 coverage/
+*.tsbuildinfo
 
 # Env
 .env
 .env.local
 .env.*.local
+.env.bak
+*.bak
 
 # Logs
 *.log
 logs/
 
-# Claude productivity scaffolding (keep memory/ tracked, but TASKS.md is personal)
-# Uncomment if you don't want TASKS.md in the repo:
-# TASKS.md
+# Turbo / pnpm
+.turbo/
+.pnpm-store/
+
+# Claude productivity scaffolding — local helper files, not part of the project
+TASKS.md
+memory/

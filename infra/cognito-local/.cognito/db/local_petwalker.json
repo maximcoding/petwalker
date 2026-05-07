@@ -1,0 +1,108 @@
+{
+  "Options": {
+    "Id": "local_petwalker",
+    "Name": "petwalker",
+    "Policies": {
+      "PasswordPolicy": {
+        "MinimumLength": 8,
+        "RequireUppercase": false,
+        "RequireLowercase": false,
+        "RequireNumbers": false,
+        "RequireSymbols": false
+      }
+    },
+    "LambdaConfig": {},
+    "SchemaAttributes": [
+      {
+        "Name": "sub",
+        "AttributeDataType": "String",
+        "DeveloperOnlyAttribute": false,
+        "Mutable": false,
+        "Required": true
+      },
+      {
+        "Name": "email",
+        "AttributeDataType": "String",
+        "DeveloperOnlyAttribute": false,
+        "Mutable": true,
+        "Required": true
+      },
+      {
+        "Name": "name",
+        "AttributeDataType": "String",
+        "DeveloperOnlyAttribute": false,
+        "Mutable": true,
+        "Required": false
+      },
+      {
+        "Name": "phone_number",
+        "AttributeDataType": "String",
+        "DeveloperOnlyAttribute": false,
+        "Mutable": true,
+        "Required": false
+      }
+    ],
+    "AutoVerifiedAttributes": [
+      "email"
+    ],
+    "UsernameAttributes": [
+      "email"
+    ],
+    "MfaConfiguration": "OFF"
+  },
+  "Users": {
+    "b5f5ddb1-effd-4845-a8e6-052ec0140c0e": {
+      "Attributes": [
+        {
+          "Name": "sub",
+          "Value": "b5f5ddb1-effd-4845-a8e6-052ec0140c0e"
+        },
+        {
+          "Name": "email",
+          "Value": "olivia@petwalker.test"
+        },
+        {
+          "Name": "name",
+          "Value": "Olivia Owner"
+        }
+      ],
+      "Enabled": true,
+      "Password": "Password123!",
+      "RefreshTokens": [
+        "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2duaXRvOnVzZXJuYW1lIjoiYjVmNWRkYjEtZWZmZC00ODQ1LWE4ZTYtMDUyZWMwMTQwYzBlIiwiZW1haWwiOiJvbGl2aWFAcGV0d2Fsa2VyLnRlc3QiLCJpYXQiOjE3NzgxMDQ1NTgsImp0aSI6IjRhNjU4YjAyLTRiZTUtNGE4MC1iMDU0LWM0YTM5MzQwYTg5NyIsImV4cCI6MTc4MDY5NjU1OCwiaXNzIjoiaHR0cDovLzAuMC4wLjA6OTIyOS9sb2NhbF9wZXR3YWxrZXIifQ.rTj5IQnAmw60pzFfBFdvVJPp0JNvIqWZYoulNnOCUfnWSHfnUhL-uriL40DJlOZpFcQIZ42-w_SL6Q99Sc5KJFLYeOKyCGtgQz6hmQVhU4uCOhA14k5itjxnpw95FyRfHVdBpKJl6Nue5XyXgYrC3mBza4t9UGlwUfBFFbe-U_rMEtfb9dXQy6K9isgzSDj8KK-CGeFUVxgnBVSjm_K_okW2zxnQUgAIR5fyaUBFGoRO02XHUeLCZS83SKDnWIRH-evJwMkHLm9iEKJWg6Ts_DIASjFiJ4xpfnhEDqYLjE13D7N6uiBP9epLwy0KoWBuJ_xzVZahgaMSYuyBZguNUA",
+        "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2duaXRvOnVzZXJuYW1lIjoiYjVmNWRkYjEtZWZmZC00ODQ1LWE4ZTYtMDUyZWMwMTQwYzBlIiwiZW1haWwiOiJvbGl2aWFAcGV0d2Fsa2VyLnRlc3QiLCJpYXQiOjE3NzgxMzgzNjIsImp0aSI6ImEwYzFmZGUyLWI2MTQtNDkyOS05NWJjLWI2MjYxNGZjZDU2MSIsImV4cCI6MTc4MDczMDM2MiwiaXNzIjoiaHR0cDovLzAuMC4wLjA6OTIyOS9sb2NhbF9wZXR3YWxrZXIifQ.z0vC1qy2Er0eAUid5tG1xo4dEvTVhr_xxxGzMHspIgHJfVtqz9V0aZXcZhgphniK_xpMmEqBDByEoVy841ZYF0r3FgUd0TjYHbr8dNowP8S2cznoQU9-sLNnyqi6iE6hhs6sg6u0GNl3B8KclPsnAVQwdd4bWj0TW2dpoBC2pOn0elneuvvpH6uqGCoq-FDgMKOzEe_fObgsORNkkAw9Aciax4-ICBBee3mgkvNrGkMt7W99-uemPWFNyuxNEQ2w9cNAh3MQzNDNuJ3_1IyQq8nhXdAMv5aJ2KCbx4CvVJXzSY8fxCNcpSIn9rCK5c30zCprLnqL5ixCQI_ieekO0w",
+        "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2duaXRvOnVzZXJuYW1lIjoiYjVmNWRkYjEtZWZmZC00ODQ1LWE4ZTYtMDUyZWMwMTQwYzBlIiwiZW1haWwiOiJvbGl2aWFAcGV0d2Fsa2VyLnRlc3QiLCJpYXQiOjE3NzgxNjQyNzMsImp0aSI6IjFjZjE2ODAxLTJhYzAtNGIzOS1hZmQ4LWRhOTk2NzA5YThkYyIsImV4cCI6MTc4MDc1NjI3MywiaXNzIjoiaHR0cDovLzAuMC4wLjA6OTIyOS9sb2NhbF9wZXR3YWxrZXIifQ.z-1L73x_z5OqyIwqlTtccMHFZ143k_DWeue9qNFb0EKDPIoGxpUHZg26hH4TZXd41wDRr4QPS1Kn5Ax4u0K2MQjKZeG97NlW11NSgdAnn2-4Yx2QhGvgmXJjNSqRYqokabMN8Uf3BWihm8P6_5BwrwuklFfDAiCAsubMx9r_u6retjsy_Z7sA11QSB5skQnVkqAYDR7sfUUDbMLzVDdvcD1cTqQ2ZlTMKnA42Qn2Ngr8KSLNLAyi0Y6tiBJwfPF-JoQ24TbOyuCgtEojSOIAhDWju0b7YXg6Zze8sZpPO2ikKHSlhwmCp-gsMuv3knQpImfn0bkP4WtwuaLACYMDzA",
+        "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2duaXRvOnVzZXJuYW1lIjoiYjVmNWRkYjEtZWZmZC00ODQ1LWE4ZTYtMDUyZWMwMTQwYzBlIiwiZW1haWwiOiJvbGl2aWFAcGV0d2Fsa2VyLnRlc3QiLCJpYXQiOjE3NzgxNjc5NTAsImp0aSI6ImQyNTAwYTY0LWNiM2YtNGFiZi05NDlkLWI2Njk2ZDZjZjgyYyIsImV4cCI6MTc4MDc1OTk1MCwiaXNzIjoiaHR0cDovLzAuMC4wLjA6OTIyOS9sb2NhbF9wZXR3YWxrZXIifQ.XC-8dr5TSGHnBFu2-h-lRmfR2CMr7zKKsXI-uPgk0pC8vWLGSDY-fEXtjm2uUD-a7_vcJ1jJIlSgzP27WE39F-WfGpsmuh_aT4Cp33yYW3IpJunAxL02brZ9ZT4QiJM0QrP8PQx2nSqM5MKqRzIcS0cb7rMMrR0jdoMFvJrKXJPqr8NP0y6ShtTfla1rO2XX4xPvINY4Pm6LRR5w2yEs6u5bSxtuJHS1zvZFmxtvPDjsvLQFZT80CGAtYhOoDJxnWw2eJhSJjndqCeo5Kmwsh_JnOCEWtlNP64jkt_XDb_2DsPepp3ICsFS9Ck7pE2tpsYxNaLQZwc7sMRKNG80N5Q",
+        "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2duaXRvOnVzZXJuYW1lIjoiYjVmNWRkYjEtZWZmZC00ODQ1LWE4ZTYtMDUyZWMwMTQwYzBlIiwiZW1haWwiOiJvbGl2aWFAcGV0d2Fsa2VyLnRlc3QiLCJpYXQiOjE3NzgxNzg4NjgsImp0aSI6IjYyMWIwMjBjLTI2NWUtNGFiZi04ZGFhLTdmMTQ2YmE5OWQxMCIsImV4cCI6MTc4MDc3MDg2OCwiaXNzIjoiaHR0cDovLzAuMC4wLjA6OTIyOS9sb2NhbF9wZXR3YWxrZXIifQ.tw9uQDQdCfYbvzfmRBYPAdtBaJQfk56lbhw-OrFawYxgnC-5VH3_-jNy4w659JdFGbMwPEuT9my8OKK6SnF4OkCzLtbAHa4vlBG9TWWiWn70341cPrZsms3zTec6DIDyZVwxU0j1CbbsRCqmQl9KA1Sh7MIFSYX4MhbE1b3X8h-YfaXgGPPUzqoN-Re_Hl79q0pB5rL5YG1LEAVatfwRks_2kPI4NT1LHWNNEV27CQ-1aPDL9KDe04s4IAXkAgXi6DA9kSa9XjX66yAM5YARrGoF0cc8kgwPFxig-BJ-Gdp_YQaHPaFdQbcWh-4247Q1UWevgojE1Vdqsb1UWaJOSA"
+      ],
+      "UserCreateDate": "2026-05-06T21:42:39.438Z",
+      "UserLastModifiedDate": "2026-05-06T21:44:31.493Z",
+      "Username": "b5f5ddb1-effd-4845-a8e6-052ec0140c0e",
+      "UserStatus": "CONFIRMED"
+    }
+  },
+  "Clients": {
+    "petwalker_local_client": {
+      "ClientId": "petwalker_local_client",
+      "ClientName": "petwalker-local-client",
+      "UserPoolId": "local_petwalker",
+      "ExplicitAuthFlows": [
+        "ALLOW_USER_PASSWORD_AUTH",
+        "ALLOW_USER_SRP_AUTH",
+        "ALLOW_REFRESH_TOKEN_AUTH"
+      ],
+      "AllowedOAuthFlows": [],
+      "AllowedOAuthScopes": [],
+      "CallbackURLs": [],
+      "RefreshTokenValidity": 30,
+      "AccessTokenValidity": 24,
+      "IdTokenValidity": 24,
+      "TokenValidityUnits": {
+        "AccessToken": "hours",
+        "IdToken": "hours",
+        "RefreshToken": "days"
+      },
+      "GenerateSecret": false
+    }
+  }
+}
