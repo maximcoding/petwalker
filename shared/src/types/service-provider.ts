@@ -1,3 +1,4 @@
+import type { BookingMode } from '../enums/booking-mode.js';
 import type { ServiceType } from '../enums/service-type.js';
 
 import type { ISODateString, UUID } from './common.js';
@@ -12,12 +13,20 @@ export interface ServiceProviderProfile {
   verifiedAt?: ISODateString | null;
 }
 
-/** A single service the provider offers, with its own price. */
+/** A single service the provider offers, with its own price + booking style. */
 export interface ServiceOffering {
   providerId: UUID;
   serviceType: ServiceType;
   hourlyRateCents: number;
   active: boolean;
+  /** How owners book this offering (window vs slot). Defaulted by service type. */
+  bookingMode: BookingMode;
+  /**
+   * For slot mode: the duration of one bookable slot in minutes (e.g. 30
+   * for vet appointments). Ignored in window mode but still stored as a
+   * hint for owners and as a default if mode is later switched.
+   */
+  slotDurationMin: number;
 }
 
 /** A provider as exposed to owners in search results. */

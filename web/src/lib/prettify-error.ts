@@ -32,6 +32,7 @@ export function prettifyError(t: TFunction, raw: unknown): string {
   // Booking-specific
   if (message.includes('OUTSIDE_AVAILABILITY')) return t('errors.outsideAvailability');
   if (message.includes('OVERLAPPING_BOOKING')) return t('errors.overlappingBooking');
+  if (message.includes('EXTERNAL_CALENDAR_CONFLICT')) return t('errors.externalCalendarConflict');
   if (message.includes('PROVIDER_NO_OFFERING')) return t('errors.providerNoOffering');
   if (message.includes('SCHEDULED_AT_TOO_SOON')) return t('errors.scheduledTooSoon');
   if (message.includes('PROVIDER_NOT_ONBOARDED')) return t('errors.providerNotOnboarded');

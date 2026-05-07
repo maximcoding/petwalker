@@ -8,6 +8,7 @@ import {
   Inject,
   Param,
   Patch,
+  Post,
   Put,
   UseGuards,
 } from '@nestjs/common';
@@ -110,6 +111,21 @@ export class UsersController {
   ): Promise<void> {
     const me = await this.auth.upsertUser(ctx.sub, ctx.email);
     await this.users.removeOffering(me.id, parseServiceType(serviceType));
+  }
+
+  /**
+   * Manual slot publication for slot-mode offerings. Idempotent — safe to
+   * trigger from a "Publish slots now" button without worrying about
+   * duplicates. Returns the count of new slots actually inserted.
+   */
+  @Post('me/offerings/:serviceType/publish-slots')
+  async publishSlots(
+    @CurrentUser() ctx: { sub: string; email: string },
+    @Param('serviceType') serviceType: string,
+  ): Promise<{ inserted: number }> {
+    const me = await this.auth.upsertUser(ctx.sub, ctx.email);
+    const inserted = await this.users.publishSlots(me.id, parseServiceType(serviceType));
+    return { inserted };
   }
 
   // ---- weekly availability ---------------------------------------------

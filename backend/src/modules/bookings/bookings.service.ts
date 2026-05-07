@@ -19,13 +19,14 @@ import {
   bookings,
   pets,
   providerServiceOfferings,
+  providerSlots,
   walks,
   type BookingRow,
   type WalkRow,
 } from '../../db/schema/index.js';
 import { PaymentsService } from '../payments/payments.service.js';
 
-import { hasAvailability, hasOverlap } from './availability-check.js';
+import { hasAvailability, hasExternalBusyConflict, hasOverlap } from './availability-check.js';
 import { mapBookingRow } from './booking.mapper.js';
 import { computeCancellationOutcome } from './cancellation-policy.js';
 import { tryTransition, type BookingAction, type CallerRole } from './state-machine.js';
@@ -100,25 +101,87 @@ export class BookingsService {
       });
     }
 
+    // 5b. No overlap with the provider's external (iCal) calendar.
+    // Same 409 shape as a booking conflict — the owner just sees "this slot
+    // is taken" either way.
+    if (await hasExternalBusyConflict(this.db, dto.providerId, scheduledAt, newEnd)) {
+      throw new ConflictException({
+        statusCode: 409,
+        message: 'Provider is busy on their external calendar at this time',
+        code: 'EXTERNAL_CALENDAR_CONFLICT',
+      });
+    }
+
     // 6. Compute price (locked at booking time)
     const priceCents = Math.round(offering.hourlyRateCents * (dto.durationMin / 60));
 
-    const [row] = await this.db
-      .insert(bookings)
-      .values({
-        ownerId,
-        providerId: dto.providerId,
-        petId: dto.petId,
-        serviceType: dto.serviceType,
-        // Drizzle's `timestamp` default mode is 'date' — pass Date, it calls
-        // `.toISOString()` internally before binding to postgres-js.
-        scheduledAt,
-        durationMin: dto.durationMin,
-        priceCents,
-        notes: dto.notes ?? null,
-      })
-      .returning();
-    if (!row) throw new Error('insert returned no row');
+    // For slot-mode offerings, the booking insert and the slot reservation
+    // must succeed together — otherwise we'd either double-book a slot or
+    // leak a "booked" slot whose booking insert later failed. A transaction
+    // gives us atomicity. Window-mode skips the slot table entirely.
+    const isSlotMode = offering.bookingMode === 'slot';
+
+    const row = await this.db.transaction(async (tx) => {
+      let reservedSlotId: string | null = null;
+
+      if (isSlotMode) {
+        // Find the matching open slot by exact start time. Slot durations are
+        // fixed at the offering level, so the owner picked one of these via
+        // the picker — durationMin should equal slot.endTs - slot.startTs.
+        const [slot] = await tx
+          .select()
+          .from(providerSlots)
+          .where(
+            and(
+              eq(providerSlots.providerId, dto.providerId),
+              eq(providerSlots.serviceType, dto.serviceType),
+              eq(providerSlots.startTs, scheduledAt),
+              eq(providerSlots.status, 'open'),
+            ),
+          )
+          .limit(1);
+        if (!slot) {
+          throw new ConflictException({
+            statusCode: 409,
+            message: 'That slot is no longer available',
+            code: 'SLOT_NOT_AVAILABLE',
+          });
+        }
+        reservedSlotId = slot.id;
+      }
+
+      const [inserted] = await tx
+        .insert(bookings)
+        .values({
+          ownerId,
+          providerId: dto.providerId,
+          petId: dto.petId,
+          serviceType: dto.serviceType,
+          // Drizzle's `timestamp` default mode is 'date' — pass Date, it calls
+          // `.toISOString()` internally before binding to postgres-js.
+          scheduledAt,
+          durationMin: dto.durationMin,
+          priceCents,
+          notes: dto.notes ?? null,
+        })
+        .returning();
+      if (!inserted) throw new Error('insert returned no row');
+
+      if (reservedSlotId) {
+        // Mark the slot booked + link it to the new booking. The unique
+        // index on (provider, service, start) plus the status='open' filter
+        // we used on read means there's no race condition here even under
+        // concurrent bookings — the second tx hits the same row and sees
+        // status='booked' on its select, throwing SLOT_NOT_AVAILABLE above.
+        await tx
+          .update(providerSlots)
+          .set({ status: 'booked', bookingId: inserted.id })
+          .where(eq(providerSlots.id, reservedSlotId));
+      }
+
+      return inserted;
+    });
+
     return mapBookingRow(row as BookingRow);
   }
 
@@ -295,6 +358,15 @@ export class BookingsService {
       .where(eq(bookings.id, id))
       .returning();
     if (!updated) throw new Error('cancel returned no row');
+
+    // Release any slot this booking was holding so another owner can book
+    // it. No-op for window-mode bookings (no slot row was ever created).
+    // Idempotent — the WHERE on status='booked' means a re-cancel won't
+    // accidentally reopen a slot that's already been released.
+    await this.db
+      .update(providerSlots)
+      .set({ status: 'open', bookingId: null })
+      .where(and(eq(providerSlots.bookingId, id), eq(providerSlots.status, 'booked')));
 
     // Issue refund against the captured PaymentIntent if there is one. Idempotent:
     // refundForCancelledBooking() short-circuits when the payment isn't

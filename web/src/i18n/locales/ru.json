@@ -112,7 +112,25 @@
     "weeklyAvailability": "Недельное расписание",
     "payouts": "Выплаты (Stripe Connect)",
     "becomeProvider": "Стать провайдером",
-    "becomeProviderHint": "Переключите роль на Провайдера или Обе, чтобы настроить био, цены и расписание."
+    "becomeProviderHint": "Переключите роль на Провайдера или Обе, чтобы настроить био, цены и расписание.",
+    "calendar": {
+      "title": "Внешний календарь",
+      "subtitle": "Подключите календарь, чтобы занятые часы исключались из слотов бронирования.",
+      "hint": "Вставьте ссылку iCal из Google, Apple или Outlook. Синхронизация каждые 30 минут; можно запустить и вручную.",
+      "icalUrl": "Ссылка iCal",
+      "urlHint": "Публичный URL iCal (.ics). Допускаются ссылки webcal://.",
+      "enabled": "Включено",
+      "testFetch": "Синхронизировать",
+      "disconnect": "Отключить",
+      "disconnectTitle": "Отключить календарь?",
+      "disconnectBody": "Удалим ссылку и синхронизированные занятые периоды. Уже принятые заказы сохранятся.",
+      "lastSyncedAt": "Последняя синхронизация",
+      "lastError": "Последняя ошибка",
+      "syncedCount_one": "Синхронизировано {{count}} событие",
+      "syncedCount_few": "Синхронизировано {{count}} события",
+      "syncedCount_many": "Синхронизировано {{count}} событий",
+      "syncedCount_other": "Синхронизировано {{count}} событий"
+    }
   },
   "errors": {
     "generic": "Что-то пошло не так",
@@ -124,6 +142,7 @@
     "nothingChanged": "Нечего обновлять.",
     "outsideAvailability": "Провайдер недоступен в это время.",
     "overlappingBooking": "Это время уже занято. Выберите другое.",
+    "externalCalendarConflict": "У исполнителя занято в календаре в это время.",
     "providerNoOffering": "Провайдер не оказывает эту услугу.",
     "scheduledTooSoon": "Выберите время не ранее, чем через 5 минут.",
     "providerNotOnboarded": "Провайдер не завершил настройку выплат."
@@ -152,6 +171,18 @@
     "es": "Español",
     "zh": "中文",
     "he": "עברית"
+  },
+  "booking": {
+    "pickSlot": "Выберите время",
+    "noSlots": "Нет свободных слотов в этом окне. Попробуйте следующие 7 дней.",
+    "prevDays_one": "Предыдущий день",
+    "prevDays_few": "Предыдущие {{count}} дня",
+    "prevDays_many": "Предыдущие {{count}} дней",
+    "prevDays_other": "Предыдущие {{count}} дней",
+    "nextDays_one": "Следующий день",
+    "nextDays_few": "Следующие {{count}} дня",
+    "nextDays_many": "Следующие {{count}} дней",
+    "nextDays_other": "Следующие {{count}} дней"
   },
   "services": {
     "all": "Все услуги",

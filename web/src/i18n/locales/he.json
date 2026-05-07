@@ -111,7 +111,24 @@
     "weeklyAvailability": "זמינות שבועית",
     "payouts": "תשלומים (Stripe Connect)",
     "becomeProvider": "הפוך לספק",
-    "becomeProviderHint": "החלף את התפקיד שלך לספק או שניהם כדי להגדיר ביו, מחירים ולוח זמנים."
+    "becomeProviderHint": "החלף את התפקיד שלך לספק או שניהם כדי להגדיר ביו, מחירים ולוח זמנים.",
+    "calendar": {
+      "title": "יומן חיצוני",
+      "subtitle": "חבר עדכון יומן כדי שזמנים תפוסים יוסרו מהזמנים הזמינים להזמנה.",
+      "hint": "הדבק כתובת iCal מ-Google, Apple או Outlook. סנכרון כל 30 דקות; ניתן לסנכרן גם ידנית.",
+      "icalUrl": "כתובת iCal",
+      "urlHint": "כתובת iCal ציבורית (.ics). קישורי webcal:// נתמכים.",
+      "enabled": "פעיל",
+      "testFetch": "סנכרן עכשיו",
+      "disconnect": "ניתוק",
+      "disconnectTitle": "לנתק יומן?",
+      "disconnectBody": "נמחק את הכתובת ואת הזמנים התפוסים שסונכרנו. הזמנות שכבר נקבעו יישארו.",
+      "lastSyncedAt": "סונכרן לאחרונה",
+      "lastError": "שגיאה אחרונה",
+      "syncedCount_one": "סונכרן {{count}} אירוע",
+      "syncedCount_two": "סונכרנו {{count}} אירועים",
+      "syncedCount_other": "סונכרנו {{count}} אירועים"
+    }
   },
   "errors": {
     "generic": "משהו השתבש",
@@ -123,6 +140,7 @@
     "nothingChanged": "אין מה לעדכן.",
     "outsideAvailability": "הספק אינו זמין בשעה זו.",
     "overlappingBooking": "המועד הזה כבר תפוס. בחר אחר.",
+    "externalCalendarConflict": "נותן השירות עסוק ביומן בשעה הזו.",
     "providerNoOffering": "הספק לא מציע שירות זה.",
     "scheduledTooSoon": "בחר שעה לפחות 5 דקות מהעכשיו.",
     "providerNotOnboarded": "הספק לא השלים הגדרת תשלומים."
@@ -151,6 +169,16 @@
     "es": "Español",
     "zh": "中文",
     "he": "עברית"
+  },
+  "booking": {
+    "pickSlot": "בחר שעה",
+    "noSlots": "אין זמנים פנויים בחלון הזה. נסה את 7 הימים הבאים.",
+    "prevDays_one": "יום קודם",
+    "prevDays_two": "יומיים קודמים",
+    "prevDays_other": "{{count}} ימים קודמים",
+    "nextDays_one": "יום הבא",
+    "nextDays_two": "יומיים הבאים",
+    "nextDays_other": "{{count}} ימים הבאים"
   },
   "services": {
     "all": "כל השירותים",

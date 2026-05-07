@@ -15,6 +15,20 @@
       "when": 1778572800000,
       "tag": "0001_extend_service_types",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778572900000,
+      "tag": "0002_calendar_feeds",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1778573000000,
+      "tag": "0003_booking_mode_and_slots",
+      "breakpoints": true
     }
   ]
 }
