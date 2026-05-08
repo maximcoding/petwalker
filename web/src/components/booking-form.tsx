@@ -35,14 +35,16 @@ interface Props {
 }
 
 /**
- * Pick the initial address source based on the offering's `addressDefault`.
- * 'owner' → owner_pet (most natural fallback chain through pet → user)
- * 'provider' → provider_offering (offering override → user fallback)
- * 'either' → owner_pet (still need a default; owner-side feels less surprising)
+ * Initial address source — first family the provider opted in to, picking
+ * the most-specific concrete source within that family. The DB CHECK
+ * constraint guarantees at least one is true; the empty case is defensive.
  */
-function defaultAddressSource(addressDefault: string | undefined): AddressSource {
-  if (addressDefault === 'provider') return 'provider_offering';
-  return 'owner_pet';
+function pickInitialSource(
+  supports: { owner: boolean; provider: boolean; custom: boolean } | undefined,
+): AddressSource {
+  if (!supports || supports.owner) return 'owner_pet';
+  if (supports.provider) return 'provider_offering';
+  return 'custom';
 }
 
 export function BookingForm({
@@ -64,8 +66,9 @@ export function BookingForm({
   const [slotStart, setSlotStart] = useState<string | null>(null);
   const [duration, setDuration] = useState<number>(60);
   const [notes, setNotes] = useState('');
+  const supports = offering?.supportedSources;
   const [addressSource, setAddressSource] = useState<AddressSource>(() =>
-    defaultAddressSource(offering?.addressDefault),
+    pickInitialSource(supports),
   );
   const [customAddress, setCustomAddress] = useState<Address | null>(null);
 
@@ -155,61 +158,97 @@ export function BookingForm({
         </select>
       </label>
 
-      {/* Where: source radio + custom-address textarea when 'custom' is picked.
-          Order matches the offering's addressDefault: owner-default services
-          show the pet option first; provider-default services lead with the
-          provider's location. */}
-      <fieldset className="space-y-2 rounded-xl border border-slate-200 p-3 dark:border-slate-800">
-        <legend className="px-1 text-sm font-medium">{t('booking.whereLabel')}</legend>
-        <label className="flex items-start gap-2 text-sm">
-          <input
-            type="radio"
-            name="addr-source"
-            checked={addressSource === 'owner_pet'}
-            onChange={() => setAddressSource('owner_pet')}
-            className="mt-1"
-          />
-          <span>
-            <span className="block">{t('booking.atPetHome')}</span>
-            <span className="block text-xs text-slate-500">{petAddrText}</span>
-          </span>
-        </label>
-        <label className="flex items-start gap-2 text-sm">
-          <input
-            type="radio"
-            name="addr-source"
-            checked={addressSource === 'provider_offering'}
-            onChange={() => setAddressSource('provider_offering')}
-            className="mt-1"
-          />
-          <span>
-            <span className="block">{t('booking.atProviderLocation')}</span>
-            <span className="block text-xs text-slate-500">{providerAddrText}</span>
-          </span>
-        </label>
-        <label className="flex items-start gap-2 text-sm">
-          <input
-            type="radio"
-            name="addr-source"
-            checked={addressSource === 'custom'}
-            onChange={() => setAddressSource('custom')}
-            className="mt-1"
-          />
-          <span className="flex-1">
-            <span className="block">{t('booking.atOtherAddress')}</span>
-            {addressSource === 'custom' ? (
-              <div className="mt-2">
-                <AddressField
-                  value={customAddress}
-                  onChange={setCustomAddress}
-                  label=""
-                  hint={t('booking.customAddressHint')}
+      {/* Where: only the source families the provider opted in to. With one
+          option enabled we drop the radio entirely and just show a label —
+          there's nothing to choose. The DB CHECK constraint means at least
+          one is always true; the empty case is defensive only. */}
+      {supports ? (() => {
+        const enabledCount =
+          (supports.owner ? 1 : 0) + (supports.provider ? 1 : 0) + (supports.custom ? 1 : 0);
+        if (enabledCount === 0) return null;
+        if (enabledCount === 1) {
+          const label = supports.owner
+            ? `${t('booking.atPetHome')} · ${petAddrText}`
+            : supports.provider
+              ? `${t('booking.atProviderLocation')} · ${providerAddrText}`
+              : t('booking.atOtherAddress');
+          return (
+            <div className="rounded-xl border border-slate-200 p-3 text-sm dark:border-slate-800">
+              <span className="block font-medium">{t('booking.whereLabel')}</span>
+              <span className="mt-1 block text-slate-600 dark:text-slate-300">{label}</span>
+              {supports.custom ? (
+                <div className="mt-2">
+                  <AddressField
+                    value={customAddress}
+                    onChange={setCustomAddress}
+                    label=""
+                    hint={t('booking.customAddressHint')}
+                  />
+                </div>
+              ) : null}
+            </div>
+          );
+        }
+        return (
+          <fieldset className="space-y-2 rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+            <legend className="px-1 text-sm font-medium">{t('booking.whereLabel')}</legend>
+            {supports.owner ? (
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="addr-source"
+                  checked={addressSource === 'owner_pet'}
+                  onChange={() => setAddressSource('owner_pet')}
+                  className="mt-1"
                 />
-              </div>
+                <span>
+                  <span className="block">{t('booking.atPetHome')}</span>
+                  <span className="block text-xs text-slate-500">{petAddrText}</span>
+                </span>
+              </label>
             ) : null}
-          </span>
-        </label>
-      </fieldset>
+            {supports.provider ? (
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="addr-source"
+                  checked={addressSource === 'provider_offering'}
+                  onChange={() => setAddressSource('provider_offering')}
+                  className="mt-1"
+                />
+                <span>
+                  <span className="block">{t('booking.atProviderLocation')}</span>
+                  <span className="block text-xs text-slate-500">{providerAddrText}</span>
+                </span>
+              </label>
+            ) : null}
+            {supports.custom ? (
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="addr-source"
+                  checked={addressSource === 'custom'}
+                  onChange={() => setAddressSource('custom')}
+                  className="mt-1"
+                />
+                <span className="flex-1">
+                  <span className="block">{t('booking.atOtherAddress')}</span>
+                  {addressSource === 'custom' ? (
+                    <div className="mt-2">
+                      <AddressField
+                        value={customAddress}
+                        onChange={setCustomAddress}
+                        label=""
+                        hint={t('booking.customAddressHint')}
+                      />
+                    </div>
+                  ) : null}
+                </span>
+              </label>
+            ) : null}
+          </fieldset>
+        );
+      })() : null}
 
       <div>
         <span className="mb-2 block text-sm font-medium">When</span>

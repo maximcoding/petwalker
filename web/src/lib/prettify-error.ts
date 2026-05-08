@@ -39,6 +39,7 @@ export function prettifyError(t: TFunction, raw: unknown): string {
   if (message.includes('OWNER_ADDRESS_MISSING')) return t('errors.ownerAddressMissing');
   if (message.includes('PROVIDER_ADDRESS_MISSING')) return t('errors.providerAddressMissing');
   if (message.includes('CUSTOM_ADDRESS_REQUIRED')) return t('errors.customAddressRequired');
+  if (message.includes('ADDRESS_SOURCE_NOT_SUPPORTED')) return t('errors.addressSourceNotSupported');
 
   // Specific HTTP-like status hints in message
   if (message.includes('Forbidden') || message.includes('Not your booking')) {

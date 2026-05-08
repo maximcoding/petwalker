@@ -4,6 +4,7 @@ import {
   BookingMode,
   DEFAULT_BOOKING_MODE,
   DEFAULT_SLOT_DURATION_MIN,
+  DEFAULT_SUPPORTED_SOURCES,
   ServiceType,
 } from '@petwalker/shared/enums';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -19,7 +20,11 @@ import { prettifyError } from '@/lib/prettify-error';
 import { ALL_SERVICE_TYPES, ICONS } from '@/lib/service-icons';
 
 import type { UpsertServiceOfferingDto } from '@petwalker/shared/dto';
-import type { Address, AddressDefault, ServiceOffering } from '@petwalker/shared/types';
+import type {
+  Address,
+  ServiceOffering,
+  SupportedAddressSources,
+} from '@petwalker/shared/types';
 
 interface RowProps {
   serviceType: ServiceType;
@@ -42,12 +47,22 @@ function OfferingRow({ serviceType, offering, onSaved }: RowProps): JSX.Element 
   const [slotDuration, setSlotDuration] = useState<number>(
     offering?.slotDurationMin ?? DEFAULT_SLOT_DURATION_MIN[serviceType],
   );
-  const [addressDefault, setAddressDefault] = useState<AddressDefault>(
-    offering?.addressDefault ?? 'owner',
+  const [supports, setSupports] = useState<SupportedAddressSources>(
+    offering?.supportedSources ?? DEFAULT_SUPPORTED_SOURCES[serviceType],
   );
   const [serviceAddress, setServiceAddress] = useState<Address | null>(
     offering?.serviceAddress ?? null,
   );
+
+  function patchSupports(key: keyof SupportedAddressSources, value: boolean): void {
+    setSupports((prev) => {
+      const next = { ...prev, [key]: value };
+      // Block unticking the last enabled checkbox — DB CHECK rejects this
+      // anyway, but failing fast in the UI is friendlier.
+      if (!next.owner && !next.provider && !next.custom) return prev;
+      return next;
+    });
+  }
   const [error, setError] = useState<string | null>(null);
 
   const upsert = useMutation({
@@ -118,7 +133,7 @@ function OfferingRow({ serviceType, offering, onSaved }: RowProps): JSX.Element 
               active,
               bookingMode,
               slotDurationMin: slotDuration,
-              addressDefault,
+              supportedSources: supports,
               // Pass the address through; null clears, object overwrites.
               serviceAddress,
             })
@@ -182,22 +197,38 @@ function OfferingRow({ serviceType, offering, onSaved }: RowProps): JSX.Element 
         ) : null}
       </div>
 
-      {/* Service-location subsection. addressDefault picks who supplies the
-          location by default at booking time; serviceAddress is the
-          provider-side override (falls back to provider.user.address). */}
+      {/* Service-location subsection. Provider opts in to which location
+          families they support — owner picks at booking time within this
+          set. At least one must be checked (UI blocks the last untick;
+          DB also enforces via CHECK constraint). */}
       <div className="space-y-2 border-t border-slate-100 pt-3 text-xs dark:border-slate-800">
-        <label className="inline-flex items-center gap-2">
-          <span className="text-slate-500">{t('profile.addressDefault')}:</span>
-          <select
-            value={addressDefault}
-            onChange={(e) => setAddressDefault(e.target.value as AddressDefault)}
-            className="rounded-lg border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900"
-          >
-            <option value="owner">{t('profile.addressDefaultOwner')}</option>
-            <option value="provider">{t('profile.addressDefaultProvider')}</option>
-            <option value="either">{t('profile.addressDefaultEither')}</option>
-          </select>
-        </label>
+        <p className="text-slate-500">{t('profile.supportedSources')}:</p>
+        <div className="flex flex-wrap gap-3">
+          <label className="inline-flex items-center gap-1">
+            <input
+              type="checkbox"
+              checked={supports.owner}
+              onChange={(e) => patchSupports('owner', e.target.checked)}
+            />
+            {t('profile.supportsOwner')}
+          </label>
+          <label className="inline-flex items-center gap-1">
+            <input
+              type="checkbox"
+              checked={supports.provider}
+              onChange={(e) => patchSupports('provider', e.target.checked)}
+            />
+            {t('profile.supportsProvider')}
+          </label>
+          <label className="inline-flex items-center gap-1">
+            <input
+              type="checkbox"
+              checked={supports.custom}
+              onChange={(e) => patchSupports('custom', e.target.checked)}
+            />
+            {t('profile.supportsCustom')}
+          </label>
+        </div>
         <AddressField
           value={serviceAddress}
           onChange={setServiceAddress}

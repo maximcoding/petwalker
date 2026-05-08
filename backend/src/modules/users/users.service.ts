@@ -19,7 +19,11 @@ import { SlotGeneratorService } from '../providers/slot-generator.service.js';
 import { mapServiceOfferingRow } from './service-offering.mapper.js';
 import { mapServiceProviderProfileRow } from './service-provider-profile.mapper.js';
 
-import { DEFAULT_BOOKING_MODE, DEFAULT_SLOT_DURATION_MIN } from '@petwalker/shared/enums';
+import {
+  DEFAULT_BOOKING_MODE,
+  DEFAULT_SLOT_DURATION_MIN,
+  DEFAULT_SUPPORTED_SOURCES,
+} from '@petwalker/shared/enums';
 
 import type {
   ReplaceAvailabilityDto,
@@ -151,6 +155,7 @@ export class UsersService {
     const bookingMode = dto.bookingMode ?? DEFAULT_BOOKING_MODE[dto.serviceType];
     const slotDurationMin =
       dto.slotDurationMin ?? DEFAULT_SLOT_DURATION_MIN[dto.serviceType];
+    const supports = dto.supportedSources ?? DEFAULT_SUPPORTED_SOURCES[dto.serviceType];
 
     // Address override on the offering: same tri-state as users.address.
     // null clears, undefined leaves untouched, object overwrites.
@@ -180,6 +185,9 @@ export class UsersService {
         active: dto.active,
         bookingMode,
         slotDurationMin,
+        supportsOwnerLocation: supports.owner,
+        supportsProviderLocation: supports.provider,
+        supportsCustomLocation: supports.custom,
         ...(dto.addressDefault != null ? { addressDefault: dto.addressDefault } : {}),
         ...(dto.serviceAddress !== undefined ? addressInsertCols : {}),
       })
@@ -196,6 +204,13 @@ export class UsersService {
             ? { slotDurationMin: dto.slotDurationMin }
             : {}),
           ...(dto.addressDefault != null ? { addressDefault: dto.addressDefault } : {}),
+          ...(dto.supportedSources != null
+            ? {
+                supportsOwnerLocation: dto.supportedSources.owner,
+                supportsProviderLocation: dto.supportedSources.provider,
+                supportsCustomLocation: dto.supportedSources.custom,
+              }
+            : {}),
           ...addressUpdateCols,
         },
       })

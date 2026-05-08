@@ -113,7 +113,28 @@ export class BookingsService {
       });
     }
 
-    // 6. Resolve the booking address from the chosen source. Throws with a
+    // 6. The provider opts in to which location families they support per
+    //    offering. Reject before address resolution so the owner sees a
+    //    clear "this provider doesn't accept that location" instead of a
+    //    confusing OWNER_ADDRESS_MISSING / PROVIDER_ADDRESS_MISSING.
+    const supportFamily =
+      dto.addressSource === 'owner_user' || dto.addressSource === 'owner_pet'
+        ? 'owner'
+        : dto.addressSource === 'provider_user' || dto.addressSource === 'provider_offering'
+          ? 'provider'
+          : 'custom';
+    const supportsThisFamily =
+      (supportFamily === 'owner' && offering.supportsOwnerLocation) ||
+      (supportFamily === 'provider' && offering.supportsProviderLocation) ||
+      (supportFamily === 'custom' && offering.supportsCustomLocation);
+    if (!supportsThisFamily) {
+      throw unprocessable(
+        'ADDRESS_SOURCE_NOT_SUPPORTED',
+        `Provider does not accept "${supportFamily}" location for this service`,
+      );
+    }
+
+    // 7. Resolve the booking address from the chosen source. Throws with a
     // stable code-string the catch below maps to a 422 — owner gets a
     // friendly i18n message ("set your home address first" etc.).
     let resolvedAddress;
@@ -133,7 +154,7 @@ export class BookingsService {
       throw err; // unexpected — bubble up as 500
     }
 
-    // 7. Compute price (locked at booking time)
+    // 8. Compute price (locked at booking time)
     const priceCents = Math.round(offering.hourlyRateCents * (dto.durationMin / 60));
 
     // For slot-mode offerings, the booking insert and the slot reservation
