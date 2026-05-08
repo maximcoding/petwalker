@@ -98,6 +98,23 @@ const LAT_MAX = 40.95;
 const LNG_MIN = -74.25;
 const LNG_MAX = -73.7;
 
+// Display-only city pool for the new "Location" chip on provider cards.
+// We pick uniformly — no geographic accuracy here, since the chip is
+// just a label and the search still uses lat/lng + radius.
+const CITIES = [
+  'Brooklyn',
+  'Queens',
+  'Manhattan',
+  'Bronx',
+  'Staten Island',
+  'Hoboken',
+  'Jersey City',
+  'Astoria',
+  'Park Slope',
+  'Williamsburg',
+  'Long Island City',
+];
+
 const FIRST_NAMES = [
   'Alex', 'Jamie', 'Sam', 'Pat', 'Jordan', 'Casey', 'Morgan', 'Taylor', 'Riley', 'Quinn',
   'Avery', 'Blake', 'Cameron', 'Dakota', 'Emerson', 'Finley', 'Gray', 'Hayden', 'Indigo', 'Jules',
@@ -309,6 +326,11 @@ function buildProvider(i: number) {
     baseLat: randFloat(LAT_MIN, LAT_MAX).toFixed(6),
     baseLng: randFloat(LNG_MIN, LNG_MAX).toFixed(6),
     serviceRadiusKm: String(randInt(3, 30)),
+    // Display chips on the provider card. baseCity is a free-form label;
+    // experienceSinceYear feeds the "Walking since {year}" chip. Keep the
+    // "since" range plausible (5–20 years ago).
+    baseCity: pick(CITIES),
+    experienceSinceYear: new Date().getUTCFullYear() - randInt(5, 20),
     offerings,
   };
 }
@@ -346,6 +368,8 @@ async function main(): Promise<void> {
       _baseLat: p.baseLat,
       _baseLng: p.baseLng,
       _serviceRadiusKm: p.serviceRadiusKm,
+      _baseCity: p.baseCity,
+      _experienceSinceYear: p.experienceSinceYear,
       _offerings: p.offerings,
     };
   });
@@ -383,6 +407,8 @@ async function main(): Promise<void> {
       serviceRadiusKm: u._serviceRadiusKm,
       baseLat: u._baseLat,
       baseLng: u._baseLng,
+      baseCity: u._baseCity,
+      experienceSinceYear: u._experienceSinceYear,
     }];
   });
   await chunkInsert(serviceProviderProfiles, profileValues, db, 'do-nothing', 'profiles');

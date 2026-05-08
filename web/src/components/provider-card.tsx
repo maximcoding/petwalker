@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
 import { FavoriteButton } from '@/components/favorite-button';
+import { ProviderMetaStrip } from '@/components/provider-meta-strip';
 import { placeholderAvatarUrl } from '@/lib/placeholder-images';
 import { ICONS } from '@/lib/service-icons';
 
@@ -27,6 +28,7 @@ function formatHourly(cents: number): string {
 
 export function ProviderCard({ provider: p, showDistance = true }: Props): JSX.Element {
   const { t } = useTranslation();
+
   return (
     <Link
       href={`/providers/${p.userId}`}
@@ -60,6 +62,17 @@ export function ProviderCard({ provider: p, showDistance = true }: Props): JSX.E
           ) : null}
         </div>
       </div>
+
+      <div className="mt-3">
+        <ProviderMetaStrip
+          baseCity={p.baseCity}
+          experienceSinceYear={p.experienceSinceYear}
+          registeredAt={p.registeredAt}
+          rating={p.rating}
+          reviewCount={p.reviewCount}
+        />
+      </div>
+
       {p.bio ? <p className="mt-3 line-clamp-3 text-sm text-slate-600">{p.bio}</p> : null}
       <div className="mt-3 flex flex-wrap gap-2">
         {p.offerings.map((o) => {

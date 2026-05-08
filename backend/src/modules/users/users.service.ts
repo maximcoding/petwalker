@@ -103,6 +103,12 @@ export class UsersService {
       ...(dto.baseLng !== undefined
         ? { baseLng: dto.baseLng == null ? null : String(dto.baseLng) }
         : {}),
+      // Tri-state preserved: null clears the chip, undefined leaves it
+      // alone, a string overwrites. Same pattern as bio.
+      ...(dto.baseCity !== undefined ? { baseCity: dto.baseCity ?? null } : {}),
+      ...(dto.experienceSinceYear !== undefined
+        ? { experienceSinceYear: dto.experienceSinceYear ?? null }
+        : {}),
     };
 
     // Build the SET clause by stripping userId; if nothing else is changing,

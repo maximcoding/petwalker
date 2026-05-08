@@ -8,6 +8,8 @@ import { useParams } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 
 import { FavoriteButton } from '@/components/favorite-button';
+import { ProviderMetaStrip } from '@/components/provider-meta-strip';
+import { ReviewsList } from '@/components/reviews-list';
 import { ScrollPage } from '@/components/scroll-page';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
@@ -82,6 +84,15 @@ export default function ProviderDetailPage(): JSX.Element {
             <p className="mt-1 text-sm text-slate-500">
               Service radius: {p.serviceRadiusKm} km
             </p>
+            <div className="mt-2">
+              <ProviderMetaStrip
+                baseCity={p.baseCity}
+                experienceSinceYear={p.experienceSinceYear}
+                registeredAt={p.registeredAt}
+                rating={p.rating}
+                reviewCount={p.reviewCount}
+              />
+            </div>
             {p.bio ? <p className="mt-3 max-w-prose text-slate-700 dark:text-slate-300">{p.bio}</p> : null}
             <div className="mt-4">
               <FavoriteButton
@@ -122,6 +133,11 @@ export default function ProviderDetailPage(): JSX.Element {
               })}
             </ul>
           )}
+        </section>
+
+        <section>
+          <h2 className="mb-3 text-lg font-semibold">{t('reviews.title')}</h2>
+          <ReviewsList providerId={p.userId} />
         </section>
       </section>
     </ScrollPage>

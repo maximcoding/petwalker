@@ -13,6 +13,7 @@ import { MessagesModule } from './modules/messages/messages.module.js';
 import { PaymentsModule } from './modules/payments/payments.module.js';
 import { PetsModule } from './modules/pets/pets.module.js';
 import { ProvidersModule } from './modules/providers/providers.module.js';
+import { ReviewsModule } from './modules/reviews/reviews.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { WalksModule } from './modules/walks/walks.module.js';
@@ -41,6 +42,7 @@ import { WsModule } from './modules/ws/ws.module.js';
     PaymentsModule,
     CalendarModule,
     FavoritesModule,
+    ReviewsModule,
     NotificationsModule,
     WsModule,
   ],

@@ -23,6 +23,10 @@ export function ServiceProfileSection(): JSX.Element {
   const [radiusKm, setRadiusKm] = useState<number>(10);
   const [lat, setLat] = useState<string>('');
   const [lng, setLng] = useState<string>('');
+  // Display-only chips on the provider card. baseCity is free-form (no
+  // geocoding); experienceSinceYear is bounded by the DTO + DB CHECK.
+  const [baseCity, setBaseCity] = useState<string>('');
+  const [experienceSince, setExperienceSince] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,6 +35,10 @@ export function ServiceProfileSection(): JSX.Element {
     setRadiusKm(q.data.serviceRadiusKm ?? 10);
     setLat(q.data.baseLat != null ? String(q.data.baseLat) : '');
     setLng(q.data.baseLng != null ? String(q.data.baseLng) : '');
+    setBaseCity(q.data.baseCity ?? '');
+    setExperienceSince(
+      q.data.experienceSinceYear != null ? String(q.data.experienceSinceYear) : '',
+    );
   }, [q.data]);
 
   const m = useMutation({
@@ -63,11 +71,26 @@ export function ServiceProfileSection(): JSX.Element {
           setError('Latitude / longitude must be numeric.');
           return;
         }
+        // Year input parses to a number; empty string clears the chip.
+        // Out-of-range values are caught by zod on the API side, but we
+        // reject obvious typos client-side too so the user gets feedback
+        // without round-tripping.
+        const yearNum =
+          experienceSince.trim() === '' ? null : Number(experienceSince);
+        if (
+          yearNum != null &&
+          (Number.isNaN(yearNum) || yearNum < 1900 || yearNum > new Date().getFullYear())
+        ) {
+          setError('Experience year must be between 1900 and the current year.');
+          return;
+        }
         m.mutate({
           bio: bio.trim() || null,
           serviceRadiusKm: radiusKm,
           baseLat: latNum,
           baseLng: lngNum,
+          baseCity: baseCity.trim() || null,
+          experienceSinceYear: yearNum,
         });
       }}
       className="space-y-4"
@@ -102,6 +125,26 @@ export function ServiceProfileSection(): JSX.Element {
           step="0.000001"
           value={lng}
           onChange={(e) => setLng(e.target.value)}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field
+          label="Base city"
+          placeholder="e.g. Brooklyn"
+          value={baseCity}
+          onChange={(e) => setBaseCity(e.target.value)}
+          hint="Shown as a chip on your card. Display only — search uses lat/lng."
+        />
+        <Field
+          label="Experience since (year)"
+          type="number"
+          min={1900}
+          max={new Date().getFullYear()}
+          placeholder="e.g. 2018"
+          value={experienceSince}
+          onChange={(e) => setExperienceSince(e.target.value)}
+          hint='Shown on your card as "Walking since 2018".'
         />
       </div>
 

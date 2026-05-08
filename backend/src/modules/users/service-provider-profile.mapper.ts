@@ -11,6 +11,8 @@ export function mapServiceProviderProfileRow(
     serviceRadiusKm: Number(row.serviceRadiusKm),
     baseLat: row.baseLat == null ? null : Number(row.baseLat),
     baseLng: row.baseLng == null ? null : Number(row.baseLng),
+    baseCity: row.baseCity ?? null,
+    experienceSinceYear: row.experienceSinceYear ?? null,
     verifiedAt: row.verifiedAt?.toISOString() ?? null,
   };
 }
