@@ -2,13 +2,15 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
+import { AddressField } from '@/components/address-field';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { api } from '@/lib/api';
 
 import type { UpdateUserDto } from '@petwalker/shared/dto';
-import type { User } from '@petwalker/shared/types';
+import type { Address, User } from '@petwalker/shared/types';
 
 interface Props {
   me: User;
@@ -16,9 +18,11 @@ interface Props {
 
 export function AccountSection({ me }: Props): JSX.Element {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   const [fullName, setFullName] = useState(me.fullName ?? '');
   const [phone, setPhone] = useState(me.phone ?? '');
   const [avatarUrl, setAvatarUrl] = useState(me.avatarUrl ?? '');
+  const [address, setAddress] = useState<Address | null>(me.address ?? null);
   const [error, setError] = useState<string | null>(null);
 
   const m = useMutation({
@@ -38,6 +42,7 @@ export function AccountSection({ me }: Props): JSX.Element {
           fullName: fullName.trim() || undefined,
           phone: phone.trim() || null,
           avatarUrl: avatarUrl.trim() || null,
+          address: address ?? null,
         });
       }}
       className="space-y-4"
@@ -62,10 +67,14 @@ export function AccountSection({ me }: Props): JSX.Element {
         onChange={(e) => setAvatarUrl(e.target.value)}
         hint="Public URL to your profile photo (S3 upload UI coming later)."
       />
+      <AddressField
+        value={address}
+        onChange={setAddress}
+        label={t('address.homeLabel')}
+        hint={t('address.homeHint')}
+      />
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
-      {m.isSuccess ? (
-        <p className="text-sm text-emerald-600">Saved.</p>
-      ) : null}
+      {m.isSuccess ? <p className="text-sm text-emerald-600">Saved.</p> : null}
       <Button type="submit" disabled={m.isPending}>
         {m.isPending ? 'Saving…' : 'Save account'}
       </Button>

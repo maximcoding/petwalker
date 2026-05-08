@@ -29,6 +29,13 @@
       "when": 1778573000000,
       "tag": "0003_booking_mode_and_slots",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778573100000,
+      "tag": "0004_address_columns",
+      "breakpoints": true
     }
   ]
 }

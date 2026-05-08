@@ -1,5 +1,13 @@
 import { sql } from 'drizzle-orm';
-import { customType, index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  customType,
+  index,
+  numeric,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 import { userRoleEnum } from './enums.js';
 
@@ -22,6 +30,9 @@ export const users = pgTable(
     fullName: text('full_name'),
     phone: text('phone'),
     avatarUrl: text('avatar_url'),
+    addressText: text('address_text'),
+    addressLat: numeric('address_lat', { precision: 9, scale: 6 }),
+    addressLng: numeric('address_lng', { precision: 9, scale: 6 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

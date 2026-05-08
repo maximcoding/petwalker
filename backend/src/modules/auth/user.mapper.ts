@@ -1,3 +1,4 @@
+import { mapAddressColumns } from '../../db/mappers/address.js';
 import type { UserRow } from '../../db/schema/users.js';
 
 import type { User } from '@petwalker/shared/types';
@@ -17,6 +18,7 @@ export function mapUserRow(row: UserRow): User {
     fullName: row.fullName ?? null,
     phone: row.phone ?? null,
     avatarUrl: row.avatarUrl ?? null,
+    address: mapAddressColumns(row.addressText, row.addressLat, row.addressLng),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

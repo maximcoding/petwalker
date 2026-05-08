@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
+import { AddressField } from '@/components/address-field';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/api';
@@ -18,7 +19,7 @@ import { prettifyError } from '@/lib/prettify-error';
 import { ALL_SERVICE_TYPES, ICONS } from '@/lib/service-icons';
 
 import type { UpsertServiceOfferingDto } from '@petwalker/shared/dto';
-import type { ServiceOffering } from '@petwalker/shared/types';
+import type { Address, AddressDefault, ServiceOffering } from '@petwalker/shared/types';
 
 interface RowProps {
   serviceType: ServiceType;
@@ -40,6 +41,12 @@ function OfferingRow({ serviceType, offering, onSaved }: RowProps): JSX.Element 
   );
   const [slotDuration, setSlotDuration] = useState<number>(
     offering?.slotDurationMin ?? DEFAULT_SLOT_DURATION_MIN[serviceType],
+  );
+  const [addressDefault, setAddressDefault] = useState<AddressDefault>(
+    offering?.addressDefault ?? 'owner',
+  );
+  const [serviceAddress, setServiceAddress] = useState<Address | null>(
+    offering?.serviceAddress ?? null,
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -111,6 +118,8 @@ function OfferingRow({ serviceType, offering, onSaved }: RowProps): JSX.Element 
               active,
               bookingMode,
               slotDurationMin: slotDuration,
+              addressDefault,
+              serviceAddress,
             })
           }
         >
@@ -170,6 +179,30 @@ function OfferingRow({ serviceType, offering, onSaved }: RowProps): JSX.Element 
             {publish.isPending ? <Spinner size="sm" /> : t('profile.publishSlots')}
           </Button>
         ) : null}
+      </div>
+
+      {/* Service-location subsection. addressDefault picks who supplies the
+          location by default at booking time; serviceAddress is the
+          provider-side override (falls back to provider.user.address). */}
+      <div className="space-y-2 border-t border-slate-100 pt-3 text-xs dark:border-slate-800">
+        <label className="inline-flex items-center gap-2">
+          <span className="text-slate-500">{t('profile.addressDefault')}:</span>
+          <select
+            value={addressDefault}
+            onChange={(e) => setAddressDefault(e.target.value as AddressDefault)}
+            className="rounded-lg border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900"
+          >
+            <option value="owner">{t('profile.addressDefaultOwner')}</option>
+            <option value="provider">{t('profile.addressDefaultProvider')}</option>
+            <option value="either">{t('profile.addressDefaultEither')}</option>
+          </select>
+        </label>
+        <AddressField
+          value={serviceAddress}
+          onChange={setServiceAddress}
+          label={t('profile.serviceAddress')}
+          hint={t('profile.serviceAddressHint')}
+        />
       </div>
 
       {error ? <p className="text-xs text-red-600">{error}</p> : null}

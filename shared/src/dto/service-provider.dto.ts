@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { BookingMode } from '../enums/booking-mode.js';
 import { ServiceType } from '../enums/service-type.js';
 
+import { AddressInput } from './address.dto.js';
+
 /** Provider's general profile (no prices here — those live in offerings). */
 export const UpsertServiceProviderProfileDto = z.object({
   bio: z.string().max(2000).nullable().optional(),
@@ -33,5 +35,12 @@ export const UpsertServiceOfferingDto = z.object({
   bookingMode: z.enum([BookingMode.Window, BookingMode.Slot]).optional(),
   /** Slot length in minutes for slot mode (15–1440). Backend defaults if omitted. */
   slotDurationMin: z.number().int().min(15).max(1440).optional(),
+  /**
+   * Optional per-offering service address. Pass `null` to clear and fall
+   * back to the provider's user.address.
+   */
+  serviceAddress: AddressInput.nullable().optional(),
+  /** Default booking-address source ('owner' | 'provider' | 'either'). */
+  addressDefault: z.enum(['owner', 'provider', 'either']).optional(),
 });
 export type UpsertServiceOfferingDto = z.infer<typeof UpsertServiceOfferingDto>;

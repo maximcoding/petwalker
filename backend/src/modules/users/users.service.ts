@@ -43,6 +43,18 @@ export class UsersService {
   ) {}
 
   async updateMe(userId: string, dto: UpdateUserDto): Promise<User> {
+    // `address: null` clears, object overwrites, undefined leaves untouched.
+    const addressUpdate =
+      dto.address === undefined
+        ? {}
+        : dto.address === null
+          ? { addressText: null, addressLat: null, addressLng: null }
+          : {
+              addressText: dto.address.text,
+              addressLat: dto.address.lat == null ? null : String(dto.address.lat),
+              addressLng: dto.address.lng == null ? null : String(dto.address.lng),
+            };
+
     const [updated] = await this.db
       .update(users)
       .set({
@@ -50,6 +62,7 @@ export class UsersService {
         ...(dto.phone !== undefined ? { phone: dto.phone ?? null } : {}),
         ...(dto.avatarUrl !== undefined ? { avatarUrl: dto.avatarUrl ?? null } : {}),
         ...(dto.role !== undefined ? { role: dto.role } : {}),
+        ...addressUpdate,
         updatedAt: sql`now()`,
       })
       .where(eq(users.id, userId))
@@ -146,18 +159,50 @@ export class UsersService {
         active: dto.active,
         bookingMode,
         slotDurationMin,
+        ...(dto.addressDefault != null ? { addressDefault: dto.addressDefault } : {}),
+        ...(dto.serviceAddress !== undefined
+          ? dto.serviceAddress === null
+            ? {
+                serviceAddressText: null,
+                serviceAddressLat: null,
+                serviceAddressLng: null,
+              }
+            : {
+                serviceAddressText: dto.serviceAddress.text,
+                serviceAddressLat:
+                  dto.serviceAddress.lat == null ? null : String(dto.serviceAddress.lat),
+                serviceAddressLng:
+                  dto.serviceAddress.lng == null ? null : String(dto.serviceAddress.lng),
+              }
+          : {}),
       })
       .onConflictDoUpdate({
         target: [providerServiceOfferings.providerId, providerServiceOfferings.serviceType],
-        // Only overwrite booking-mode / slot-duration when the caller
-        // actually sent them. Otherwise existing rows keep their settings
-        // even when a price-only edit comes through.
+        // Only overwrite booking-mode / slot-duration / address when the
+        // caller actually sent them. Otherwise existing rows keep their
+        // settings even when a price-only edit comes through.
         set: {
           hourlyRateCents: dto.hourlyRateCents,
           active: dto.active,
           ...(dto.bookingMode != null ? { bookingMode: dto.bookingMode } : {}),
           ...(dto.slotDurationMin != null
             ? { slotDurationMin: dto.slotDurationMin }
+            : {}),
+          ...(dto.addressDefault != null ? { addressDefault: dto.addressDefault } : {}),
+          ...(dto.serviceAddress !== undefined
+            ? dto.serviceAddress === null
+              ? {
+                  serviceAddressText: null,
+                  serviceAddressLat: null,
+                  serviceAddressLng: null,
+                }
+              : {
+                  serviceAddressText: dto.serviceAddress.text,
+                  serviceAddressLat:
+                    dto.serviceAddress.lat == null ? null : String(dto.serviceAddress.lat),
+                  serviceAddressLng:
+                    dto.serviceAddress.lng == null ? null : String(dto.serviceAddress.lng),
+                }
             : {}),
         },
       })
