@@ -1,20 +1,19 @@
-import type { ServiceType } from '@petwalker/shared';
+import type { ServiceType } from '@petwalker/shared/enums';
 
-/**
- * Returns the maximum number of times-per-day slots allowed for a recurring
- * series of the given service type.
- *
- * Services like dog-walking can reasonably be scheduled multiple times per day
- * (morning/noon/evening), while appointment-style services (grooming, boarding,
- * veterinary, etc.) make sense only once per day.
- */
+export const MAX_TIMES_PER_DAY: Record<ServiceType, number> = {
+  walking:          4,
+  sitting:          3,
+  senior_care:      3,
+  fitness:          2,
+  training:         2,
+  grooming:         1,
+  boarding:         1,
+  daycare:          1,
+  photography:      1,
+  massage_wellness: 1,
+  veterinary:       1,
+};
+
 export function getMaxTimesPerDay(serviceType: ServiceType): number {
-  switch (serviceType) {
-    case 'walking':
-    case 'fitness':
-    case 'senior_care':
-      return 3;
-    default:
-      return 1;
-  }
+  return MAX_TIMES_PER_DAY[serviceType] ?? 1;
 }
