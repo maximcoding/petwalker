@@ -111,6 +111,15 @@ function BookingActions({ booking, meId }: ActionsProps): JSX.Element {
     onError: onErr,
   });
 
+  const cancelRemainingMutation = useMutation({
+    mutationFn: (seriesId: string) => api.bookings.cancelRemaining(seriesId, {}),
+    onSuccess: (res) => {
+      toast.success(`Cancelled ${res.cancelledCount} remaining session(s)`);
+      invalidate();
+    },
+    onError: onErr,
+  });
+
   const busy =
     confirmM.isPending || start.isPending || end.isPending || cancel.isPending;
 
@@ -173,6 +182,29 @@ function BookingActions({ booking, meId }: ActionsProps): JSX.Element {
     buttons.push(
       <Button key="x" variant="danger" disabled={busy} onClick={onCancelClick}>
         {cancel.isPending ? <Spinner size="sm" /> : t('bookings.cancelBooking')}
+      </Button>,
+    );
+  }
+
+  if (booking.recurringSeriesId &&
+    (booking.status === BookingStatus.Pending || booking.status === BookingStatus.Confirmed)) {
+    buttons.push(
+      <Button
+        key="cs"
+        variant="secondary"
+        className="border-orange-300 text-orange-600 hover:bg-orange-50"
+        disabled={cancelRemainingMutation.isPending}
+        onClick={async () => {
+          const ok = await dlg({
+            title: 'Cancel remaining sessions',
+            body: 'This will cancel all future pending/confirmed sessions in this recurring series.',
+            confirmLabel: 'Cancel remaining',
+          });
+          if (!ok) return;
+          cancelRemainingMutation.mutate(booking.recurringSeriesId!);
+        }}
+      >
+        Cancel series
       </Button>,
     );
   }
@@ -271,6 +303,11 @@ export default function BookingsPage(): JSX.Element {
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{tr(`services.${b.serviceType}`)}</span>
                       <StatusPill status={b.status} />
+                      {b.recurringSeriesId ? (
+                        <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs text-purple-800 dark:bg-purple-950 dark:text-purple-300">
+                          Recurring
+                        </span>
+                      ) : null}
                     </div>
                     <p className="mt-0.5 text-sm text-slate-500">
                       {fmtWhen(b.scheduledAt)} · {b.durationMin} min · {fmtMoney(b.priceCents)}
