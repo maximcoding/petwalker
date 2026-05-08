@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
 
+import { ENV_TOKEN, type Env } from './config/env.js';
 import { ConfigModule } from './config/config.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
@@ -21,6 +23,12 @@ import { WsModule } from './modules/ws/ws.module.js';
   imports: [
     ConfigModule,
     DatabaseModule,
+    BullModule.forRootAsync({
+      inject: [ENV_TOKEN],
+      useFactory: (env: Env) => ({
+        connection: { url: env.REDIS_URL },
+      }),
+    }),
     StorageModule,
     AuthModule,
     HealthModule,

@@ -40,7 +40,11 @@ export class PushTokensController {
 
   @Delete('tokens/:expoToken')
   @HttpCode(204)
-  async revoke(@Param('expoToken') expoToken: string): Promise<void> {
-    await this.notifications.revokeToken(expoToken);
+  async revoke(
+    @CurrentUser() ctx: { sub: string; email: string },
+    @Param('expoToken') expoToken: string,
+  ): Promise<void> {
+    const me = await this.auth.upsertUser(ctx.sub, ctx.email);
+    await this.notifications.revokeToken(expoToken, me.id);
   }
 }

@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
-import { sql, eq } from 'drizzle-orm';
+import { sql, eq, and } from 'drizzle-orm';
 import type { Queue } from 'bullmq';
 
 import { DRIZZLE_DB } from '../../database/database.module.js';
@@ -31,11 +31,11 @@ export class NotificationsService {
       });
   }
 
-  async revokeToken(expoToken: string): Promise<void> {
+  async revokeToken(expoToken: string, userId: string): Promise<void> {
     await this.db
       .update(pushTokens)
       .set({ revokedAt: sql`now()` })
-      .where(eq(pushTokens.expoToken, expoToken));
+      .where(and(eq(pushTokens.expoToken, expoToken), eq(pushTokens.userId, userId)));
   }
 
   notifyAsync(payload: PushNotificationPayload): void {

@@ -21,7 +21,10 @@ export function usePushNotifications(): void {
 
       try {
         const url = new URL(deepLink);
-        const [, resource, resourceId] = url.pathname.split('/');
+        // For custom schemes (petwalker://bookings/<id>), the host is the resource type
+        // and the pathname starts with '/' followed by the id.
+        const resource = url.hostname;
+        const resourceId = url.pathname.slice(1);
         if (resource === 'bookings' && resourceId) {
           router.push(`/(tabs)/bookings/${resourceId}` as never);
         }

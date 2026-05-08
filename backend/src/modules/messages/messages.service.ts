@@ -10,7 +10,7 @@ import { decodeCursor } from '../../common/cursor.js';
 import { buildCursorPage } from '../../common/pagination.js';
 import { DRIZZLE_DB } from '../../database/database.module.js';
 import type { Database } from '../../db/client.js';
-import { bookings, messages, type MessageRow } from '../../db/schema/index.js';
+import { bookings, messages, users, type MessageRow } from '../../db/schema/index.js';
 
 import { buildNewMessagePayload } from '../notifications/notification-builders.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
@@ -92,11 +92,15 @@ export class MessagesService {
       .where(eq(bookings.id, bookingId));
     if (booking) {
       const recipientUserId = booking.ownerId === viewerId ? booking.providerId : booking.ownerId;
+      const [sender] = await this.db
+        .select({ fullName: users.fullName })
+        .from(users)
+        .where(eq(users.id, viewerId));
       this.notifications.notifyAsync(
         buildNewMessagePayload({
           recipientUserId,
           bookingId,
-          senderName: 'New message',
+          senderName: sender?.fullName ?? 'Someone',
           preview: dto.body,
         }),
       );
