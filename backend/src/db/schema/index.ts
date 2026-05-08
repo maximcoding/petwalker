@@ -16,3 +16,4 @@ export * from './calendar-feeds.js';
 export * from './provider-slots.js';
 export * from './favorites.js';
 export * from './web-notifications.js';
+export * from './recurring-series.js';
