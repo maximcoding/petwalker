@@ -31,5 +31,8 @@ export function mapProviderListing(
     // Use the canonical offering mapper so any future offering field
     // (bookingMode, slotDurationMin, ...) shows up here automatically.
     offerings: [mapServiceOfferingRow(row.offering)],
+    // Default — overwritten by ProvidersService.search() once the
+    // favorites lookup runs against the page slice.
+    isFavorited: false,
   };
 }

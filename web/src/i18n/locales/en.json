@@ -3,6 +3,7 @@
     "me": "Me",
     "pets": "Pets",
     "providers": "Find a provider",
+    "favorites": "Favorites",
     "bookings": "Bookings",
     "profile": "Profile",
     "signOut": "Sign out",
@@ -74,6 +75,16 @@
     "searchPlaceholder": "Search providers by name or bio…",
     "recentSearches": "Recent",
     "clearRecent": "Clear"
+  },
+  "favorites": {
+    "title": "Saved providers",
+    "subtitle": "Providers you've hearted from search or detail pages.",
+    "empty": "No saved providers yet.",
+    "emptyHint": "Tap the heart on a provider to save it for later.",
+    "count_one": "{{count}} saved provider",
+    "count_other": "{{count}} saved providers",
+    "add": "Save provider",
+    "remove": "Remove from saved"
   },
   "bookings": {
     "title": "Bookings",

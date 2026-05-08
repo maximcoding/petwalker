@@ -11,14 +11,15 @@ import { PageLoading } from '@/components/ui/spinner';
 import { getMe, signOut } from '@/lib/auth';
 
 interface NavItem {
-  href: '/me' | '/pets' | '/providers' | '/bookings' | '/profile';
-  key: 'me' | 'pets' | 'providers' | 'bookings' | 'profile';
+  href: '/me' | '/pets' | '/providers' | '/me/favorites' | '/bookings' | '/profile';
+  key: 'me' | 'pets' | 'providers' | 'favorites' | 'bookings' | 'profile';
 }
 
 const NAV: NavItem[] = [
   { href: '/me', key: 'me' },
   { href: '/pets', key: 'pets' },
   { href: '/providers', key: 'providers' },
+  { href: '/me/favorites', key: 'favorites' },
   { href: '/bookings', key: 'bookings' },
   { href: '/profile', key: 'profile' },
 ];

@@ -56,6 +56,8 @@ export interface ServiceProviderListing {
   distanceM: number;
   /** Offerings filtered to the requested serviceType (always non-empty in search results). */
   offerings: ServiceOffering[];
+  /** True iff the calling owner has favorited this provider. */
+  isFavorited: boolean;
 }
 
 /** Full profile view — used by `/providers/:id` (no search context, so no distance). */
@@ -72,4 +74,6 @@ export interface ServiceProviderDetail {
   verified: boolean;
   /** All active offerings for this provider. */
   offerings: ServiceOffering[];
+  /** True iff the calling owner has favorited this provider. */
+  isFavorited: boolean;
 }

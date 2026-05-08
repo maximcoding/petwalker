@@ -13,6 +13,7 @@ import {
   type ServiceProviderProfileRow,
   type UserRow,
 } from '../../db/schema/index.js';
+import { FavoritesService } from '../favorites/favorites.service.js';
 import { mapServiceOfferingRow } from '../users/service-offering.mapper.js';
 
 import {
@@ -37,9 +38,15 @@ interface DistanceCursor {
 
 @Injectable()
 export class ProvidersService {
-  constructor(@Inject(DRIZZLE_DB) private readonly db: Database) {}
+  constructor(
+    @Inject(DRIZZLE_DB) private readonly db: Database,
+    @Inject(FavoritesService) private readonly favorites: FavoritesService,
+  ) {}
 
-  async search(q: SearchProvidersQuery): Promise<CursorPage<ServiceProviderListing>> {
+  async search(
+    q: SearchProvidersQuery,
+    viewerId?: string,
+  ): Promise<CursorPage<ServiceProviderListing>> {
     const origin = new GeoPoint(q.lat, q.lng);
     const { minLat, maxLat, minLng, maxLng } = origin.bbox(q.radiusKm * 1000);
 
@@ -116,16 +123,30 @@ export class ProvidersService {
       : enriched;
 
     // 4. Build cursor page (over-fetch limit+1 to detect tail).
-    return buildCursorPage(
+    const page = buildCursorPage(
       sliced.slice(0, q.limit + 1),
       q.limit,
       (x) => mapProviderListing(x.row, x.distanceM),
       (x) => ({ d: x.distanceM, id: x.row.profile.userId } satisfies DistanceCursor),
     );
+
+    // 5. Layer per-viewer `isFavorited` after pagination so we only ask the
+    //    favorites table for the providers actually being returned.
+    if (viewerId && page.items.length > 0) {
+      const favorited = await this.favorites.favoritedSubset(
+        viewerId,
+        page.items.map((p) => p.userId),
+      );
+      page.items = page.items.map((p) => ({ ...p, isFavorited: favorited.has(p.userId) }));
+    }
+    return page;
   }
 
   /** Full profile + offerings + user info. */
-  async getProfile(providerId: string): Promise<ServiceProviderDetail> {
+  async getProfile(
+    providerId: string,
+    viewerId?: string,
+  ): Promise<ServiceProviderDetail> {
     const profileRows = await this.db
       .select()
       .from(serviceProviderProfiles)
@@ -146,6 +167,10 @@ export class ProvidersService {
         ),
       );
 
+    const isFavorited = viewerId
+      ? await this.favorites.isFavorited(viewerId, providerId)
+      : false;
+
     return {
       userId: joined.service_provider_profiles.userId,
       fullName: joined.users.fullName ?? '',
@@ -164,6 +189,7 @@ export class ProvidersService {
       reviewCount: 0,
       verified: joined.service_provider_profiles.verifiedAt !== null,
       offerings: offeringRows.map((r) => mapServiceOfferingRow(r as ServiceOfferingRow)),
+      isFavorited,
     };
   }
 }
