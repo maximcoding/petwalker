@@ -235,7 +235,11 @@ export class BookingsService {
       return inserted;
     });
 
-    return mapBookingRow(row as BookingRow);
+    const booking = mapBookingRow(row as BookingRow);
+    this.notifications.notifyAsync(
+      buildBookingStatusPayload({ recipientUserId: booking.providerId, bookingId: booking.id, newStatus: 'pending' }),
+    );
+    return booking;
   }
 
   // ---- list / get ---------------------------------------------------------

@@ -1,4 +1,5 @@
 export type PushEventType =
+  | 'booking.requested'
   | 'booking.confirmed'
   | 'booking.started'
   | 'booking.ended'
@@ -14,13 +15,14 @@ export interface PushNotificationPayload {
   data?: Record<string, string>;
 }
 
-type BookingStatus = 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+type BookingStatus = 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
 
 const STATUS_COPY: Record<BookingStatus, { title: string; body: string; eventType: PushEventType }> = {
-  confirmed:   { title: 'Booking confirmed!',  body: 'Your booking has been confirmed.',      eventType: 'booking.confirmed' },
-  in_progress: { title: 'Walk started!',        body: 'Your booking is underway.',             eventType: 'booking.started'   },
-  completed:   { title: 'Walk complete!',        body: 'Your walk has ended. How did it go?',  eventType: 'booking.ended'     },
-  cancelled:   { title: 'Booking cancelled',     body: 'Your booking was cancelled.',           eventType: 'booking.cancelled' },
+  pending:     { title: 'New booking request!', body: 'A client has requested a booking.',    eventType: 'booking.requested' },
+  confirmed:   { title: 'Booking confirmed!',   body: 'Your booking has been confirmed.',     eventType: 'booking.confirmed' },
+  in_progress: { title: 'Walk started!',         body: 'Your booking is underway.',            eventType: 'booking.started'   },
+  completed:   { title: 'Walk complete!',         body: 'Your walk has ended. How did it go?', eventType: 'booking.ended'     },
+  cancelled:   { title: 'Booking cancelled',      body: 'Your booking was cancelled.',          eventType: 'booking.cancelled' },
 };
 
 export function buildBookingStatusPayload(opts: {
