@@ -46,7 +46,7 @@ export default function CreateRecurringSeriesPage(): JSX.Element {
 
   const { data: pets = [] } = useQuery({
     queryKey: ['pets'],
-    queryFn: () => api.pets.list(),
+    queryFn: () => api.pets.list().then((p) => p.items),
     enabled: !!me,
   });
 
