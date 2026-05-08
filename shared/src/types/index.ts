@@ -1,4 +1,5 @@
 export * from './common.js';
+export * from './address.js';
 export * from './user.js';
 export * from './service-provider.js';
 export * from './availability.js';

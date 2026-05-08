@@ -1,3 +1,4 @@
+import { mapAddressColumns } from '../../db/mappers/address.js';
 import type { PetRow } from '../../db/schema/pets.js';
 
 import type { Pet } from '@petwalker/shared/types';
@@ -13,6 +14,7 @@ export function mapPetRow(row: PetRow): Pet {
     ageYears: row.ageYears == null ? null : Number(row.ageYears),
     notes: row.notes ?? null,
     photoUrl: row.photoUrl ?? null,
+    address: mapAddressColumns(row.addressText, row.addressLat, row.addressLng),
     createdAt: row.createdAt.toISOString(),
   };
 }

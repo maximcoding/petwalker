@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { BookingStatus } from '../enums/booking-status.js';
 import { ServiceType } from '../enums/service-type.js';
 
+import { AddressInput } from './address.dto.js';
+
 const uuid = z.string().uuid();
 
 export const CreateBookingDto = z.object({
@@ -26,6 +28,25 @@ export const CreateBookingDto = z.object({
   // can layer on later in a constraints map.
   durationMin: z.number().int().min(15).max(1440),
   notes: z.string().max(2000).nullable().optional(),
+  /**
+   * Where to perform the service. The backend resolves to a concrete
+   * address using these rules:
+   *   - 'owner_user'        → owner's user.address (must be set)
+   *   - 'owner_pet'         → pet.address ?? owner.user.address
+   *   - 'provider_user'     → provider's user.address
+   *   - 'provider_offering' → offering.serviceAddress ?? provider.user.address
+   *   - 'custom'            → use `customAddress` from this DTO (required)
+   * The owner-supplied source is captured on the booking row as a snapshot.
+   */
+  addressSource: z.enum([
+    'owner_user',
+    'owner_pet',
+    'provider_user',
+    'provider_offering',
+    'custom',
+  ]),
+  /** Required when `addressSource === 'custom'`. Ignored otherwise. */
+  customAddress: AddressInput.optional(),
 });
 export type CreateBookingDto = z.infer<typeof CreateBookingDto>;
 

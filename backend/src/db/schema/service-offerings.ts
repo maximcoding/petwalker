@@ -1,4 +1,12 @@
-import { boolean, integer, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  numeric,
+  pgTable,
+  primaryKey,
+  text,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 import { serviceTypeEnum } from './enums.js';
 import { serviceProviderProfiles } from './service-provider-profiles.js';
@@ -27,6 +35,21 @@ export const providerServiceOfferings = pgTable(
     active: boolean('active').notNull().default(true),
     bookingMode: text('booking_mode').notNull().default('window'),
     slotDurationMin: integer('slot_duration_min').notNull().default(60),
+    // Optional per-offering service address override. When unset, the
+    // provider's user.address is used (e.g. one location for the whole
+    // business). Set this to publish a separate address per service —
+    // mobile vs in-studio grooming, vet house calls, etc.
+    serviceAddressText: text('service_address_text'),
+    serviceAddressLat: numeric('service_address_lat', { precision: 9, scale: 6 }),
+    serviceAddressLng: numeric('service_address_lng', { precision: 9, scale: 6 }),
+    /**
+     * Default booking-address source for this offering:
+     *   'owner'    → use the owner's pet/user address
+     *   'provider' → use this offering's serviceAddress (or provider.user.address)
+     *   'either'   → owner picks at booking time (no auto-default)
+     * The owner can always override to 'custom' at booking time regardless.
+     */
+    addressDefault: text('address_default').notNull().default('owner'),
   },
   (t) => ({
     pk: primaryKey({ columns: [t.providerId, t.serviceType] }),

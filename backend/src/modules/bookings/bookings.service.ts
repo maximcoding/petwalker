@@ -26,6 +26,7 @@ import {
 } from '../../db/schema/index.js';
 import { PaymentsService } from '../payments/payments.service.js';
 
+import { resolveBookingAddress } from './address-resolver.js';
 import { hasAvailability, hasExternalBusyConflict, hasOverlap } from './availability-check.js';
 import { mapBookingRow } from './booking.mapper.js';
 import { computeCancellationOutcome } from './cancellation-policy.js';
@@ -112,7 +113,27 @@ export class BookingsService {
       });
     }
 
-    // 6. Compute price (locked at booking time)
+    // 6. Resolve the booking address from the chosen source. Throws with a
+    // stable code-string the catch below maps to a 422 — owner gets a
+    // friendly i18n message ("set your home address first" etc.).
+    let resolvedAddress;
+    try {
+      resolvedAddress = await resolveBookingAddress(this.db, ownerId, dto.petId, offering, dto);
+    } catch (err) {
+      const code = (err as Error).message;
+      if (code === 'CUSTOM_ADDRESS_REQUIRED') {
+        throw unprocessable('CUSTOM_ADDRESS_REQUIRED', 'A custom address is required when addressSource is "custom"');
+      }
+      if (code === 'OWNER_ADDRESS_MISSING') {
+        throw unprocessable('OWNER_ADDRESS_MISSING', 'Owner has no address set — add one in account settings');
+      }
+      if (code === 'PROVIDER_ADDRESS_MISSING') {
+        throw unprocessable('PROVIDER_ADDRESS_MISSING', 'Provider has no address set for this service');
+      }
+      throw err; // unexpected — bubble up as 500
+    }
+
+    // 7. Compute price (locked at booking time)
     const priceCents = Math.round(offering.hourlyRateCents * (dto.durationMin / 60));
 
     // For slot-mode offerings, the booking insert and the slot reservation
@@ -163,6 +184,14 @@ export class BookingsService {
           durationMin: dto.durationMin,
           priceCents,
           notes: dto.notes ?? null,
+          // Snapshot resolved address — see `address-resolver.ts` for the
+          // chain. `lat/lng` may be null even if `text` is set (we don't
+          // auto-geocode). Drizzle wants string for numeric columns, hence
+          // the toString().
+          addressText: resolvedAddress.text,
+          addressLat: resolvedAddress.lat == null ? null : String(resolvedAddress.lat),
+          addressLng: resolvedAddress.lng == null ? null : String(resolvedAddress.lng),
+          addressSource: resolvedAddress.source,
         })
         .returning();
       if (!inserted) throw new Error('insert returned no row');

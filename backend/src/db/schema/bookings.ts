@@ -1,5 +1,14 @@
 import { sql } from 'drizzle-orm';
-import { check, index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  check,
+  index,
+  integer,
+  numeric,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 import { bookingStatusEnum, serviceTypeEnum, userRoleEnum } from './enums.js';
 import { pets } from './pets.js';
@@ -27,6 +36,23 @@ export const bookings = pgTable(
     /** Locked at booking time. */
     priceCents: integer('price_cents').notNull(),
     notes: text('notes'),
+
+    // Resolved address snapshot — captured at booking time so renaming or
+    // moving a pet/owner/provider/offering address later doesn't rewrite
+    // history. NOT NULL because every booking happens *somewhere*.
+    addressText: text('address_text').notNull().default(''),
+    addressLat: numeric('address_lat', { precision: 9, scale: 6 }),
+    addressLng: numeric('address_lng', { precision: 9, scale: 6 }),
+    /**
+     * Where the address came from when the booking was created:
+     *   'owner_user'        — owner's user.address
+     *   'owner_pet'         — pet's overriding address
+     *   'provider_user'     — provider's user.address
+     *   'provider_offering' — offering's serviceAddress override
+     *   'custom'            — owner typed a one-off
+     * Stored as text so adding sources later doesn't need an ALTER TYPE.
+     */
+    addressSource: text('address_source').notNull().default('owner_pet'),
 
     // Cancellation outcome — populated by the cancel endpoint, consumed by M4 (payments).
     cancelledBy: userRoleEnum('cancelled_by'),

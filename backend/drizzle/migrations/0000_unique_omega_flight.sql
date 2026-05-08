@@ -11,6 +11,9 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"full_name" text,
 	"phone" text,
 	"avatar_url" text,
+	"address_text" text,
+	"address_lat" numeric(9, 6),
+	"address_lng" numeric(9, 6),
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "users_cognito_sub_unique" UNIQUE("cognito_sub"),
@@ -52,6 +55,9 @@ CREATE TABLE IF NOT EXISTS "pets" (
 	"age_years" numeric(4, 1),
 	"notes" text,
 	"photo_url" text,
+	"address_text" text,
+	"address_lat" numeric(9, 6),
+	"address_lng" numeric(9, 6),
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -66,6 +72,10 @@ CREATE TABLE IF NOT EXISTS "bookings" (
 	"status" "booking_status" DEFAULT 'pending' NOT NULL,
 	"price_cents" integer NOT NULL,
 	"notes" text,
+	"address_text" text DEFAULT '' NOT NULL,
+	"address_lat" numeric(9, 6),
+	"address_lng" numeric(9, 6),
+	"address_source" text DEFAULT 'owner_pet' NOT NULL,
 	"cancelled_by" "user_role",
 	"cancelled_at" timestamp with time zone,
 	"cancellation_reason" text,

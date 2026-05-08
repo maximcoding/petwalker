@@ -290,6 +290,11 @@ export default function ProviderDetail(): JSX.Element {
               scheduledAt: scheduledDate.toISOString(),
               durationMin: duration,
               notes: null,
+              // Default to the pet's home address; backend resolver falls
+              // back to owner.user.address if the pet has none. Mobile
+              // booking flow doesn't yet expose the address picker — that
+              // ships with the slot picker port in a follow-up.
+              addressSource: 'owner_pet',
             });
           }}
           style={{

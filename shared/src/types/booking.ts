@@ -2,6 +2,7 @@ import type { BookingStatus } from '../enums/booking-status.js';
 import type { ServiceType } from '../enums/service-type.js';
 import type { UserRole } from '../enums/user-role.js';
 
+import type { Address, AddressSource } from './address.js';
 import type { GeoSample, ISODateString, UUID } from './common.js';
 
 /** Who initiated the cancellation (null if booking is not cancelled). */
@@ -19,6 +20,11 @@ export interface Booking {
   /** Locked at booking time: hourlyRateCents * (durationMin / 60), rounded. */
   priceCents: number;
   notes?: string | null;
+
+  /** Resolved service address — snapshotted at booking time. */
+  address: Address;
+  /** Where `address` was sourced from on create. */
+  addressSource: AddressSource;
 
   // Cancellation outcome — populated on cancel; M4 (payments) acts on these.
   cancelledBy?: CancelledBy | null;

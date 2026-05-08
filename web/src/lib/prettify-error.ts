@@ -36,6 +36,9 @@ export function prettifyError(t: TFunction, raw: unknown): string {
   if (message.includes('PROVIDER_NO_OFFERING')) return t('errors.providerNoOffering');
   if (message.includes('SCHEDULED_AT_TOO_SOON')) return t('errors.scheduledTooSoon');
   if (message.includes('PROVIDER_NOT_ONBOARDED')) return t('errors.providerNotOnboarded');
+  if (message.includes('OWNER_ADDRESS_MISSING')) return t('errors.ownerAddressMissing');
+  if (message.includes('PROVIDER_ADDRESS_MISSING')) return t('errors.providerAddressMissing');
+  if (message.includes('CUSTOM_ADDRESS_REQUIRED')) return t('errors.customAddressRequired');
 
   // Specific HTTP-like status hints in message
   if (message.includes('Forbidden') || message.includes('Not your booking')) {

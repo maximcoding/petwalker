@@ -1,6 +1,10 @@
 ALTER TABLE "provider_service_offerings"
   ADD COLUMN IF NOT EXISTS "booking_mode" text NOT NULL DEFAULT 'window',
-  ADD COLUMN IF NOT EXISTS "slot_duration_min" integer NOT NULL DEFAULT 60;
+  ADD COLUMN IF NOT EXISTS "slot_duration_min" integer NOT NULL DEFAULT 60,
+  ADD COLUMN IF NOT EXISTS "service_address_text" text,
+  ADD COLUMN IF NOT EXISTS "service_address_lat" numeric(9, 6),
+  ADD COLUMN IF NOT EXISTS "service_address_lng" numeric(9, 6),
+  ADD COLUMN IF NOT EXISTS "address_default" text NOT NULL DEFAULT 'owner';
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "provider_slots" (
   "id"           uuid PRIMARY KEY DEFAULT gen_random_uuid(),

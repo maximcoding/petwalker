@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { AddressInput } from './address.dto.js';
+
 export const CreatePetDto = z.object({
   name: z.string().min(1).max(80),
   species: z.string().min(1).max(40).default('dog'),
@@ -8,6 +10,12 @@ export const CreatePetDto = z.object({
   ageYears: z.number().nonnegative().max(40).nullable().optional(),
   notes: z.string().max(2000).nullable().optional(),
   photoUrl: z.string().url().nullable().optional(),
+  /**
+   * Optional override address for this pet. Pass `null` to clear.
+   * If unset, bookings using `address_source='owner_pet'` fall back to
+   * the owner's user.address.
+   */
+  address: AddressInput.nullable().optional(),
 });
 export type CreatePetDto = z.infer<typeof CreatePetDto>;
 
