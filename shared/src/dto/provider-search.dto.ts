@@ -29,6 +29,13 @@ export const SearchProvidersQuery = z.object({
   minRating: z.coerce.number().min(1).max(5).optional(),
   maxHourlyCents: z.coerce.number().int().nonnegative().optional(),
 
+  /**
+   * Free-text query — matched against the provider's full name and bio
+   * with case-insensitive substring search. Empty string is treated as
+   * absent. Capped at 200 chars to bound query cost.
+   */
+  q: z.string().trim().max(200).optional(),
+
   /** Cursor pagination. */
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),

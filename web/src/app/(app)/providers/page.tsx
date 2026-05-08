@@ -2,13 +2,14 @@
 
 import { ServiceType } from '@petwalker/shared/enums';
 import type { ServiceProviderListing } from '@petwalker/shared/types';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ProviderCard } from '@/components/provider-card';
 import { ProviderSearchForm, type SearchValues } from '@/components/provider-search-form';
+import { RecentSearchChips } from '@/components/recent-search-chips';
 import { ServiceChipRow } from '@/components/service-chip-row';
 import { Button } from '@/components/ui/button';
 import { ErrorState } from '@/components/ui/error-state';
@@ -16,8 +17,15 @@ import { SkeletonGrid } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/api';
 import { SEED_LOCATION } from '@/lib/geolocation';
+import {
+  clearRecentSearches,
+  loadRecentSearches,
+  pushRecentSearch,
+} from '@/lib/recent-searches';
 
 const DEFAULT_RADIUS_KM = 25;
+/** Wait this long after the user stops typing before firing a search. */
+const SEARCH_DEBOUNCE_MS = 300;
 
 function readSearch(sp: URLSearchParams): SearchValues {
   return {
@@ -29,6 +37,7 @@ function readSearch(sp: URLSearchParams): SearchValues {
     durationMin: sp.get('durationMin') ? Number(sp.get('durationMin')) : undefined,
     minRating: sp.get('minRating') ? Number(sp.get('minRating')) : undefined,
     maxHourlyCents: sp.get('maxHourlyCents') ? Number(sp.get('maxHourlyCents')) : undefined,
+    q: sp.get('q') ?? undefined,
   };
 }
 
@@ -42,6 +51,7 @@ function writeSearch(v: SearchValues): URLSearchParams {
   if (v.durationMin) sp.set('durationMin', String(v.durationMin));
   if (v.minRating) sp.set('minRating', String(v.minRating));
   if (v.maxHourlyCents) sp.set('maxHourlyCents', String(v.maxHourlyCents));
+  if (v.q && v.q.trim()) sp.set('q', v.q.trim());
   return sp;
 }
 
@@ -62,9 +72,43 @@ export default function ProvidersPage(): JSX.Element {
     values.radiusKm !== DEFAULT_RADIUS_KM;
   const [filtersOpen, setFiltersOpen] = useState(hasActiveFilters);
 
+  // Free-text search — local state for the input, debounced into the URL.
+  // The URL is the single source of truth for what the query fires on, so
+  // back/forward + share-link behaviours just work.
+  const [searchInput, setSearchInput] = useState<string>(values.q ?? '');
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [recent, setRecent] = useState<string[]>(() => loadRecentSearches());
+
+  // Keep the input in sync if the URL is mutated externally (back/forward,
+  // chip click, etc.). Skip the sync while the user is typing — otherwise
+  // a debounced URL update would clobber unsent keystrokes.
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!searchFocused) setSearchInput(values.q ?? '');
+  }, [values.q, searchFocused]);
+
+  function pushQuery(next: string): void {
+    const params = writeSearch({ ...values, q: next });
+    router.push(`/providers?${params.toString()}`);
+    // Bump recent list once the search "settles" — i.e. on each push,
+    // not on every keystroke.
+    if (next.trim()) setRecent(pushRecentSearch(next));
+  }
+
+  function onSearchChange(next: string): void {
+    setSearchInput(next);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      pushQuery(next);
+    }, SEARCH_DEBOUNCE_MS);
+  }
+
   // Always run the query — sensible defaults come from URL or fallbacks.
   // Backend sorts by distance ascending, so the listing is already
-  // proximity-ordered.
+  // proximity-ordered. Caching:
+  //   - staleTime: same query within 30s skips the network entirely.
+  //   - placeholderData: keepPreviousData → results stay rendered while
+  //     the next page/query loads (no flicker on each keystroke).
   const q = useInfiniteQuery({
     queryKey: ['providers', values],
     initialPageParam: undefined as string | undefined,
@@ -80,10 +124,13 @@ export default function ProvidersPage(): JSX.Element {
         durationMin: values.durationMin,
         minRating: values.minRating,
         maxHourlyCents: values.maxHourlyCents,
+        q: values.q,
         cursor: pageParam,
         limit: 20,
       }),
     getNextPageParam: (last) => last.nextCursor ?? undefined,
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
 
   const items: ServiceProviderListing[] = q.data?.pages.flatMap((p) => p.items) ?? [];
@@ -100,6 +147,42 @@ export default function ProvidersPage(): JSX.Element {
           · {t('providers.sortedByProximity')}
         </p>
       </header>
+
+      {/* Free-text search. Debounced into the URL so a fresh page-load
+          (or back/forward) hits the same query the user was looking at. */}
+      <div className="shrink-0 space-y-2">
+        <input
+          type="search"
+          inputMode="search"
+          value={searchInput}
+          onChange={(e) => onSearchChange(e.target.value)}
+          onFocus={() => setSearchFocused(true)}
+          onBlur={() => setSearchFocused(false)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              if (debounceTimer.current) clearTimeout(debounceTimer.current);
+              pushQuery(searchInput);
+            }
+          }}
+          placeholder={t('providers.searchPlaceholder')}
+          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+        />
+        {/* Recent searches surface only when the input is empty + focused —
+            once the user starts typing, results below are the answer. */}
+        {searchFocused && !searchInput.trim() ? (
+          <RecentSearchChips
+            items={recent}
+            onPick={(query) => {
+              setSearchInput(query);
+              pushQuery(query);
+            }}
+            onClear={() => {
+              clearRecentSearches();
+              setRecent([]);
+            }}
+          />
+        ) : null}
+      </div>
 
       <div className="shrink-0">
         <ServiceChipRow

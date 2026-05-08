@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, between, eq, gte, isNotNull, lte } from 'drizzle-orm';
+import { and, between, eq, gte, ilike, isNotNull, lte, or } from 'drizzle-orm';
 
 import { decodeCursor } from '../../common/cursor.js';
 import { buildCursorPage } from '../../common/pagination.js';
@@ -55,6 +55,22 @@ export class ProvidersService {
     ];
     if (q.maxHourlyCents !== undefined) {
       conditions.push(lte(providerServiceOfferings.hourlyRateCents, q.maxHourlyCents));
+    }
+
+    // Free-text search — matches the trimmed query as a case-insensitive
+    // substring of either the provider's full name or their bio. ILIKE is
+    // fast enough at our current size (10K rows); swap to a pg_trgm GIN
+    // index when latency becomes noticeable. Empty/whitespace-only is a
+    // no-op (zod already trims).
+    const trimmed = q.q?.trim();
+    if (trimmed) {
+      const pattern = `%${trimmed.replace(/[%_]/g, (ch) => `\\${ch}`)}%`;
+      conditions.push(
+        or(
+          ilike(users.fullName, pattern),
+          ilike(serviceProviderProfiles.bio, pattern),
+        )!,
+      );
     }
 
     const rows = await this.db
