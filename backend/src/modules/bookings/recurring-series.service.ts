@@ -25,6 +25,7 @@ import { resolveBookingAddress } from './address-resolver.js';
 import { hasAvailability, hasExternalBusyConflict, hasOverlap } from './availability-check.js';
 import { mapBookingRow } from './booking.mapper.js';
 import { addWeeks, generateRecurrenceDates } from './recurrence-dates.js';
+import { getMaxTimesPerDay } from './service-type-constraints.js';
 
 import type {
   Booking,
@@ -43,7 +44,7 @@ function mapSeriesRow(row: RecurringSeriesRow): RecurringSeries {
     serviceType: row.serviceType as never,
     recurrence: row.recurrence,
     daysOfWeek: JSON.parse(row.daysOfWeek) as number[],
-    timeOfDay: row.timeOfDay,
+    timesOfDay: JSON.parse(row.timesOfDay) as string[],
     startDate: row.startDate,
     endDate: row.endDate,
     durationMin: row.durationMin,
@@ -102,6 +103,14 @@ export class RecurringSeriesService {
       );
     }
 
+    const maxTimes = getMaxTimesPerDay(dto.serviceType);
+    if (dto.timesOfDay.length > maxTimes) {
+      throw unprocessable(
+        'TOO_MANY_TIMES_PER_DAY',
+        `Service type "${dto.serviceType}" allows at most ${maxTimes} time(s) per day`,
+      );
+    }
+
     let resolvedAddress;
     try {
       resolvedAddress = await resolveBookingAddress(
@@ -131,7 +140,7 @@ export class RecurringSeriesService {
     const dates = generateRecurrenceDates({
       recurrence: dto.recurrence,
       daysOfWeek: dto.daysOfWeek,
-      timeOfDay: dto.timeOfDay,
+      timesOfDay: dto.timesOfDay,
       startDate: dto.startDate,
       endDate,
     });
@@ -176,7 +185,7 @@ export class RecurringSeriesService {
           serviceType: dto.serviceType,
           recurrence: dto.recurrence,
           daysOfWeek: JSON.stringify(dto.daysOfWeek),
-          timeOfDay: dto.timeOfDay,
+          timesOfDay: JSON.stringify(dto.timesOfDay),
           startDate: dto.startDate,
           endDate,
           durationMin: dto.durationMin,
