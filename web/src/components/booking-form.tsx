@@ -3,12 +3,18 @@
 import { type FormEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { AddressField } from './address-field';
 import { FreeSlotPicker } from './free-slot-picker';
 import { Button } from './ui/button';
 import { TextareaField } from './ui/field';
 
 import type { ServiceType } from '@petwalker/shared/enums';
-import type { Pet, ServiceProviderDetail } from '@petwalker/shared/types';
+import type {
+  Address,
+  AddressSource,
+  Pet,
+  ServiceProviderDetail,
+} from '@petwalker/shared/types';
 
 const DURATIONS = [15, 30, 45, 60, 90, 120] as const;
 
@@ -23,7 +29,20 @@ interface Props {
     scheduledAt: string; // ISO UTC
     durationMin: number;
     notes: string | null;
+    addressSource: AddressSource;
+    customAddress?: Address;
   }) => void;
+}
+
+/**
+ * Pick the initial address source based on the offering's `addressDefault`.
+ * 'owner' → owner_pet (most natural fallback chain through pet → user)
+ * 'provider' → provider_offering (offering override → user fallback)
+ * 'either' → owner_pet (still need a default; owner-side feels less surprising)
+ */
+function defaultAddressSource(addressDefault: string | undefined): AddressSource {
+  if (addressDefault === 'provider') return 'provider_offering';
+  return 'owner_pet';
 }
 
 export function BookingForm({
@@ -45,13 +64,38 @@ export function BookingForm({
   const [slotStart, setSlotStart] = useState<string | null>(null);
   const [duration, setDuration] = useState<number>(60);
   const [notes, setNotes] = useState('');
+  const [addressSource, setAddressSource] = useState<AddressSource>(() =>
+    defaultAddressSource(offering?.addressDefault),
+  );
+  const [customAddress, setCustomAddress] = useState<Address | null>(null);
 
   const previewCents = offering ? Math.round(offering.hourlyRateCents * (duration / 60)) : 0;
+
+  // Provider's resolved address for the radio label — the offering override
+  // wins, falling back to the provider's user.address. We pull the latter
+  // out of ServiceProviderDetail's bio/location later if needed; for v1
+  // the offering address is the only thing in the type, so a missing one
+  // falls back to a generic "Provider's location" label.
+  const providerAddrText =
+    offering?.serviceAddress?.text ?? t('booking.providerLocation');
+  const selectedPet = pets.find((p) => p.id === petId);
+  const petAddrText = selectedPet?.address?.text ?? t('booking.ownerHome');
 
   function handleSubmit(e: FormEvent<HTMLFormElement>): void {
     e.preventDefault();
     if (!petId || !slotStart) return;
-    onSubmit({ petId, scheduledAt: slotStart, durationMin: duration, notes: notes || null });
+    if (addressSource === 'custom' && (!customAddress || !customAddress.text.trim())) {
+      // Don't submit with an empty custom address — backend would 422 anyway.
+      return;
+    }
+    onSubmit({
+      petId,
+      scheduledAt: slotStart,
+      durationMin: duration,
+      notes: notes || null,
+      addressSource,
+      customAddress: addressSource === 'custom' ? customAddress ?? undefined : undefined,
+    });
   }
 
   if (!offering) {
@@ -110,6 +154,62 @@ export function BookingForm({
           ))}
         </select>
       </label>
+
+      {/* Where: source radio + custom-address textarea when 'custom' is picked.
+          Order matches the offering's addressDefault: owner-default services
+          show the pet option first; provider-default services lead with the
+          provider's location. */}
+      <fieldset className="space-y-2 rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+        <legend className="px-1 text-sm font-medium">{t('booking.whereLabel')}</legend>
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="radio"
+            name="addr-source"
+            checked={addressSource === 'owner_pet'}
+            onChange={() => setAddressSource('owner_pet')}
+            className="mt-1"
+          />
+          <span>
+            <span className="block">{t('booking.atPetHome')}</span>
+            <span className="block text-xs text-slate-500">{petAddrText}</span>
+          </span>
+        </label>
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="radio"
+            name="addr-source"
+            checked={addressSource === 'provider_offering'}
+            onChange={() => setAddressSource('provider_offering')}
+            className="mt-1"
+          />
+          <span>
+            <span className="block">{t('booking.atProviderLocation')}</span>
+            <span className="block text-xs text-slate-500">{providerAddrText}</span>
+          </span>
+        </label>
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="radio"
+            name="addr-source"
+            checked={addressSource === 'custom'}
+            onChange={() => setAddressSource('custom')}
+            className="mt-1"
+          />
+          <span className="flex-1">
+            <span className="block">{t('booking.atOtherAddress')}</span>
+            {addressSource === 'custom' ? (
+              <div className="mt-2">
+                <AddressField
+                  value={customAddress}
+                  onChange={setCustomAddress}
+                  label=""
+                  hint={t('booking.customAddressHint')}
+                />
+              </div>
+            ) : null}
+          </span>
+        </label>
+      </fieldset>
 
       <div>
         <span className="mb-2 block text-sm font-medium">When</span>

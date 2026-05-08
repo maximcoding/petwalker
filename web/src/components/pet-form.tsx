@@ -1,7 +1,9 @@
 'use client';
 
 import { type FormEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
+import { AddressField } from './address-field';
 import { PetPhotoUploader } from './pet-photo-uploader';
 import { Button } from './ui/button';
 import { Field, TextareaField } from './ui/field';
@@ -27,6 +29,7 @@ const EMPTY: PetFormValues = {
   ageYears: null,
   notes: null,
   photoUrl: null,
+  address: null,
 };
 
 export function PetForm({
@@ -37,6 +40,7 @@ export function PetForm({
   onSubmit,
   onCancel,
 }: Props): JSX.Element {
+  const { t } = useTranslation();
   const [v, setV] = useState<PetFormValues>({ ...EMPTY, ...initial });
 
   function patch<K extends keyof PetFormValues>(k: K, val: PetFormValues[K]): void {
@@ -92,6 +96,13 @@ export function PetForm({
         hint="Allergies, behaviour quirks, walking preferences…"
       />
       <PetPhotoUploader value={v.photoUrl ?? null} onChange={(url) => patch('photoUrl', url)} />
+
+      <AddressField
+        value={v.address ?? null}
+        onChange={(addr) => patch('address', addr)}
+        label={t('address.petLabel')}
+        hint={t('address.petHint')}
+      />
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 

@@ -1,6 +1,12 @@
+import { mapAddressColumns } from '../../db/mappers/address.js';
 import type { ServiceOfferingRow } from '../../db/schema/service-offerings.js';
 
-import type { BookingMode, ServiceOffering, ServiceType } from '@petwalker/shared';
+import type {
+  AddressDefault,
+  BookingMode,
+  ServiceOffering,
+  ServiceType,
+} from '@petwalker/shared';
 
 export function mapServiceOfferingRow(row: ServiceOfferingRow): ServiceOffering {
   return {
@@ -12,5 +18,11 @@ export function mapServiceOfferingRow(row: ServiceOfferingRow): ServiceOffering 
     // 'window' via the migration so this is safe.
     bookingMode: row.bookingMode as BookingMode,
     slotDurationMin: row.slotDurationMin,
+    serviceAddress: mapAddressColumns(
+      row.serviceAddressText,
+      row.serviceAddressLat,
+      row.serviceAddressLng,
+    ),
+    addressDefault: row.addressDefault as AddressDefault,
   };
 }

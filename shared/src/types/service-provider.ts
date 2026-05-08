@@ -1,6 +1,7 @@
 import type { BookingMode } from '../enums/booking-mode.js';
 import type { ServiceType } from '../enums/service-type.js';
 
+import type { Address, AddressDefault } from './address.js';
 import type { ISODateString, UUID } from './common.js';
 
 /** Provider's general profile — bio, base location, service radius, verified status. */
@@ -27,6 +28,10 @@ export interface ServiceOffering {
    * hint for owners and as a default if mode is later switched.
    */
   slotDurationMin: number;
+  /** Per-offering service location override. Falls back to provider.user.address. */
+  serviceAddress: Address | null;
+  /** Default booking-address source ('owner' | 'provider' | 'either'). */
+  addressDefault: AddressDefault;
 }
 
 /** A provider as exposed to owners in search results. */

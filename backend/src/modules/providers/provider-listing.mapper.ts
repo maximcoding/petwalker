@@ -1,8 +1,9 @@
 import type { ServiceOfferingRow } from '../../db/schema/service-offerings.js';
 import type { ServiceProviderProfileRow } from '../../db/schema/service-provider-profiles.js';
 import type { UserRow } from '../../db/schema/users.js';
+import { mapServiceOfferingRow } from '../users/service-offering.mapper.js';
 
-import type { ServiceProviderListing, ServiceType } from '@petwalker/shared';
+import type { ServiceProviderListing } from '@petwalker/shared';
 
 /** Joined row used by the search query — profile + user + matching offering. */
 export interface ProviderJoinedRow {
@@ -27,13 +28,8 @@ export function mapProviderListing(
     reviewCount: 0,
     verified: row.profile.verifiedAt !== null,
     distanceM: Math.round(distanceM),
-    offerings: [
-      {
-        providerId: row.offering.providerId,
-        serviceType: row.offering.serviceType as ServiceType,
-        hourlyRateCents: row.offering.hourlyRateCents,
-        active: row.offering.active,
-      },
-    ],
+    // Use the canonical offering mapper so any future offering field
+    // (bookingMode, slotDurationMin, ...) shows up here automatically.
+    offerings: [mapServiceOfferingRow(row.offering)],
   };
 }

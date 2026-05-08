@@ -1,5 +1,13 @@
 import { sql } from 'drizzle-orm';
-import { customType, index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  customType,
+  index,
+  numeric,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 import { userRoleEnum } from './enums.js';
 
@@ -22,6 +30,12 @@ export const users = pgTable(
     fullName: text('full_name'),
     phone: text('phone'),
     avatarUrl: text('avatar_url'),
+    // Home / billing / default-service address. Free-form text — the
+    // optional lat/lng pair lets us deep-link to maps if the owner pastes
+    // them; we don't geocode automatically.
+    addressText: text('address_text'),
+    addressLat: numeric('address_lat', { precision: 9, scale: 6 }),
+    addressLng: numeric('address_lng', { precision: 9, scale: 6 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

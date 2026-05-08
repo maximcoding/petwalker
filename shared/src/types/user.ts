@@ -1,5 +1,6 @@
 import type { UserRole } from '../enums/user-role.js';
 
+import type { Address } from './address.js';
 import type { ISODateString, UUID } from './common.js';
 
 export interface User {
@@ -10,6 +11,8 @@ export interface User {
   fullName?: string | null;
   phone?: string | null;
   avatarUrl?: string | null;
+  /** Default home address. Owners use as booking pickup; providers use as default service location. */
+  address: Address | null;
   createdAt: ISODateString;
   updatedAt: ISODateString;
 }

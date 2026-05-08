@@ -68,6 +68,13 @@ export class PetsService {
         ageYears: dto.ageYears == null ? null : String(dto.ageYears),
         notes: dto.notes ?? null,
         photoUrl: dto.photoUrl ?? null,
+        // Address override: tri-state semantics like updateMe — null means
+        // "leave blank" on insert (the column is nullable).
+        addressText: dto.address?.text ?? null,
+        addressLat:
+          dto.address?.lat == null ? null : String(dto.address.lat),
+        addressLng:
+          dto.address?.lng == null ? null : String(dto.address.lng),
       })
       .returning();
     if (!row) throw new Error('insert returned no row');
@@ -91,6 +98,17 @@ export class PetsService {
           : {}),
         ...(dto.notes !== undefined ? { notes: dto.notes ?? null } : {}),
         ...(dto.photoUrl !== undefined ? { photoUrl: dto.photoUrl ?? null } : {}),
+        ...(dto.address === undefined
+          ? {}
+          : dto.address === null
+            ? { addressText: null, addressLat: null, addressLng: null }
+            : {
+                addressText: dto.address.text,
+                addressLat:
+                  dto.address.lat == null ? null : String(dto.address.lat),
+                addressLng:
+                  dto.address.lng == null ? null : String(dto.address.lng),
+              }),
       })
       .where(eq(pets.id, id))
       .returning();

@@ -39,6 +39,8 @@ export default function BookProviderPage(): JSX.Element {
       scheduledAt: string;
       durationMin: number;
       notes: string | null;
+      addressSource: import('@petwalker/shared').AddressSource;
+      customAddress?: import('@petwalker/shared').Address;
     }) =>
       api.bookings.create({
         providerId: id,
@@ -47,6 +49,8 @@ export default function BookProviderPage(): JSX.Element {
         scheduledAt: input.scheduledAt,
         durationMin: input.durationMin,
         notes: input.notes,
+        addressSource: input.addressSource,
+        customAddress: input.customAddress,
       }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ['bookings'] });

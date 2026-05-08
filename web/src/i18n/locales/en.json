@@ -122,6 +122,12 @@
     "publishSlots": "Publish slots now",
     "slotsPublished_one": "Published {{count}} new slot",
     "slotsPublished_other": "Published {{count}} new slots",
+    "addressDefault": "Default location",
+    "addressDefaultOwner": "Owner's place",
+    "addressDefaultProvider": "Provider's place",
+    "addressDefaultEither": "Owner picks at booking",
+    "serviceAddress": "Service address (optional)",
+    "serviceAddressHint": "Where this service is performed if it differs from your home address. Leave blank to use your account address.",
     "calendar": {
       "title": "External calendar",
       "subtitle": "Connect a calendar feed so busy times are excluded from booking slots.",
@@ -150,6 +156,9 @@
     "outsideAvailability": "Provider isn't available at this time.",
     "overlappingBooking": "That slot is already booked. Pick another time.",
     "externalCalendarConflict": "Provider is busy on their calendar at this time.",
+    "ownerAddressMissing": "Set a home address on your account or this pet before booking.",
+    "providerAddressMissing": "Provider hasn't set a service address — pick a different location.",
+    "customAddressRequired": "Type the address where the service should happen.",
     "providerNoOffering": "This provider doesn't offer this service.",
     "scheduledTooSoon": "Pick a time at least 5 minutes from now.",
     "providerNotOnboarded": "Provider hasn't finished payout setup yet."
@@ -200,7 +209,22 @@
       "morning": "Morning",
       "afternoon": "Afternoon",
       "evening": "Evening"
-    }
+    },
+    "whereLabel": "Where",
+    "atPetHome": "At my pet's home",
+    "atProviderLocation": "At the provider's location",
+    "atOtherAddress": "Other address",
+    "ownerHome": "(Set a home address on this pet or your account)",
+    "providerLocation": "(Provider hasn't published an address)",
+    "customAddressHint": "Where the service should happen — street, neighborhood, anything that helps the provider find it."
+  },
+  "address": {
+    "label": "Address",
+    "placeholder": "12 Main St, Brooklyn, NY 11201",
+    "homeLabel": "Home address",
+    "homeHint": "Used as the default booking pickup. Leave blank if you'd rather pick a location at booking time.",
+    "petLabel": "Pet's address (optional)",
+    "petHint": "Override your home address for this pet — useful if the pet lives elsewhere."
   },
   "services": {
     "all": "All services",

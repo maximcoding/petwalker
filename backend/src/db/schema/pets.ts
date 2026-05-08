@@ -19,6 +19,13 @@ export const pets = pgTable(
     ageYears: numeric('age_years', { precision: 4, scale: 1 }),
     notes: text('notes'),
     photoUrl: text('photo_url'),
+    // Optional per-pet address override. When unset, bookings using
+    // address_source='owner_pet' fall back to the owner's user.address.
+    // Lets one owner have pets at multiple homes ("Whiskey lives at
+    // grandma's") without needing a separate addresses table.
+    addressText: text('address_text'),
+    addressLat: numeric('address_lat', { precision: 9, scale: 6 }),
+    addressLng: numeric('address_lng', { precision: 9, scale: 6 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
