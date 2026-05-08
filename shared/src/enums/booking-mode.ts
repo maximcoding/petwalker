@@ -65,3 +65,34 @@ export const DEFAULT_SLOT_DURATION_MIN: Record<ServiceType, number> = {
   [ServiceType.Fitness]: 45,
   [ServiceType.Veterinary]: 30,
 };
+
+/**
+ * Default supported-source set per service when an offering is first
+ * created and the provider hasn't opted in explicitly. Sensible-default
+ * tuning so a fresh signup doesn't have to think about it:
+ *
+ *   - walking / sitting / senior_care → owner only (provider travels)
+ *   - daycare / boarding / vet / grooming → provider only (owner travels)
+ *   - training / fitness / massage → owner + provider
+ *   - photography → all three (studio, on-location, custom)
+ *
+ * The shape mirrors `SupportedAddressSources` from shared/types but is
+ * typed structurally here to avoid a circular import (this file is
+ * enum-tier, types depend on it).
+ */
+export const DEFAULT_SUPPORTED_SOURCES: Record<
+  ServiceType,
+  { owner: boolean; provider: boolean; custom: boolean }
+> = {
+  [ServiceType.Walking]: { owner: true, provider: false, custom: false },
+  [ServiceType.Sitting]: { owner: true, provider: false, custom: false },
+  [ServiceType.SeniorCare]: { owner: true, provider: false, custom: false },
+  [ServiceType.Daycare]: { owner: false, provider: true, custom: false },
+  [ServiceType.Boarding]: { owner: false, provider: true, custom: false },
+  [ServiceType.Veterinary]: { owner: false, provider: true, custom: false },
+  [ServiceType.Grooming]: { owner: false, provider: true, custom: false },
+  [ServiceType.Training]: { owner: true, provider: true, custom: false },
+  [ServiceType.Fitness]: { owner: true, provider: true, custom: false },
+  [ServiceType.MassageWellness]: { owner: true, provider: true, custom: false },
+  [ServiceType.Photography]: { owner: true, provider: true, custom: true },
+};

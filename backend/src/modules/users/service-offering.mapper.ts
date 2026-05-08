@@ -24,5 +24,10 @@ export function mapServiceOfferingRow(row: ServiceOfferingRow): ServiceOffering 
       row.serviceAddressLng,
     ),
     addressDefault: row.addressDefault as AddressDefault,
+    supportedSources: {
+      owner: row.supportsOwnerLocation,
+      provider: row.supportsProviderLocation,
+      custom: row.supportsCustomLocation,
+    },
   };
 }
