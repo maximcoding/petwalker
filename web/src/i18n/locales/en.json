@@ -275,5 +275,11 @@
     "senior_care": "Senior Care",
     "veterinary": "Veterinary",
     "fitness": "Fitness"
+  },
+  "notifications": {
+    "bell": "Notifications",
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "empty": "No notifications yet"
   }
 }
