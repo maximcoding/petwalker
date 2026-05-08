@@ -10,3 +10,4 @@ export * from './review.js';
 export * from './payment.js';
 export * from './push.js';
 export * from './calendar.js';
+export * from './favorite.js';

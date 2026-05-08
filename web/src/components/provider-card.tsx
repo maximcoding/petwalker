@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
+import { FavoriteButton } from '@/components/favorite-button';
 import { placeholderAvatarUrl } from '@/lib/placeholder-images';
 import { ICONS } from '@/lib/service-icons';
 
@@ -11,6 +12,8 @@ import type { ServiceProviderListing } from '@petwalker/shared/types';
 
 interface Props {
   provider: ServiceProviderListing;
+  /** Show distance? Off in the favorites context, where there's no origin. */
+  showDistance?: boolean;
 }
 
 function formatDistance(m: number): string {
@@ -22,14 +25,19 @@ function formatHourly(cents: number): string {
   return `$${(cents / 100).toFixed(2)}/h`;
 }
 
-export function ProviderCard({ provider: p }: Props): JSX.Element {
+export function ProviderCard({ provider: p, showDistance = true }: Props): JSX.Element {
   const { t } = useTranslation();
   return (
     <Link
       href={`/providers/${p.userId}`}
-      className="block rounded-2xl border border-slate-200 p-4 transition hover:border-brand-500 dark:border-slate-800"
+      className="relative block rounded-2xl border border-slate-200 p-4 transition hover:border-brand-500 dark:border-slate-800"
     >
-      <div className="flex gap-3">
+      {/* Heart sits in the top-right; clicking it toggles favorited without
+          following the card link. */}
+      <div className="absolute right-3 top-3 z-10">
+        <FavoriteButton providerId={p.userId} favorited={p.isFavorited} />
+      </div>
+      <div className="flex gap-3 pr-10">
         <Image
           src={p.avatarUrl ?? placeholderAvatarUrl(p.userId)}
           alt={p.fullName}
@@ -47,7 +55,9 @@ export function ProviderCard({ provider: p }: Props): JSX.Element {
               </span>
             ) : null}
           </div>
-          <p className="text-xs text-slate-500">≈ {formatDistance(p.distanceM)}</p>
+          {showDistance ? (
+            <p className="text-xs text-slate-500">≈ {formatDistance(p.distanceM)}</p>
+          ) : null}
         </div>
       </div>
       {p.bio ? <p className="mt-3 line-clamp-3 text-sm text-slate-600">{p.bio}</p> : null}

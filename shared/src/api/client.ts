@@ -2,6 +2,7 @@ import { AuthApi } from './endpoints/auth.api.js';
 import { BookingsApi } from './endpoints/bookings.api.js';
 import { CalendarApi } from './endpoints/calendar.api.js';
 import { ChatApi } from './endpoints/chat.api.js';
+import { FavoritesApi } from './endpoints/favorites.api.js';
 import { PaymentsApi } from './endpoints/payments.api.js';
 import { PetsApi } from './endpoints/pets.api.js';
 import { ProvidersApi } from './endpoints/providers.api.js';
@@ -22,6 +23,7 @@ export class PetwalkerApi {
   readonly payments: PaymentsApi;
   readonly push: PushApi;
   readonly calendar: CalendarApi;
+  readonly favorites: FavoritesApi;
 
   constructor(opts: HttpClientOptions) {
     this.http = new HttpClient(opts);
@@ -35,6 +37,7 @@ export class PetwalkerApi {
     this.payments = new PaymentsApi(this.http);
     this.push = new PushApi(this.http);
     this.calendar = new CalendarApi(this.http);
+    this.favorites = new FavoritesApi(this.http);
   }
 }
 

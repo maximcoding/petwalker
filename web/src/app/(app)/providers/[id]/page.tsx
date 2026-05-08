@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 
+import { FavoriteButton } from '@/components/favorite-button';
 import { ScrollPage } from '@/components/scroll-page';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
@@ -82,6 +83,14 @@ export default function ProviderDetailPage(): JSX.Element {
               Service radius: {p.serviceRadiusKm} km
             </p>
             {p.bio ? <p className="mt-3 max-w-prose text-slate-700 dark:text-slate-300">{p.bio}</p> : null}
+            <div className="mt-4">
+              <FavoriteButton
+                providerId={p.userId}
+                favorited={p.isFavorited}
+                variant="button"
+                stopPropagation={false}
+              />
+            </div>
           </div>
         </header>
 
