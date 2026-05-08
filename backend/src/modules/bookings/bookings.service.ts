@@ -24,6 +24,8 @@ import {
   type BookingRow,
   type WalkRow,
 } from '../../db/schema/index.js';
+import { buildBookingStatusPayload } from '../notifications/notification-builders.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { PaymentsService } from '../payments/payments.service.js';
 
 import { resolveBookingAddress } from './address-resolver.js';
@@ -55,6 +57,7 @@ export class BookingsService {
   constructor(
     @Inject(DRIZZLE_DB) private readonly db: Database,
     @Inject(PaymentsService) private readonly payments: PaymentsService,
+    @Inject(NotificationsService) private readonly notifications: NotificationsService,
   ) {}
 
   // ---- create -------------------------------------------------------------
@@ -232,7 +235,11 @@ export class BookingsService {
       return inserted;
     });
 
-    return mapBookingRow(row as BookingRow);
+    const booking = mapBookingRow(row as BookingRow);
+    this.notifications.notifyAsync(
+      buildBookingStatusPayload({ recipientUserId: booking.providerId, bookingId: booking.id, newStatus: 'pending' }),
+    );
+    return booking;
   }
 
   // ---- list / get ---------------------------------------------------------
@@ -278,7 +285,11 @@ export class BookingsService {
   // ---- state-machine actions ---------------------------------------------
 
   async confirm(userId: string, id: string): Promise<Booking> {
-    return this.transition(userId, id, 'confirm');
+    const booking = await this.transition(userId, id, 'confirm');
+    this.notifications.notifyAsync(
+      buildBookingStatusPayload({ recipientUserId: booking.ownerId, bookingId: id, newStatus: 'confirmed' }),
+    );
+    return booking;
   }
 
   /**
@@ -321,6 +332,9 @@ export class BookingsService {
       return updated as BookingRow;
     });
 
+    this.notifications.notifyAsync(
+      buildBookingStatusPayload({ recipientUserId: row.ownerId, bookingId: id, newStatus: 'in_progress' }),
+    );
     return mapBookingRow(updatedBooking);
   }
 
@@ -370,6 +384,9 @@ export class BookingsService {
       return updated as BookingRow;
     });
 
+    this.notifications.notifyAsync(
+      buildBookingStatusPayload({ recipientUserId: row.ownerId, bookingId: id, newStatus: 'completed' }),
+    );
     return mapBookingRow(updatedBooking);
   }
 
@@ -426,6 +443,11 @@ export class BookingsService {
         .refundForCancelledBooking(id, outcome.refundCents)
         .catch(() => void 0);
     }
+
+    const notifyId = callerRole === 'provider' ? row.ownerId : row.providerId;
+    this.notifications.notifyAsync(
+      buildBookingStatusPayload({ recipientUserId: notifyId, bookingId: id, newStatus: 'cancelled' }),
+    );
 
     return mapBookingRow(updated as BookingRow);
   }

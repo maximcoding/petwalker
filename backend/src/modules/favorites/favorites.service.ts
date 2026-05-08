@@ -95,7 +95,12 @@ export class FavoritesService {
         favoritedAt: userFavorites.createdAt,
         favoritedProviderId: userFavorites.providerId,
         profile: serviceProviderProfiles,
-        user: { id: users.id, fullName: users.fullName, avatarUrl: users.avatarUrl },
+        user: {
+          id: users.id,
+          fullName: users.fullName,
+          avatarUrl: users.avatarUrl,
+          createdAt: users.createdAt,
+        },
       })
       .from(userFavorites)
       .innerJoin(
@@ -136,7 +141,7 @@ export class FavoritesService {
       (r) => mapFavoriteListing(
         {
           profile: r.profile as ServiceProviderProfileRow,
-          user: r.user as Pick<UserRow, 'id' | 'fullName' | 'avatarUrl'>,
+          user: r.user as Pick<UserRow, 'id' | 'fullName' | 'avatarUrl' | 'createdAt'>,
         },
         offeringsByProvider.get(r.favoritedProviderId) ?? [],
       ),
@@ -189,11 +194,16 @@ export class FavoritesService {
   }
 }
 
-/** Build a listing from the favorites join, with isFavorited hardcoded true. */
+/**
+ * Build a listing from the favorites join, with isFavorited hardcoded
+ * true. Note: rating + reviewCount are not aggregated here — this list
+ * doesn't currently surface them. If we want them, layer the same
+ * aggregateRatings call as `ProvidersService.search()` does.
+ */
 function mapFavoriteListing(
   joined: {
     profile: ServiceProviderProfileRow;
-    user: Pick<UserRow, 'id' | 'fullName' | 'avatarUrl'>;
+    user: Pick<UserRow, 'id' | 'fullName' | 'avatarUrl' | 'createdAt'>;
   },
   offeringRows: ServiceOfferingRow[],
 ): ServiceProviderListing {
@@ -205,6 +215,9 @@ function mapFavoriteListing(
     baseLat: joined.profile.baseLat == null ? null : Number(joined.profile.baseLat),
     baseLng: joined.profile.baseLng == null ? null : Number(joined.profile.baseLng),
     serviceRadiusKm: Number(joined.profile.serviceRadiusKm),
+    baseCity: joined.profile.baseCity ?? null,
+    experienceSinceYear: joined.profile.experienceSinceYear ?? null,
+    registeredAt: joined.user.createdAt.toISOString(),
     rating: null,
     reviewCount: 0,
     verified: joined.profile.verifiedAt !== null,

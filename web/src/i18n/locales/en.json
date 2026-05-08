@@ -74,7 +74,24 @@
     "verified": "verified",
     "searchPlaceholder": "Search providers by name or bio…",
     "recentSearches": "Recent",
-    "clearRecent": "Clear"
+    "clearRecent": "Clear",
+    "memberSince": "Member since {{date}}",
+    "experienceSince": "Walking since {{year}}",
+    "noReviewsYet": "No reviews yet",
+    "reviewCount_one": "{{count}} review",
+    "reviewCount_other": "{{count}} reviews"
+  },
+  "reviews": {
+    "title": "Reviews",
+    "empty": "No reviews yet.",
+    "leave": "Leave a review",
+    "body": "Your review (optional)",
+    "placeholder": "How was your walk? Anything other owners should know?",
+    "submit": "Submit review",
+    "submitting": "Submitting…",
+    "thanks": "Thanks for the review!",
+    "starsLabel": "Rating, 1 to 5 stars",
+    "starsRequired": "Please pick a star rating before submitting."
   },
   "favorites": {
     "title": "Saved providers",
@@ -258,5 +275,11 @@
     "senior_care": "Senior Care",
     "veterinary": "Veterinary",
     "fitness": "Fitness"
+  },
+  "notifications": {
+    "bell": "Notifications",
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "empty": "No notifications yet"
   }
 }

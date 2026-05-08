@@ -6,6 +6,8 @@ import { useEffect, useState, type PropsWithChildren } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { LangSwitcher } from '@/components/lang-switcher';
+import { NotificationBell } from '@/components/notification-bell';
+import { NotificationsProvider } from '@/contexts/notifications-context';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { PageLoading } from '@/components/ui/spinner';
 import { getMe, signOut } from '@/lib/auth';
@@ -60,6 +62,7 @@ export default function AppLayout({ children }: PropsWithChildren): JSX.Element 
   // scroll layout — list pages keep their title + filters fixed and scroll
   // only the items list, while content pages scroll their body normally.
   return (
+    <NotificationsProvider>
     <div className="flex h-screen flex-col">
       <header className="shrink-0 border-b border-slate-200 dark:border-slate-800">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-3">
@@ -84,6 +87,7 @@ export default function AppLayout({ children }: PropsWithChildren): JSX.Element 
             </nav>
           </div>
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <LangSwitcher />
             <button
               type="button"
@@ -99,5 +103,6 @@ export default function AppLayout({ children }: PropsWithChildren): JSX.Element 
         <div className="mx-auto h-full w-full max-w-5xl px-6">{children}</div>
       </main>
     </div>
+    </NotificationsProvider>
   );
 }

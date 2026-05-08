@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, between, eq, gte, ilike, isNotNull, lte, or } from 'drizzle-orm';
+import { and, between, eq, ilike, inArray, isNotNull, lte, or, sql } from 'drizzle-orm';
 
 import { decodeCursor } from '../../common/cursor.js';
 import { buildCursorPage } from '../../common/pagination.js';
@@ -7,6 +7,7 @@ import { DRIZZLE_DB } from '../../database/database.module.js';
 import type { Database } from '../../db/client.js';
 import {
   providerServiceOfferings,
+  reviews,
   serviceProviderProfiles,
   users,
   type ServiceOfferingRow,
@@ -83,7 +84,12 @@ export class ProvidersService {
     const rows = await this.db
       .select({
         profile: serviceProviderProfiles,
-        user: { id: users.id, fullName: users.fullName, avatarUrl: users.avatarUrl },
+        user: {
+          id: users.id,
+          fullName: users.fullName,
+          avatarUrl: users.avatarUrl,
+          createdAt: users.createdAt,
+        },
         offering: providerServiceOfferings,
       })
       .from(serviceProviderProfiles)
@@ -130,7 +136,22 @@ export class ProvidersService {
       (x) => ({ d: x.distanceM, id: x.row.profile.userId } satisfies DistanceCursor),
     );
 
-    // 5. Layer per-viewer `isFavorited` after pagination so we only ask the
+    // 5. Layer aggregate rating + reviewCount onto the page slice. We do
+    //    this after pagination so the AVG/COUNT scan only touches the
+    //    providers that will actually be sent to the client.
+    if (page.items.length > 0) {
+      const ratings = await this.aggregateRatings(page.items.map((p) => p.userId));
+      page.items = page.items.map((p) => {
+        const agg = ratings.get(p.userId);
+        return {
+          ...p,
+          rating: agg?.rating ?? null,
+          reviewCount: agg?.reviewCount ?? 0,
+        };
+      });
+    }
+
+    // 6. Layer per-viewer `isFavorited` after pagination so we only ask the
     //    favorites table for the providers actually being returned.
     if (viewerId && page.items.length > 0) {
       const favorited = await this.favorites.favoritedSubset(
@@ -140,6 +161,40 @@ export class ProvidersService {
       page.items = page.items.map((p) => ({ ...p, isFavorited: favorited.has(p.userId) }));
     }
     return page;
+  }
+
+  /**
+   * Group-by aggregate of the reviews table for a list of provider ids.
+   * Returns a Map keyed by providerId. Providers with no reviews are
+   * absent from the map (not present with `0`/`null` — the caller fills
+   * those defaults).
+   *
+   * Why a separate method: the same logic is needed by `getProfile` and
+   * by the favorites listing in the future, and isolating it makes the
+   * future swap to a denormalised `service_provider_profiles.rating_avg`
+   * column a one-line change.
+   */
+  private async aggregateRatings(
+    providerIds: string[],
+  ): Promise<Map<string, { rating: number; reviewCount: number }>> {
+    if (!providerIds.length) return new Map();
+    const rows = await this.db
+      .select({
+        providerId: reviews.providerId,
+        avg: sql<string>`avg(${reviews.rating})::numeric(3,2)`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(reviews)
+      .where(inArray(reviews.providerId, providerIds))
+      .groupBy(reviews.providerId);
+    const out = new Map<string, { rating: number; reviewCount: number }>();
+    for (const r of rows) {
+      out.set(r.providerId, {
+        rating: Number(r.avg),
+        reviewCount: Number(r.count),
+      });
+    }
+    return out;
   }
 
   /** Full profile + offerings + user info. */
@@ -167,9 +222,11 @@ export class ProvidersService {
         ),
       );
 
-    const isFavorited = viewerId
-      ? await this.favorites.isFavorited(viewerId, providerId)
-      : false;
+    const [isFavorited, ratings] = await Promise.all([
+      viewerId ? this.favorites.isFavorited(viewerId, providerId) : Promise.resolve(false),
+      this.aggregateRatings([providerId]),
+    ]);
+    const agg = ratings.get(providerId);
 
     return {
       userId: joined.service_provider_profiles.userId,
@@ -185,8 +242,11 @@ export class ProvidersService {
         joined.service_provider_profiles.baseLng == null
           ? null
           : Number(joined.service_provider_profiles.baseLng),
-      rating: null, // M5 — reviews
-      reviewCount: 0,
+      baseCity: joined.service_provider_profiles.baseCity ?? null,
+      experienceSinceYear: joined.service_provider_profiles.experienceSinceYear ?? null,
+      registeredAt: joined.users.createdAt.toISOString(),
+      rating: agg?.rating ?? null,
+      reviewCount: agg?.reviewCount ?? 0,
       verified: joined.service_provider_profiles.verifiedAt !== null,
       offerings: offeringRows.map((r) => mapServiceOfferingRow(r as ServiceOfferingRow)),
       isFavorited,

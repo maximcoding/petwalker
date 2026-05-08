@@ -64,3 +64,21 @@ export interface ChatMessageEvent {
 
 export type WsChatClientEvent = ChatSendEvent;
 export type WsChatServerEvent = ChatMessageEvent;
+
+// ────────────── web notifications ──────────────
+
+export interface WebNotificationReceivedEvent {
+  type: 'notification:received';
+  notification: {
+    id: string;
+    userId: string;
+    eventType: string;
+    title: string;
+    body: string;
+    deepLink: string | null;
+    readAt: string | null;
+    createdAt: string;
+  };
+}
+
+export type WsNotificationsServerEvent = WebNotificationReceivedEvent;

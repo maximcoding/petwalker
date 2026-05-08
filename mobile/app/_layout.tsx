@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { configureAmplify } from '@/lib/amplify';
 import { queryClient } from '@/lib/query';
+import { usePushNotifications } from '@/hooks/use-push-notifications';
 
 const PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 // Apple Merchant ID — must match the entry in your Apple Developer account
@@ -41,6 +42,8 @@ export default function RootLayout(): JSX.Element {
   useEffect(() => {
     configureAmplify();
   }, []);
+
+  usePushNotifications();
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

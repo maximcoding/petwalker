@@ -11,6 +11,18 @@ export const UpsertServiceProviderProfileDto = z.object({
   serviceRadiusKm: z.number().positive().max(100).optional(),
   baseLat: z.number().min(-90).max(90).nullable().optional(),
   baseLng: z.number().min(-180).max(180).nullable().optional(),
+  // Display-only chips on the provider card. Both nullable so the provider
+  // can clear them. The year cap matches the DB CHECK; we also reject any
+  // year strictly greater than the current year on the API side (keeps the
+  // chip honest — "Walking since 2099" would look ridiculous).
+  baseCity: z.string().trim().max(120).nullable().optional(),
+  experienceSinceYear: z
+    .number()
+    .int()
+    .min(1900)
+    .max(new Date().getUTCFullYear())
+    .nullable()
+    .optional(),
 });
 export type UpsertServiceProviderProfileDto = z.infer<typeof UpsertServiceProviderProfileDto>;
 

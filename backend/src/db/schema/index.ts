@@ -15,3 +15,4 @@ export * from './push-tokens.js';
 export * from './calendar-feeds.js';
 export * from './provider-slots.js';
 export * from './favorites.js';
+export * from './web-notifications.js';

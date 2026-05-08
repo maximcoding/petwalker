@@ -8,7 +8,7 @@ import type { ServiceProviderListing } from '@petwalker/shared';
 /** Joined row used by the search query — profile + user + matching offering. */
 export interface ProviderJoinedRow {
   profile: ServiceProviderProfileRow;
-  user: Pick<UserRow, 'id' | 'fullName' | 'avatarUrl'>;
+  user: Pick<UserRow, 'id' | 'fullName' | 'avatarUrl' | 'createdAt'>;
   offering: ServiceOfferingRow;
 }
 
@@ -24,7 +24,12 @@ export function mapProviderListing(
     baseLat: row.profile.baseLat == null ? null : Number(row.profile.baseLat),
     baseLng: row.profile.baseLng == null ? null : Number(row.profile.baseLng),
     serviceRadiusKm: Number(row.profile.serviceRadiusKm),
-    rating: null, // populated in M5 when reviews land; null for MVP
+    baseCity: row.profile.baseCity ?? null,
+    experienceSinceYear: row.profile.experienceSinceYear ?? null,
+    registeredAt: row.user.createdAt.toISOString(),
+    // Defaults — overwritten by ProvidersService.search() after the
+    // aggregate rating + favorites lookups run against the page slice.
+    rating: null,
     reviewCount: 0,
     verified: row.profile.verifiedAt !== null,
     distanceM: Math.round(distanceM),

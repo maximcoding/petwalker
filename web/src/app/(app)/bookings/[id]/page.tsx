@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
+import { LeaveReviewForm } from '@/components/leave-review-form';
 import { PaymentBlock } from '@/components/payment-block';
 import { ScrollPage } from '@/components/scroll-page';
 import { Button } from '@/components/ui/button';
@@ -216,6 +217,13 @@ export default function BookingDetailPage(): JSX.Element {
           </Button>
         ) : null}
       </section>
+
+      {/* Owner can leave a review on a completed booking. The form
+          handles its own "already reviewed" state via the `forBooking`
+          query so we don't need to track it here. */}
+      {isOwner && b.status === BookingStatus.Completed ? (
+        <LeaveReviewForm bookingId={b.id} providerId={b.providerId} />
+      ) : null}
 
       {isCancelled ? (
         <section className="rounded-2xl border border-red-200 bg-red-50/50 p-4 dark:border-red-900 dark:bg-red-950/20">

@@ -11,6 +11,10 @@ export interface ServiceProviderProfile {
   serviceRadiusKm: number;
   baseLat?: number | null;
   baseLng?: number | null;
+  /** Display-only label rendered on the card / detail header, e.g. "Brooklyn". */
+  baseCity?: string | null;
+  /** Year the provider started doing this professionally — surfaces as "Walking since 2018". */
+  experienceSinceYear?: number | null;
   verifiedAt?: ISODateString | null;
 }
 
@@ -49,6 +53,13 @@ export interface ServiceProviderListing {
   baseLat?: number | null;
   baseLng?: number | null;
   serviceRadiusKm: number;
+  /** Display-only label rendered as a chip on the card. */
+  baseCity?: string | null;
+  /** Year the provider started professionally — chip "Walking since 2018". */
+  experienceSinceYear?: number | null;
+  /** When the user first signed up — chip "Member since Mar 2024". */
+  registeredAt: ISODateString;
+  /** Average of all reviews for this provider, null when no reviews exist. */
   rating?: number | null;
   reviewCount: number;
   verified: boolean;
@@ -69,6 +80,13 @@ export interface ServiceProviderDetail {
   baseLat?: number | null;
   baseLng?: number | null;
   serviceRadiusKm: number;
+  /** Display-only label rendered as a chip on the card. */
+  baseCity?: string | null;
+  /** Year the provider started professionally — chip "Walking since 2018". */
+  experienceSinceYear?: number | null;
+  /** When the user first signed up — chip "Member since Mar 2024". */
+  registeredAt: ISODateString;
+  /** Average of all reviews for this provider, null when no reviews exist. */
   rating?: number | null;
   reviewCount: number;
   verified: boolean;

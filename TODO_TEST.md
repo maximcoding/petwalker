@@ -326,3 +326,48 @@ Seed creates Wendy (walking, sitting in NYC) and Gretchen (grooming, walking nea
 - [ ] Submit overlapping with existing booking → "That slot is already booked."
 - [ ] Submit < 5 min from now → "Pick a time at least 5 minutes from now."
 - [ ] Provider drops walking offering then back to form → "Provider doesn't offer this service."
+
+---
+
+## M5 · Push Notifications
+
+Pre-req: `APP_ENV=dev` (default). Push dispatcher is `DevLogDispatcher` — all sends are
+logged, not delivered to a real device. Token registration still writes to `push_tokens`.
+
+### Token registration
+
+- [ ] Sign in on mobile simulator or device.
+- [ ] On first boot, the app requests push permission (physical device) or silently skips (simulator).
+- [ ] `POST /push/tokens` is called with `expoToken` + `platform`.
+  ```bash
+  # Verify row landed in DB
+  make db-shell
+  SELECT expo_token, platform, revoked_at FROM push_tokens WHERE user_id = '<yourUserId>';
+  ```
+  Expected: one row, `revoked_at` NULL.
+- [ ] Call again (hot reload) → still one row (idempotent upsert).
+- [ ] `DELETE /push/tokens/<expoToken>` → `revoked_at` is now non-null.
+  ```bash
+  curl -X DELETE "http://localhost:3001/push/tokens/<token>" \
+    -H "Authorization: Bearer $ID_TOKEN"
+  ```
+- [ ] Without Bearer → 401.
+
+### Booking-status notifications (dev mode — check backend logs)
+
+- [ ] Provider confirms booking → backend log: `[DEV PUSH] to=... title="Booking confirmed!"`
+- [ ] Provider starts booking → log: `title="Walk started!"`
+- [ ] Provider ends booking → log: `title="Walk complete!"`
+- [ ] Owner cancels booking → log for provider: `title="Booking cancelled"`
+- [ ] Provider cancels booking → log for owner: `title="Booking cancelled"`
+
+### Chat message notification (dev mode)
+
+- [ ] Owner sends a message → log for provider: `title="New message from New message"`
+- [ ] Provider sends a message → log for owner: same pattern.
+
+### Deep-link (physical device with notifications enabled)
+
+- [ ] Put app in background, trigger a booking status change.
+- [ ] Notification appears in device tray.
+- [ ] Tap → app opens to `/(tabs)/bookings/<id>`.

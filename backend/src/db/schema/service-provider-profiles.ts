@@ -1,4 +1,4 @@
-import { numeric, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { numeric, pgTable, smallint, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 import { users } from './users.js';
 
@@ -14,6 +14,13 @@ export const serviceProviderProfiles = pgTable('service_provider_profiles', {
   serviceRadiusKm: numeric('service_radius_km', { precision: 6, scale: 2 }).notNull().default('5'),
   baseLat: numeric('base_lat', { precision: 9, scale: 6 }),
   baseLng: numeric('base_lng', { precision: 9, scale: 6 }),
+  // Display-only: city shown as a chip on the provider card. Search still
+  // uses lat/lng + radius — this is purely a human-readable label so we
+  // don't need geocoding in the dev flow.
+  baseCity: text('base_city'),
+  // Year the provider started doing this professionally. Surfaced on cards
+  // as "Walking since {year}". DB CHECK enforces a sane range.
+  experienceSinceYear: smallint('experience_since_year'),
   verifiedAt: timestamp('verified_at', { withTimezone: true }),
 });
 
