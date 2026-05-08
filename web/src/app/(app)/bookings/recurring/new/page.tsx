@@ -96,6 +96,7 @@ export default function CreateRecurringSeriesPage(): JSX.Element {
 
   function setTime(index: number, value: string): void {
     setForm((f) => {
+      if (f.timesOfDay.some((t, i) => i !== index && t === value)) return f; // duplicate
       const next = [...f.timesOfDay];
       next[index] = value;
       return { ...f, timesOfDay: next };
@@ -103,7 +104,10 @@ export default function CreateRecurringSeriesPage(): JSX.Element {
   }
 
   function addTime(): void {
-    setForm((f) => ({ ...f, timesOfDay: [...f.timesOfDay, '09:00'] }));
+    setForm((f) => {
+      const next = f.timesOfDay.includes('09:00') ? '10:00' : '09:00';
+      return { ...f, timesOfDay: [...f.timesOfDay, next] };
+    });
   }
 
   function removeTime(index: number): void {
