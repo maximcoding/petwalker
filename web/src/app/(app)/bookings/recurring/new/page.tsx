@@ -19,6 +19,20 @@ const SERVICE_TYPES = [
   'veterinary', 'fitness',
 ] as const;
 
+const MAX_TIMES_PER_DAY: Record<string, number> = {
+  walking: 4,
+  sitting: 3,
+  senior_care: 3,
+  fitness: 2,
+  training: 2,
+  grooming: 1,
+  boarding: 1,
+  daycare: 1,
+  photography: 1,
+  massage_wellness: 1,
+  veterinary: 1,
+};
+
 export default function CreateRecurringSeriesPage(): JSX.Element {
   const { t } = useTranslation();
   const router = useRouter();
@@ -41,7 +55,7 @@ export default function CreateRecurringSeriesPage(): JSX.Element {
     serviceType: 'walking' as string,
     recurrence: 'weekly' as 'weekly' | 'biweekly',
     daysOfWeek: [1] as number[],
-    timeOfDay: '09:00',
+    timesOfDay: ['09:00'] as string[],
     startDate: '',
     endDate: '',
     durationMin: 60,
@@ -57,7 +71,7 @@ export default function CreateRecurringSeriesPage(): JSX.Element {
         serviceType: form.serviceType as never,
         recurrence: form.recurrence,
         daysOfWeek: form.daysOfWeek,
-        timeOfDay: form.timeOfDay,
+        timesOfDay: form.timesOfDay,
         startDate: form.startDate,
         endDate: form.endDate || undefined,
         durationMin: form.durationMin,
@@ -79,6 +93,28 @@ export default function CreateRecurringSeriesPage(): JSX.Element {
         : [...f.daysOfWeek, dow].sort((a, b) => a - b),
     }));
   }
+
+  function setTime(index: number, value: string): void {
+    setForm((f) => {
+      const next = [...f.timesOfDay];
+      next[index] = value;
+      return { ...f, timesOfDay: next };
+    });
+  }
+
+  function addTime(): void {
+    setForm((f) => ({ ...f, timesOfDay: [...f.timesOfDay, '09:00'] }));
+  }
+
+  function removeTime(index: number): void {
+    setForm((f) => ({
+      ...f,
+      timesOfDay: f.timesOfDay.filter((_, i) => i !== index),
+    }));
+  }
+
+  const maxTimes = MAX_TIMES_PER_DAY[form.serviceType] ?? 1;
+  const canAddTime = form.timesOfDay.length < maxTimes;
 
   if (!providerId) {
     return (
@@ -114,7 +150,15 @@ export default function CreateRecurringSeriesPage(): JSX.Element {
           <select
             className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
             value={form.serviceType}
-            onChange={(e) => setForm((f) => ({ ...f, serviceType: e.target.value }))}
+            onChange={(e) => {
+              const newType = e.target.value;
+              const newMax = MAX_TIMES_PER_DAY[newType] ?? 1;
+              setForm((f) => ({
+                ...f,
+                serviceType: newType,
+                timesOfDay: f.timesOfDay.slice(0, newMax),
+              }));
+            }}
           >
             {SERVICE_TYPES.map((s) => (
               <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
@@ -162,20 +206,51 @@ export default function CreateRecurringSeriesPage(): JSX.Element {
           </div>
         </div>
 
-        {/* Time of day */}
+        {/* Times of day */}
         <div>
-          <label className="mb-1 block text-sm font-medium">Time (UTC)</label>
-          <input
-            type="time"
-            className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
-            value={form.timeOfDay}
-            onChange={(e) => setForm((f) => ({ ...f, timeOfDay: e.target.value }))}
-          />
+          <div className="mb-2 flex items-center justify-between">
+            <label className="text-sm font-medium">
+              Times per day (UTC)
+              <span className="ml-1 font-normal text-slate-400">
+                — max {maxTimes} for {form.serviceType.replace(/_/g, ' ')}
+              </span>
+            </label>
+          </div>
+          <div className="space-y-2">
+            {form.timesOfDay.map((time, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <input
+                  type="time"
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+                  value={time}
+                  onChange={(e) => setTime(idx, e.target.value)}
+                />
+                {form.timesOfDay.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeTime(idx)}
+                    className="text-sm text-red-500 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          {canAddTime && (
+            <button
+              type="button"
+              onClick={addTime}
+              className="mt-2 text-sm text-brand-600 hover:underline"
+            >
+              + Add time slot
+            </button>
+          )}
         </div>
 
         {/* Duration */}
         <div>
-          <label className="mb-1 block text-sm font-medium">Duration (minutes)</label>
+          <label className="mb-1 block text-sm font-medium">Duration per session (minutes)</label>
           <input
             type="number"
             min={15}
@@ -242,7 +317,8 @@ export default function CreateRecurringSeriesPage(): JSX.Element {
             mutation.isPending ||
             !form.petId ||
             !form.startDate ||
-            form.daysOfWeek.length === 0
+            form.daysOfWeek.length === 0 ||
+            form.timesOfDay.length === 0
           }
           className="w-full"
         >

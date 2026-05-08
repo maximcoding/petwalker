@@ -12,7 +12,7 @@ export const recurringSeries = pgTable('recurring_series', {
   serviceType: serviceTypeEnum('service_type').notNull(),
   recurrence: text('recurrence').notNull(),
   daysOfWeek: text('days_of_week').notNull(),
-  timeOfDay: text('time_of_day').notNull(),
+  timesOfDay: text('time_of_day').notNull(),    // renamed from timeOfDay
   startDate: text('start_date').notNull(),
   endDate: text('end_date').notNull(),
   durationMin: integer('duration_min').notNull(),

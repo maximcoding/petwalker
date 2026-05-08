@@ -64,8 +64,8 @@ export interface RecurringSeries {
   recurrence: string;
   /** UTC day-of-week values: 0=Sun … 6=Sat */
   daysOfWeek: number[];
-  /** 'HH:MM' UTC */
-  timeOfDay: string;
+  /** 'HH:MM' UTC times — one or more, sorted ascending */
+  timesOfDay: string[];
   /** 'YYYY-MM-DD' */
   startDate: string;
   /** 'YYYY-MM-DD' */

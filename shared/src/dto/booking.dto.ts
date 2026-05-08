@@ -91,7 +91,10 @@ export const CreateRecurringSeriesDto = z.object({
   ]),
   recurrence: z.enum(['weekly', 'biweekly']),
   daysOfWeek: z.array(z.number().int().min(0).max(6)).min(1).max(7),
-  timeOfDay: z.string().regex(/^\d{2}:\d{2}$/, 'Must be HH:MM'),
+  timesOfDay: z
+    .array(z.string().regex(/^\d{2}:\d{2}$/, 'Each time must be HH:MM'))
+    .min(1, 'At least one time is required')
+    .max(10, 'Maximum 10 times per day'),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD').optional(),
   durationMin: z.number().int().min(15).max(1440),
