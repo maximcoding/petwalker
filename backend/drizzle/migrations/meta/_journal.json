@@ -57,6 +57,13 @@
       "when": 1778573400000,
       "tag": "0007_provider_enrichment_and_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1746723600000,
+      "tag": "0008_web_notifications",
+      "breakpoints": true
     }
   ]
 }
