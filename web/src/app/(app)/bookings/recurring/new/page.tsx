@@ -105,7 +105,7 @@ export default function CreateRecurringSeriesPage(): JSX.Element {
 
   function addTime(): void {
     setForm((f) => {
-      const defaults = ['09:00', '12:00', '15:00', '18:00', '07:00', '10:00', '13:00', '16:00', '19:00', '21:00'];
+      const defaults = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
       const next = defaults.find((t) => !f.timesOfDay.includes(t)) ?? '09:00';
       return { ...f, timesOfDay: [...f.timesOfDay, next] };
     });
