@@ -18,6 +18,8 @@ export interface SearchValues {
   durationMin?: number;
   minRating?: number;
   maxHourlyCents?: number;
+  /** Free-text search across name + bio. Mirrors the URL `?q=` param. */
+  q?: string;
 }
 
 interface Props {
@@ -127,6 +129,16 @@ export function ProviderSearchForm({ initial, onSubmit, busy }: Props): JSX.Elem
           }
         />
       </div>
+
+      {/* Mirror of the page-level search input. Submitting the form pushes
+          q to the URL alongside the other filters; clearing the input
+          drops it. */}
+      <Field
+        label={t('providers.searchPlaceholder')}
+        type="search"
+        value={v.q ?? ''}
+        onChange={(e) => patch('q', e.target.value || undefined)}
+      />
 
       <div className="grid grid-cols-2 gap-3">
         <Field

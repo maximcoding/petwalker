@@ -70,7 +70,10 @@
     "providersCount_other": "{{count}} providers",
     "moreAvailable": "more available — load below",
     "loadMore": "Load more",
-    "verified": "verified"
+    "verified": "verified",
+    "searchPlaceholder": "Search providers by name or bio…",
+    "recentSearches": "Recent",
+    "clearRecent": "Clear"
   },
   "bookings": {
     "title": "Bookings",
