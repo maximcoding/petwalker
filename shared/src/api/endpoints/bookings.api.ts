@@ -1,10 +1,11 @@
 import type {
   CancelBookingDto,
   CreateBookingDto,
+  CreateRecurringSeriesDto,
   ListBookingsQuery,
 } from '../../dto/booking.dto.js';
 import type { ListMessagesQuery, SendMessageDto } from '../../dto/chat.dto.js';
-import type { Booking, Walk } from '../../types/booking.js';
+import type { Booking, CreateRecurringSeriesResponse, RecurringSeries, Walk } from '../../types/booking.js';
 import type { CursorPage, UUID } from '../../types/common.js';
 import type { Message } from '../../types/message.js';
 import type { HttpClient } from '../http.js';
@@ -59,5 +60,17 @@ export class BookingsApi {
   /** Fallback for sending a chat message when no WS is open (push-notification reply path). */
   sendMessage(bookingId: UUID, body: SendMessageDto): Promise<Message> {
     return this.http.post(`/bookings/${bookingId}/messages`, body);
+  }
+
+  createRecurringSeries(body: CreateRecurringSeriesDto): Promise<CreateRecurringSeriesResponse> {
+    return this.http.post('/recurring-series', body);
+  }
+
+  getRecurringSeries(id: string): Promise<RecurringSeries> {
+    return this.http.get(`/recurring-series/${id}`);
+  }
+
+  cancelRemaining(seriesId: string, body: CancelBookingDto = {}): Promise<{ cancelledCount: number }> {
+    return this.http.post(`/recurring-series/${seriesId}/cancel-remaining`, body);
   }
 }
