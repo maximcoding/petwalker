@@ -12,6 +12,9 @@ import { DRIZZLE_DB } from '../../database/database.module.js';
 import type { Database } from '../../db/client.js';
 import { bookings, messages, type MessageRow } from '../../db/schema/index.js';
 
+import { buildNewMessagePayload } from '../notifications/notification-builders.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
+
 import { mapMessageRow } from './message.mapper.js';
 
 import type {
@@ -30,7 +33,10 @@ interface MessagesCursor {
 
 @Injectable()
 export class MessagesService {
-  constructor(@Inject(DRIZZLE_DB) private readonly db: Database) {}
+  constructor(
+    @Inject(DRIZZLE_DB) private readonly db: Database,
+    @Inject(NotificationsService) private readonly notifications: NotificationsService,
+  ) {}
 
   async list(
     viewerId: UUID,
@@ -79,6 +85,23 @@ export class MessagesService {
       })
       .returning();
     if (!row) throw new Error('insert returned no row');
+
+    const [booking] = await this.db
+      .select({ ownerId: bookings.ownerId, providerId: bookings.providerId })
+      .from(bookings)
+      .where(eq(bookings.id, bookingId));
+    if (booking) {
+      const recipientUserId = booking.ownerId === viewerId ? booking.providerId : booking.ownerId;
+      this.notifications.notifyAsync(
+        buildNewMessagePayload({
+          recipientUserId,
+          bookingId,
+          senderName: 'New message',
+          preview: dto.body,
+        }),
+      );
+    }
+
     return mapMessageRow(row as MessageRow);
   }
 
