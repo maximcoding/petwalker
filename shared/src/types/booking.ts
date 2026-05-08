@@ -20,6 +20,7 @@ export interface Booking {
   /** Locked at booking time: hourlyRateCents * (durationMin / 60), rounded. */
   priceCents: number;
   notes?: string | null;
+  recurringSeriesId?: string | null;
 
   /** Resolved service address — snapshotted at booking time. */
   address: Address;
@@ -51,4 +52,33 @@ export interface Walk {
   polyline: GeoSample[];
   distanceM?: number | null;
   createdAt: ISODateString;
+}
+
+export interface RecurringSeries {
+  id: string;
+  ownerId: string;
+  providerId: string;
+  petId: string;
+  serviceType: ServiceType;
+  /** 'weekly' | 'biweekly' */
+  recurrence: string;
+  /** UTC day-of-week values: 0=Sun … 6=Sat */
+  daysOfWeek: number[];
+  /** 'HH:MM' UTC */
+  timeOfDay: string;
+  /** 'YYYY-MM-DD' */
+  startDate: string;
+  /** 'YYYY-MM-DD' */
+  endDate: string;
+  durationMin: number;
+  priceCents: number;
+  notes: string | null;
+  instanceCount: number;
+  cancelledAt: string | null;
+  createdAt: string;
+}
+
+export interface CreateRecurringSeriesResponse {
+  series: RecurringSeries;
+  bookings: Booking[];
 }

@@ -30,6 +30,7 @@ export function mapBookingRow(row: BookingRow): Booking {
     status: row.status,
     priceCents: row.priceCents,
     notes: row.notes ?? null,
+    recurringSeriesId: row.recurringSeriesId ?? null,
     // The `text` is NOT NULL with default '' in DB. Older rows from before
     // the address feature have empty text — we surface that as `text: ''`
     // rather than null so the UI can decide whether to show "no address

@@ -6,11 +6,13 @@ import { PaymentsModule } from '../payments/payments.module.js';
 
 import { BookingsController } from './bookings.controller.js';
 import { BookingsService } from './bookings.service.js';
+import { RecurringSeriesController } from './recurring-series.controller.js';
+import { RecurringSeriesService } from './recurring-series.service.js';
 
 @Module({
   imports: [AuthModule, PaymentsModule, NotificationsModule],
-  controllers: [BookingsController],
-  providers: [BookingsService],
+  controllers: [BookingsController, RecurringSeriesController],
+  providers: [BookingsService, RecurringSeriesService],
   exports: [BookingsService],
 })
 export class BookingsModule {}

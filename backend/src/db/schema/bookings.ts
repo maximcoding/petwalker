@@ -64,6 +64,8 @@ export const bookings = pgTable(
 
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+
+    recurringSeriesId: uuid('recurring_series_id'),
   },
   (t) => ({
     providerIdx: index('bookings_provider_idx').on(t.providerId, t.scheduledAt),
