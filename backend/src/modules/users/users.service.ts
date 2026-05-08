@@ -19,7 +19,11 @@ import { SlotGeneratorService } from '../providers/slot-generator.service.js';
 import { mapServiceOfferingRow } from './service-offering.mapper.js';
 import { mapServiceProviderProfileRow } from './service-provider-profile.mapper.js';
 
-import { DEFAULT_BOOKING_MODE, DEFAULT_SLOT_DURATION_MIN } from '@petwalker/shared/enums';
+import {
+  DEFAULT_BOOKING_MODE,
+  DEFAULT_SLOT_DURATION_MIN,
+  DEFAULT_SUPPORTED_SOURCES,
+} from '@petwalker/shared/enums';
 
 import type {
   ReplaceAvailabilityDto,
@@ -149,6 +153,8 @@ export class UsersService {
     const bookingMode = dto.bookingMode ?? DEFAULT_BOOKING_MODE[dto.serviceType];
     const slotDurationMin =
       dto.slotDurationMin ?? DEFAULT_SLOT_DURATION_MIN[dto.serviceType];
+    const defaultSupported = DEFAULT_SUPPORTED_SOURCES[dto.serviceType];
+    const supports = dto.supportedSources ?? defaultSupported;
 
     const [row] = await this.db
       .insert(providerServiceOfferings)
@@ -159,6 +165,9 @@ export class UsersService {
         active: dto.active,
         bookingMode,
         slotDurationMin,
+        supportsOwnerLocation: supports.owner,
+        supportsProviderLocation: supports.provider,
+        supportsCustomLocation: supports.custom,
         ...(dto.addressDefault != null ? { addressDefault: dto.addressDefault } : {}),
         ...(dto.serviceAddress !== undefined
           ? dto.serviceAddress === null
@@ -189,6 +198,13 @@ export class UsersService {
             ? { slotDurationMin: dto.slotDurationMin }
             : {}),
           ...(dto.addressDefault != null ? { addressDefault: dto.addressDefault } : {}),
+          ...(dto.supportedSources != null
+            ? {
+                supportsOwnerLocation: dto.supportedSources.owner,
+                supportsProviderLocation: dto.supportedSources.provider,
+                supportsCustomLocation: dto.supportedSources.custom,
+              }
+            : {}),
           ...(dto.serviceAddress !== undefined
             ? dto.serviceAddress === null
               ? {

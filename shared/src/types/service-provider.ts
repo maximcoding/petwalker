@@ -1,7 +1,7 @@
 import type { BookingMode } from '../enums/booking-mode.js';
 import type { ServiceType } from '../enums/service-type.js';
 
-import type { Address, AddressDefault } from './address.js';
+import type { Address, AddressDefault, SupportedAddressSources } from './address.js';
 import type { ISODateString, UUID } from './common.js';
 
 /** Provider's general profile — bio, base location, service radius, verified status. */
@@ -30,8 +30,14 @@ export interface ServiceOffering {
   slotDurationMin: number;
   /** Per-offering service location override. Falls back to provider.user.address. */
   serviceAddress: Address | null;
-  /** Default booking-address source ('owner' | 'provider' | 'either'). */
+  /**
+   * Deprecated — left in the API contract for backward compat with older
+   * clients. Read `supportedSources` instead. Will be removed in a future
+   * release once mobile + web have caught up.
+   */
   addressDefault: AddressDefault;
+  /** Allow-list of address sources the provider supports for this offering. */
+  supportedSources: SupportedAddressSources;
 }
 
 /** A provider as exposed to owners in search results. */

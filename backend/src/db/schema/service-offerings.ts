@@ -38,7 +38,20 @@ export const providerServiceOfferings = pgTable(
     serviceAddressText: text('service_address_text'),
     serviceAddressLat: numeric('service_address_lat', { precision: 9, scale: 6 }),
     serviceAddressLng: numeric('service_address_lng', { precision: 9, scale: 6 }),
+    /**
+     * Deprecated — kept for the prior row's value but no longer read by
+     * the app. Replaced by the three `supports_*_location` flags below.
+     * Drop in a future migration once we're sure no caller reads it.
+     */
     addressDefault: text('address_default').notNull().default('owner'),
+    /**
+     * Provider's allow-list of address sources for this offering. Owners
+     * can only pick a `addressSource` covered by one of these flags. At
+     * least one must be true (DB CHECK constraint enforces it).
+     */
+    supportsOwnerLocation: boolean('supports_owner_location').notNull().default(true),
+    supportsProviderLocation: boolean('supports_provider_location').notNull().default(false),
+    supportsCustomLocation: boolean('supports_custom_location').notNull().default(false),
   },
   (t) => ({
     pk: primaryKey({ columns: [t.providerId, t.serviceType] }),

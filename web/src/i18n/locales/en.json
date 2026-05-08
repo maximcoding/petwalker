@@ -128,6 +128,10 @@
     "addressDefaultEither": "Owner picks at booking",
     "serviceAddress": "Service address (optional)",
     "serviceAddressHint": "Where this service is performed if it differs from your home address. Leave blank to use your account address.",
+    "supportedSources": "Where you offer this service",
+    "supportsOwner": "At the owner's place",
+    "supportsProvider": "At my location",
+    "supportsCustom": "Anywhere the owner picks",
     "calendar": {
       "title": "External calendar",
       "subtitle": "Connect a calendar feed so busy times are excluded from booking slots.",
@@ -159,6 +163,7 @@
     "ownerAddressMissing": "Set a home address on your account or this pet before booking.",
     "providerAddressMissing": "Provider hasn't set a service address — pick a different location.",
     "customAddressRequired": "Type the address where the service should happen.",
+    "addressSourceNotSupported": "Provider doesn't accept that location for this service.",
     "providerNoOffering": "This provider doesn't offer this service.",
     "scheduledTooSoon": "Pick a time at least 5 minutes from now.",
     "providerNotOnboarded": "Provider hasn't finished payout setup yet."

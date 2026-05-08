@@ -40,7 +40,27 @@ export const UpsertServiceOfferingDto = z.object({
    * back to the provider's user.address.
    */
   serviceAddress: AddressInput.nullable().optional(),
-  /** Default booking-address source ('owner' | 'provider' | 'either'). */
+  /**
+   * Deprecated. Pass `supportedSources` instead. Older clients can keep
+   * sending this; the backend ignores it.
+   */
   addressDefault: z.enum(['owner', 'provider', 'either']).optional(),
+  /**
+   * Provider's allow-list of address sources for this offering. At least
+   * one must be true — enforced both here (zod refine) and at the DB
+   * level (CHECK constraint). Omit to keep the existing values; on a
+   * fresh insert the backend seeds defaults from the service type.
+   */
+  supportedSources: z
+    .object({
+      owner: z.boolean(),
+      provider: z.boolean(),
+      custom: z.boolean(),
+    })
+    .refine(
+      (s) => s.owner || s.provider || s.custom,
+      'At least one address source must be supported',
+    )
+    .optional(),
 });
 export type UpsertServiceOfferingDto = z.infer<typeof UpsertServiceOfferingDto>;
