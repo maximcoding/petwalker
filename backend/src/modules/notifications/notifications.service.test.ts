@@ -11,9 +11,10 @@ const mockDb = {
   set: vi.fn().mockReturnThis(),
   where: vi.fn().mockResolvedValue(undefined),
 };
+const mockWebNotifs = { dispatch: vi.fn().mockResolvedValue(undefined) };
 
 function makeService(): NotificationsService {
-  return new NotificationsService(mockDb as never, mockQueue as never);
+  return new NotificationsService(mockDb as never, mockQueue as never, mockWebNotifs as never);
 }
 
 describe('NotificationsService', () => {

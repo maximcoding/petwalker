@@ -8,6 +8,7 @@ import type { Database } from '../../db/client.js';
 import { pushTokens } from '../../db/schema/index.js';
 
 import type { PushNotificationPayload } from './notification-builders.js';
+import { WebNotificationsService } from './web-notifications.service.js';
 import type { RegisterPushTokenDto } from '@petwalker/shared';
 
 export const PUSH_QUEUE = 'push-notifications';
@@ -19,6 +20,7 @@ export class NotificationsService {
   constructor(
     @Inject(DRIZZLE_DB) private readonly db: Database,
     @InjectQueue(PUSH_QUEUE) private readonly queue: Queue<PushNotificationPayload>,
+    @Inject(WebNotificationsService) private readonly webNotifs: WebNotificationsService,
   ) {}
 
   async registerToken(userId: string, dto: RegisterPushTokenDto): Promise<void> {
@@ -39,6 +41,10 @@ export class NotificationsService {
   }
 
   notifyAsync(payload: PushNotificationPayload): void {
+    this.webNotifs.dispatch(payload).catch((err: unknown) => {
+      this.logger.error('Failed to dispatch web notification', err);
+    });
+
     this.queue
       .add('push', payload, {
         attempts: 3,

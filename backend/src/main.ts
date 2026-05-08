@@ -12,6 +12,7 @@ import { initCognitoJwtVerifier } from './modules/auth/jwt-verifier.js';
 import { ChatGateway } from './modules/ws/chat.gateway.js';
 import { registerEchoWs } from './modules/ws/echo.ws.js';
 import { TrackingGateway } from './modules/ws/tracking.gateway.js';
+import { WebNotificationsGateway } from './modules/ws/web-notifications.gateway.js';
 import { bootstrapWebSockets } from './modules/ws/ws.bootstrap.js';
 
 async function bootstrap(): Promise<void> {
@@ -42,6 +43,7 @@ async function bootstrap(): Promise<void> {
   registerEchoWs(fastify);
   app.get(TrackingGateway).register(fastify);
   app.get(ChatGateway).register(fastify);
+  app.get(WebNotificationsGateway).register(fastify);
 
   await app.listen({ port: env.API_PORT, host: '0.0.0.0' });
   Logger.log(`API on http://localhost:${env.API_PORT}`, 'bootstrap');
