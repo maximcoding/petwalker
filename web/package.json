@@ -10,7 +10,10 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "echo 'TODO'",
-    "clean": "rm -rf .next .turbo"
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:install": "playwright install chromium",
+    "clean": "rm -rf .next .turbo test-results playwright-report"
   },
   "dependencies": {
     "@petwalker/shared": "workspace:*",
@@ -28,6 +31,7 @@
     "sonner": "^1.7.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.48.0",
     "@types/node": "^20.14.0",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
