@@ -60,3 +60,6 @@ playwright/.cache/
 # Claude productivity scaffolding — local helper files, not part of the project
 TASKS.md
 memory/
+.claude/
+docs/superpowers/
+tsx
