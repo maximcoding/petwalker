@@ -14,6 +14,7 @@ import { ProvidersModule } from './modules/providers/providers.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { WalksModule } from './modules/walks/walks.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { WsModule } from './modules/ws/ws.module.js';
 
 @Module({
@@ -32,6 +33,7 @@ import { WsModule } from './modules/ws/ws.module.js';
     PaymentsModule,
     CalendarModule,
     FavoritesModule,
+    NotificationsModule,
     WsModule,
   ],
 })
