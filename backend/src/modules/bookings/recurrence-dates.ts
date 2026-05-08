@@ -3,7 +3,8 @@ export type RecurrencePattern = 'weekly' | 'biweekly';
 export interface RecurrenceDatesOptions {
   recurrence: RecurrencePattern;
   daysOfWeek: number[];
-  timeOfDay: string;
+  /** One or more UTC times in 'HH:MM' format. Each qualifying day gets one Date per time. */
+  timesOfDay: string[];
   startDate: string;
   endDate: string;
 }
@@ -11,10 +12,12 @@ export interface RecurrenceDatesOptions {
 export const MAX_RECURRING_INSTANCES = 52;
 
 export function generateRecurrenceDates(opts: RecurrenceDatesOptions): Date[] {
-  const { recurrence, daysOfWeek, timeOfDay, startDate, endDate } = opts;
-  const [hStr, mStr] = timeOfDay.split(':');
-  const h = parseInt(hStr!, 10);
-  const m = parseInt(mStr!, 10);
+  const { recurrence, daysOfWeek, timesOfDay, startDate, endDate } = opts;
+
+  const parsedTimes = timesOfDay.map((t) => {
+    const [hStr, mStr] = t.split(':');
+    return { h: parseInt(hStr!, 10), m: parseInt(mStr!, 10) };
+  });
 
   const parseDate = (s: string): number =>
     Date.UTC(
@@ -38,7 +41,9 @@ export function generateRecurrenceDates(opts: RecurrenceDatesOptions): Date[] {
     for (const dow of daysOfWeek) {
       const dayMs = weekCurMs + dow * 86_400_000;
       if (dayMs >= startMs && dayMs <= endMs) {
-        results.push(new Date(dayMs + h * 3_600_000 + m * 60_000));
+        for (const { h, m } of parsedTimes) {
+          results.push(new Date(dayMs + h * 3_600_000 + m * 60_000));
+        }
       }
     }
     weekCurMs += weekStepMs;
