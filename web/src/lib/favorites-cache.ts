@@ -26,7 +26,7 @@ export function toggleFavoriteInQueries(
   providerId: string,
   next: boolean,
 ): void {
-  qc.setQueriesData<unknown>({ queryKey: [] }, (data) => {
+  qc.setQueriesData<unknown>({ queryKey: [] }, (data: unknown) => {
     if (data == null) return data;
     return updateData(data, providerId, next);
   });
