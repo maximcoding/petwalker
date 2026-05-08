@@ -2,6 +2,7 @@ import type { BookingMode } from '../enums/booking-mode.js';
 import type { ServiceType } from '../enums/service-type.js';
 
 import type { Address, AddressDefault, SupportedAddressSources } from './address.js';
+import type { AvailabilitySlot } from './availability.js';
 import type { ISODateString, UUID } from './common.js';
 
 /** Provider's general profile — bio, base location, service radius, verified status. */
@@ -92,6 +93,8 @@ export interface ServiceProviderDetail {
   verified: boolean;
   /** All active offerings for this provider. */
   offerings: ServiceOffering[];
+  /** Weekly availability slots (UTC). Empty means provider has set no schedule. */
+  availability: AvailabilitySlot[];
   /** True iff the calling owner has favorited this provider. */
   isFavorited: boolean;
 }

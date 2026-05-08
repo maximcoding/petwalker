@@ -6,6 +6,7 @@ import { buildCursorPage } from '../../common/pagination.js';
 import { DRIZZLE_DB } from '../../database/database.module.js';
 import type { Database } from '../../db/client.js';
 import {
+  providerAvailability,
   providerServiceOfferings,
   reviews,
   serviceProviderProfiles,
@@ -222,9 +223,13 @@ export class ProvidersService {
         ),
       );
 
-    const [isFavorited, ratings] = await Promise.all([
+    const [isFavorited, ratings, availabilityRows] = await Promise.all([
       viewerId ? this.favorites.isFavorited(viewerId, providerId) : Promise.resolve(false),
       this.aggregateRatings([providerId]),
+      this.db
+        .select()
+        .from(providerAvailability)
+        .where(eq(providerAvailability.providerId, providerId)),
     ]);
     const agg = ratings.get(providerId);
 
@@ -249,6 +254,11 @@ export class ProvidersService {
       reviewCount: agg?.reviewCount ?? 0,
       verified: joined.service_provider_profiles.verifiedAt !== null,
       offerings: offeringRows.map((r) => mapServiceOfferingRow(r as ServiceOfferingRow)),
+      availability: availabilityRows.map((r) => ({
+        dayOfWeek: r.dayOfWeek as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+        startTime: r.startTime.slice(0, 5),
+        endTime: r.endTime.slice(0, 5),
+      })),
       isFavorited,
     };
   }
