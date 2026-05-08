@@ -72,3 +72,37 @@ export const ListBookingsQuery = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 export type ListBookingsQuery = z.infer<typeof ListBookingsQuery>;
+
+export const CreateRecurringSeriesDto = z.object({
+  providerId: uuid,
+  petId: uuid,
+  serviceType: z.enum([
+    ServiceType.Walking,
+    ServiceType.Grooming,
+    ServiceType.Sitting,
+    ServiceType.Boarding,
+    ServiceType.Training,
+    ServiceType.Daycare,
+    ServiceType.Photography,
+    ServiceType.MassageWellness,
+    ServiceType.SeniorCare,
+    ServiceType.Veterinary,
+    ServiceType.Fitness,
+  ]),
+  recurrence: z.enum(['weekly', 'biweekly']),
+  daysOfWeek: z.array(z.number().int().min(0).max(6)).min(1).max(7),
+  timeOfDay: z.string().regex(/^\d{2}:\d{2}$/, 'Must be HH:MM'),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD').optional(),
+  durationMin: z.number().int().min(15).max(1440),
+  notes: z.string().max(2000).nullable().optional(),
+  addressSource: z.enum([
+    'owner_user',
+    'owner_pet',
+    'provider_user',
+    'provider_offering',
+    'custom',
+  ]),
+  customAddress: AddressInput.optional(),
+});
+export type CreateRecurringSeriesDto = z.infer<typeof CreateRecurringSeriesDto>;
