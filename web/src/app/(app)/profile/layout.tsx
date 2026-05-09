@@ -8,7 +8,6 @@ import { usePathname } from 'next/navigation';
 import { useMemo, type PropsWithChildren } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { ScrollPage } from '@/components/scroll-page';
 import { api } from '@/lib/api';
 
 
@@ -43,6 +42,7 @@ const TABS: TabDef[] = [
     show: (me) => me.role === UserRole.Provider || me.role === UserRole.Both,
   },
   { href: '/profile/finances', i18nKey: 'profile.tabs.finances' },
+  { href: '/profile/preferences', i18nKey: 'profile.tabs.preferences' },
 ];
 
 export default function ProfileLayout({ children }: PropsWithChildren): JSX.Element {
@@ -60,16 +60,28 @@ export default function ProfileLayout({ children }: PropsWithChildren): JSX.Elem
     return TABS.filter((tab) => !tab.show || tab.show(me.data!));
   }, [me.data]);
 
+  // Custom scroll layout (NOT ScrollPage). Why: we need the sticky tab
+  // bar to stick flush with the top of the scroll viewport. ScrollPage
+  // adds `pt-8` which creates a void above any sticky child where
+  // scrolling content bleeds through. Here we own the scroll container
+  // and apply spacing inside the children area only.
   return (
-    <ScrollPage>
-      <header className="mb-4">
+    <div className="flex h-full flex-col overflow-y-auto">
+      <header className="bg-white px-1 pb-3 pt-6 dark:bg-slate-950">
         <h1 className="text-2xl font-semibold">{t('profile.title')}</h1>
         <p className="mt-1 text-sm text-slate-500">{t('profile.subtitle')}</p>
       </header>
 
       <nav
         aria-label={t('profile.tabsLabel')}
-        className="sticky top-0 z-10 -mx-2 mb-6 flex gap-1 overflow-x-auto bg-white px-2 py-2 dark:bg-slate-950"
+        // Sticky tab bar.
+        // - `flex-wrap` lets tabs reflow onto a second row on narrow
+        //   widths instead of triggering an ugly horizontal scrollbar.
+        //   Browsers were showing the scrollbar even when content fit
+        //   because `overflow-x-auto` reserves a track on some OSes.
+        // - py-4 + per-link py-2 px-4 gives a 56-ish-px tall bar with
+        //   comfortable tap targets and stronger visual presence.
+        className="sticky top-0 z-10 flex flex-wrap items-center gap-1 border-b border-slate-200 bg-white px-1 py-4 dark:border-slate-800 dark:bg-slate-950"
       >
         {visibleTabs.map((tab) => {
           const active = pathname === tab.href || pathname?.startsWith(`${tab.href}/`);
@@ -79,8 +91,8 @@ export default function ProfileLayout({ children }: PropsWithChildren): JSX.Elem
               href={tab.href}
               className={
                 active
-                  ? 'rounded-lg bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
-                  : 'rounded-lg px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-900'
+                  ? 'rounded-lg bg-brand-50 px-4 py-2 text-sm font-medium text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
+                  : 'rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-900'
               }
             >
               {t(tab.i18nKey)}
@@ -89,7 +101,7 @@ export default function ProfileLayout({ children }: PropsWithChildren): JSX.Elem
         })}
       </nav>
 
-      <div>{children}</div>
-    </ScrollPage>
+      <div className="pb-12 pt-6">{children}</div>
+    </div>
   );
 }

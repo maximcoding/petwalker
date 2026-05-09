@@ -27,6 +27,7 @@ import {
   pets,
   providerAvailability,
   providerServiceOfferings,
+  recurringSeries,
   serviceProviderProfiles,
   users,
   walks,
@@ -449,6 +450,10 @@ async function main(): Promise<void> {
   }
 
   console.log('\n→ wiping Olivia\'s prior pets + bookings (cascade drops walks/messages)');
+  // Order matters: recurring_series.pet_id has a FK without ON DELETE
+  // CASCADE, so we have to drop the parent series rows before the pets
+  // they reference. Bookings → walks/messages cascade via their own FKs.
+  await db.delete(recurringSeries).where(eq(recurringSeries.ownerId, olivia.id));
   await db.delete(bookings).where(eq(bookings.ownerId, olivia.id));
   await db.delete(pets).where(eq(pets.ownerId, olivia.id));
 

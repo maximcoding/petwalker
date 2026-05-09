@@ -5,8 +5,9 @@ import type { User } from '@petwalker/shared/types';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
+import { BillingHistorySection } from '@/components/profile/billing-history-section';
 import { Card } from '@/components/profile/card';
-import { CurrencySection } from '@/components/profile/currency-section';
+import { PaymentMethodsSection } from '@/components/profile/payment-methods-section';
 import { StripeSection } from '@/components/profile/stripe-section';
 import { api } from '@/lib/api';
 
@@ -14,10 +15,9 @@ import { api } from '@/lib/api';
 /**
  * Finances tab — the money-touching surface.
  *
- * Currency preference applies to everyone. Payouts are provider-only and
- * piggyback on Stripe Connect. Saved payment methods + billing history +
- * downloadable invoices arrive in Phase 3 of the platform plan; the cards
- * are reserved here as placeholders so the IA contract is stable.
+ * Saved payment methods, billing history with downloadable invoice PDFs,
+ * and (provider-only) Stripe Connect payouts. Display-currency moved to
+ * the Preferences tab — it's a UI preference, not a money concern.
  */
 export default function FinancesPage(): JSX.Element {
   const { t } = useTranslation();
@@ -41,22 +41,18 @@ export default function FinancesPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <Card title={t('finances.currency.title')} hint={t('finances.currency.hint')}>
-        <CurrencySection me={me.data} />
-      </Card>
-
       <Card
         title={t('finances.paymentMethods.title')}
         hint={t('finances.paymentMethods.hint')}
       >
-        <ComingSoonRow body={t('finances.paymentMethods.body')} />
+        <PaymentMethodsSection />
       </Card>
 
       <Card
         title={t('finances.billingHistory.title')}
         hint={t('finances.billingHistory.hint')}
       >
-        <ComingSoonRow body={t('finances.billingHistory.body')} />
+        <BillingHistorySection />
       </Card>
 
       {isProvider ? (
@@ -68,14 +64,3 @@ export default function FinancesPage(): JSX.Element {
   );
 }
 
-function ComingSoonRow({ body }: { body: string }): JSX.Element {
-  const { t } = useTranslation();
-  return (
-    <div className="rounded-lg border border-dashed border-slate-300 p-3 dark:border-slate-700">
-      <p className="text-sm text-slate-600 dark:text-slate-300">{body}</p>
-      <p className="mt-2 text-xs font-medium uppercase tracking-wide text-slate-400">
-        {t('common.comingSoon')}
-      </p>
-    </div>
-  );
-}

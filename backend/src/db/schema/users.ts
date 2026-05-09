@@ -41,6 +41,13 @@ export const users = pgTable(
      * SUPPORTED_CURRENCIES from @petwalker/shared/types/user.
      */
     preferredCurrency: text('preferred_currency'),
+    /**
+     * Stripe Customer id (`cus_...`). Lazily populated the first time the
+     * user touches a money flow that needs it (saving a card, paying a
+     * booking with a saved card, etc.) — so we don't pre-create a
+     * customer for every signup. Null until then.
+     */
+    stripeCustomerId: text('stripe_customer_id'),
     // Home / billing / default-service address. Free-form text — the
     // optional lat/lng pair lets us deep-link to maps if the owner pastes
     // them; we don't geocode automatically.
