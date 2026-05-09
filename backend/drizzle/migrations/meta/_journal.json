@@ -85,6 +85,13 @@
       "when": 1746921600000,
       "tag": "0011_provider_blackouts",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1746921700000,
+      "tag": "0012_booking_accommodation",
+      "breakpoints": true
     }
   ]
 }

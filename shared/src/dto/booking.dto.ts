@@ -47,6 +47,12 @@ export const CreateBookingDto = z.object({
   ]),
   /** Required when `addressSource === 'custom'`. Ignored otherwise. */
   customAddress: AddressInput.optional(),
+  /**
+   * True when the owner provides accommodation at their property for the
+   * duration of a multi-day/overnight service. Only meaningful when
+   * `addressSource` is `owner_pet` or `owner_user`.
+   */
+  withAccommodation: z.boolean().optional(),
 });
 export type CreateBookingDto = z.infer<typeof CreateBookingDto>;
 

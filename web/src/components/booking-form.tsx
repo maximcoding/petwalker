@@ -16,7 +16,13 @@ import type {
   ServiceProviderDetail,
 } from '@petwalker/shared/types';
 
-const DURATIONS = [15, 30, 45, 60, 90, 120] as const;
+const DURATION_PRESETS = [15, 30, 45, 60, 90, 120, 180, 240] as const;
+
+function fmtDuration(min: number): string {
+  if (min < 60) return `${min} min`;
+  const h = min / 60;
+  return Number.isInteger(h) ? `${h} h` : `${h.toFixed(1)} h`;
+}
 
 interface Props {
   provider: ServiceProviderDetail;
@@ -26,11 +32,12 @@ interface Props {
   error?: string | null;
   onSubmit: (values: {
     petId: string;
-    scheduledAt: string; // ISO UTC
+    scheduledAts: string[]; // ISO UTC — one per selected slot
     durationMin: number;
     notes: string | null;
     addressSource: AddressSource;
     customAddress?: Address;
+    withAccommodation: boolean;
   }) => void;
 }
 
@@ -62,8 +69,8 @@ export function BookingForm({
   );
   const serviceLabel = t(`services.${serviceType as ServiceType}`);
   const [petId, setPetId] = useState(pets[0]?.id ?? '');
-  /** ISO start chosen via FreeSlotPicker. null means nothing selected yet. */
-  const [slotStart, setSlotStart] = useState<string | null>(null);
+  /** Set of ISO starts chosen via FreeSlotPicker. */
+  const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
   const [duration, setDuration] = useState<number>(60);
   const [notes, setNotes] = useState('');
   const supports = offering?.supportedSources;
@@ -71,6 +78,10 @@ export function BookingForm({
     pickInitialSource(supports),
   );
   const [customAddress, setCustomAddress] = useState<Address | null>(null);
+  const [withAccommodation, setWithAccommodation] = useState(false);
+
+  const isAtOwnerProperty =
+    addressSource === 'owner_pet' || addressSource === 'owner_user';
 
   const previewCents = offering ? Math.round(offering.hourlyRateCents * (duration / 60)) : 0;
 
@@ -86,18 +97,18 @@ export function BookingForm({
 
   function handleSubmit(e: FormEvent<HTMLFormElement>): void {
     e.preventDefault();
-    if (!petId || !slotStart) return;
+    if (!petId || selectedSlots.size === 0) return;
     if (addressSource === 'custom' && (!customAddress || !customAddress.text.trim())) {
-      // Don't submit with an empty custom address — backend would 422 anyway.
       return;
     }
     onSubmit({
       petId,
-      scheduledAt: slotStart,
+      scheduledAts: [...selectedSlots].sort(),
       durationMin: duration,
       notes: notes || null,
       addressSource,
       customAddress: addressSource === 'custom' ? customAddress ?? undefined : undefined,
+      withAccommodation: isAtOwnerProperty && withAccommodation,
     });
   }
 
@@ -121,167 +132,229 @@ export function BookingForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <label className="block">
-        <span className="mb-1 block text-sm font-medium">Pet</span>
-        <select
-          required
-          value={petId}
-          onChange={(e) => setPetId(e.target.value)}
-          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
-        >
-          {pets.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name} {p.breed ? `· ${p.breed}` : ''}
-            </option>
-          ))}
-        </select>
-      </label>
+    <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+      {/* Body: single column on mobile, two columns on md+ */}
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row md:gap-8">
+      {/* Left column — static fields (Pet, Duration, Where) */}
+      <div className="shrink-0 space-y-4 py-4 md:w-72 md:overflow-y-auto">
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium">Pet</span>
+          <select
+            required
+            value={petId}
+            onChange={(e) => setPetId(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
+          >
+            {pets.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} {p.breed ? `· ${p.breed}` : ''}
+              </option>
+            ))}
+          </select>
+        </label>
 
-      <label className="block">
-        <span className="mb-1 block text-sm font-medium">Duration</span>
-        <select
-          value={duration}
-          onChange={(e) => {
-            setDuration(Number(e.target.value));
-            // Slot list depends on duration — drop the previous selection so
-            // the user explicitly re-picks under the new constraint.
-            setSlotStart(null);
-          }}
-          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
-        >
-          {DURATIONS.map((d) => (
-            <option key={d} value={d}>
-              {d} min
-            </option>
-          ))}
-        </select>
-      </label>
+        <div>
+          <span className="mb-2 block text-sm font-medium">Duration</span>
+          <div className="flex flex-wrap gap-2">
+            {DURATION_PRESETS.map((d) => (
+              <button
+                key={d}
+                type="button"
+                aria-pressed={duration === d}
+                onClick={() => { setDuration(d); setSelectedSlots(new Set()); }}
+                className={[
+                  'rounded-full border px-3 py-1 text-sm transition',
+                  duration === d
+                    ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-200'
+                    : 'border-slate-200 text-slate-600 hover:border-slate-400 dark:border-slate-700 dark:text-slate-300',
+                ].join(' ')}
+              >
+                {fmtDuration(d)}
+              </button>
+            ))}
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              max={1440}
+              value={duration}
+              onChange={(e) => {
+                const v = Math.max(1, Math.min(1440, Number(e.target.value) || 1));
+                setDuration(v);
+                setSelectedSlots(new Set());
+              }}
+              className="w-24 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+            />
+            <span className="text-sm text-slate-500">
+              min{duration >= 60 ? ` · ${fmtDuration(duration)}` : ''}
+            </span>
+          </div>
+        </div>
 
-      {/* Where: only the source families the provider opted in to. With one
-          option enabled we drop the radio entirely and just show a label —
-          there's nothing to choose. The DB CHECK constraint means at least
-          one is always true; the empty case is defensive only. */}
-      {supports ? (() => {
-        const enabledCount =
-          (supports.owner ? 1 : 0) + (supports.provider ? 1 : 0) + (supports.custom ? 1 : 0);
-        if (enabledCount === 0) return null;
-        if (enabledCount === 1) {
-          const label = supports.owner
-            ? `${t('booking.atPetHome')} · ${petAddrText}`
-            : supports.provider
-              ? `${t('booking.atProviderLocation')} · ${providerAddrText}`
-              : t('booking.atOtherAddress');
+        {/* Where */}
+        {supports ? (() => {
+          const enabledCount =
+            (supports.owner ? 1 : 0) + (supports.provider ? 1 : 0) + (supports.custom ? 1 : 0);
+          if (enabledCount === 0) return null;
+          if (enabledCount === 1) {
+            const label = supports.owner
+              ? `${t('booking.atPetHome')} · ${petAddrText}`
+              : supports.provider
+                ? `${t('booking.atProviderLocation')} · ${providerAddrText}`
+                : t('booking.atOtherAddress');
+            return (
+              <div className="rounded-xl border border-slate-200 p-3 text-sm dark:border-slate-800">
+                <span className="block font-medium">{t('booking.whereLabel')}</span>
+                <span className="mt-1 block text-slate-600 dark:text-slate-300">{label}</span>
+                {supports.custom ? (
+                  <div className="mt-2">
+                    <AddressField
+                      value={customAddress}
+                      onChange={setCustomAddress}
+                      label=""
+                      hint={t('booking.customAddressHint')}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            );
+          }
           return (
-            <div className="rounded-xl border border-slate-200 p-3 text-sm dark:border-slate-800">
-              <span className="block font-medium">{t('booking.whereLabel')}</span>
-              <span className="mt-1 block text-slate-600 dark:text-slate-300">{label}</span>
-              {supports.custom ? (
-                <div className="mt-2">
-                  <AddressField
-                    value={customAddress}
-                    onChange={setCustomAddress}
-                    label=""
-                    hint={t('booking.customAddressHint')}
+            <fieldset className="space-y-2 rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+              <legend className="px-1 text-sm font-medium">{t('booking.whereLabel')}</legend>
+              {supports.owner ? (
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="addr-source"
+                    checked={addressSource === 'owner_pet'}
+                    onChange={() => setAddressSource('owner_pet')}
+                    className="mt-1"
                   />
-                </div>
+                  <span>
+                    <span className="block">{t('booking.atPetHome')}</span>
+                    <span className="block text-xs text-slate-500">{petAddrText}</span>
+                  </span>
+                </label>
               ) : null}
-            </div>
+              {supports.provider ? (
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="addr-source"
+                    checked={addressSource === 'provider_offering'}
+                    onChange={() => setAddressSource('provider_offering')}
+                    className="mt-1"
+                  />
+                  <span>
+                    <span className="block">{t('booking.atProviderLocation')}</span>
+                    <span className="block text-xs text-slate-500">{providerAddrText}</span>
+                  </span>
+                </label>
+              ) : null}
+              {supports.custom ? (
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="addr-source"
+                    checked={addressSource === 'custom'}
+                    onChange={() => setAddressSource('custom')}
+                    className="mt-1"
+                  />
+                  <span className="flex-1">
+                    <span className="block">{t('booking.atOtherAddress')}</span>
+                    {addressSource === 'custom' ? (
+                      <div className="mt-2">
+                        <AddressField
+                          value={customAddress}
+                          onChange={setCustomAddress}
+                          label=""
+                          hint={t('booking.customAddressHint')}
+                        />
+                      </div>
+                    ) : null}
+                  </span>
+                </label>
+              ) : null}
+            </fieldset>
           );
-        }
-        return (
-          <fieldset className="space-y-2 rounded-xl border border-slate-200 p-3 dark:border-slate-800">
-            <legend className="px-1 text-sm font-medium">{t('booking.whereLabel')}</legend>
-            {supports.owner ? (
-              <label className="flex items-start gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="addr-source"
-                  checked={addressSource === 'owner_pet'}
-                  onChange={() => setAddressSource('owner_pet')}
-                  className="mt-1"
-                />
-                <span>
-                  <span className="block">{t('booking.atPetHome')}</span>
-                  <span className="block text-xs text-slate-500">{petAddrText}</span>
-                </span>
-              </label>
-            ) : null}
-            {supports.provider ? (
-              <label className="flex items-start gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="addr-source"
-                  checked={addressSource === 'provider_offering'}
-                  onChange={() => setAddressSource('provider_offering')}
-                  className="mt-1"
-                />
-                <span>
-                  <span className="block">{t('booking.atProviderLocation')}</span>
-                  <span className="block text-xs text-slate-500">{providerAddrText}</span>
-                </span>
-              </label>
-            ) : null}
-            {supports.custom ? (
-              <label className="flex items-start gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="addr-source"
-                  checked={addressSource === 'custom'}
-                  onChange={() => setAddressSource('custom')}
-                  className="mt-1"
-                />
-                <span className="flex-1">
-                  <span className="block">{t('booking.atOtherAddress')}</span>
-                  {addressSource === 'custom' ? (
-                    <div className="mt-2">
-                      <AddressField
-                        value={customAddress}
-                        onChange={setCustomAddress}
-                        label=""
-                        hint={t('booking.customAddressHint')}
-                      />
-                    </div>
-                  ) : null}
-                </span>
-              </label>
-            ) : null}
-          </fieldset>
-        );
-      })() : null}
+        })() : null}
 
-      <div>
-        <span className="mb-2 block text-sm font-medium">When</span>
+        {/* Accommodation — only when service is at owner's property */}
+        {isAtOwnerProperty ? (
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm transition hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700">
+            <input
+              type="checkbox"
+              checked={withAccommodation}
+              onChange={(e) => setWithAccommodation(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 accent-brand-600"
+            />
+            <span>
+              <span className="block font-medium">Accommodation included</span>
+              <span className="block text-xs text-slate-500">
+                The provider will stay at my property for the duration of the service.
+              </span>
+            </span>
+          </label>
+        ) : null}
+      </div>
+
+      {/* Right column — When + slot picker (grows, slot grid scrolls) */}
+      <div className="flex min-h-0 flex-1 flex-col py-4 pb-2">
+        <span className="mb-2 block shrink-0 text-sm font-medium">When</span>
         <FreeSlotPicker
           providerId={provider.userId}
           serviceType={serviceType as ServiceType}
           durationMin={duration}
-          value={slotStart}
-          onChange={setSlotStart}
+          value={selectedSlots}
+          onChange={(start) =>
+            setSelectedSlots((prev) => {
+              const next = new Set(prev);
+              if (next.has(start)) next.delete(start);
+              else next.add(start);
+              return next;
+            })
+          }
+          onClear={() => setSelectedSlots(new Set())}
         />
+        {selectedSlots.size === 0 ? (
+          <p className="mt-1 shrink-0 text-xs text-slate-400">Select at least one time to continue.</p>
+        ) : null}
       </div>
 
-      <TextareaField
-        label="Notes (optional)"
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        hint="Anything the provider should know"
-      />
+      </div>{/* end body columns */}
 
-      <div className="rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-900">
-        <p>
-          {serviceLabel} · {duration} min · {provider.fullName}
-        </p>
-        <p className="mt-1 font-medium">
-          Total ≈ ${(previewCents / 100).toFixed(2)} ({offering.hourlyRateCents / 100}/h)
-        </p>
+      {/* Pinned footer — always visible, never scrolls away */}
+      <div className="shrink-0 space-y-3 border-t border-slate-200 pb-4 pt-4 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] dark:border-slate-800">
+        <TextareaField
+          label="Notes (optional)"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          hint="Anything the provider should know"
+        />
+
+        <div className="rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-900">
+          <p>
+            {serviceLabel} · {duration} min · {provider.fullName}
+          </p>
+          <p className="mt-1 font-medium">
+            {selectedSlots.size > 1
+              ? `${selectedSlots.size} slots · Total ≈ $${((previewCents * selectedSlots.size) / 100).toFixed(2)} ($${(previewCents / 100).toFixed(2)} each)`
+              : `Total ≈ $${(previewCents / 100).toFixed(2)} (${offering.hourlyRateCents / 100}/h)`}
+          </p>
+        </div>
+
+        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
+        <Button type="submit" disabled={busy || selectedSlots.size === 0}>
+          {busy
+            ? 'Booking…'
+            : selectedSlots.size > 1
+              ? `Confirm ${selectedSlots.size} bookings`
+              : 'Confirm booking'}
+        </Button>
       </div>
-
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-      <Button type="submit" disabled={busy || !slotStart}>
-        {busy ? 'Booking…' : 'Confirm booking'}
-      </Button>
     </form>
   );
 }

@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  boolean,
   check,
   index,
   integer,
@@ -53,6 +54,8 @@ export const bookings = pgTable(
      * Stored as text so adding sources later doesn't need an ALTER TYPE.
      */
     addressSource: text('address_source').notNull().default('owner_pet'),
+    /** True when owner provides accommodation at their property for the service. */
+    withAccommodation: boolean('with_accommodation').notNull().default(false),
 
     // Cancellation outcome — populated by the cancel endpoint, consumed by M4 (payments).
     cancelledBy: userRoleEnum('cancelled_by'),

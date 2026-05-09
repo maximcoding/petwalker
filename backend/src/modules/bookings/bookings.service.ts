@@ -216,6 +216,7 @@ export class BookingsService {
           addressLat: resolvedAddress.lat == null ? null : String(resolvedAddress.lat),
           addressLng: resolvedAddress.lng == null ? null : String(resolvedAddress.lng),
           addressSource: resolvedAddress.source,
+          withAccommodation: dto.withAccommodation ?? false,
         })
         .returning();
       if (!inserted) throw new Error('insert returned no row');
