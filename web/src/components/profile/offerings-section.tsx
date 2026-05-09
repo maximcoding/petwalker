@@ -29,10 +29,18 @@ import type {
 interface RowProps {
   serviceType: ServiceType;
   offering: ServiceOffering | undefined;
+  expanded: boolean;
+  onToggle: () => void;
   onSaved: () => void;
 }
 
-function OfferingRow({ serviceType, offering, onSaved }: RowProps): JSX.Element {
+function OfferingRow({
+  serviceType,
+  offering,
+  expanded,
+  onToggle,
+  onSaved,
+}: RowProps): JSX.Element {
   const qc = useQueryClient();
   const { t } = useTranslation();
   const Icon = ICONS[serviceType];
@@ -93,14 +101,56 @@ function OfferingRow({ serviceType, offering, onSaved }: RowProps): JSX.Element 
   const cents = Math.round(Number(hourly) * 100);
   const valid = !Number.isNaN(cents) && cents >= 0;
 
+  // Collapsed summary row (always visible). The full editor is rendered
+  // below only when `expanded` is true — keeps the page scannable when
+  // a provider has many active services.
   return (
-    <li className="space-y-3 rounded-xl border border-slate-200 p-3 dark:border-slate-800">
-      <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[160px_1fr_auto_auto]">
-        <span className="flex items-center gap-2 font-medium">
-          <Icon className="h-4 w-4 text-slate-500" aria-hidden="true" />
-          {t(`services.${serviceType}`)}
-        </span>
+    <li className="rounded-xl border border-slate-200 dark:border-slate-800">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-900"
+      >
+        <Icon className="h-5 w-5 text-slate-500" aria-hidden="true" />
+        <span className="flex-1 font-medium">{t(`services.${serviceType}`)}</span>
+        {offering ? (
+          <>
+            <span className="text-sm tabular-nums text-slate-600 dark:text-slate-300">
+              ${(offering.hourlyRateCents / 100).toFixed(2)}/h
+            </span>
+            <span
+              className={
+                offering.active
+                  ? 'rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
+                  : 'rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+              }
+            >
+              {offering.active ? t('profile.offeringActive') : t('common.remove')}
+            </span>
+          </>
+        ) : (
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+            {t('common.add')}
+          </span>
+        )}
+        <svg
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          aria-hidden
+          className={`h-4 w-4 text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+        >
+          <path
+            fillRule="evenodd"
+            d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </button>
 
+      {!expanded ? null : (
+      <div className="space-y-3 border-t border-slate-100 px-4 py-3 dark:border-slate-800">
+      <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[1fr_auto_auto]">
         <label className="flex items-center gap-2 text-sm">
           <span className="w-10 text-slate-500">$/h</span>
           <input
@@ -238,6 +288,8 @@ function OfferingRow({ serviceType, offering, onSaved }: RowProps): JSX.Element 
       </div>
 
       {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      </div>
+      )}
     </li>
   );
 }
@@ -245,6 +297,11 @@ function OfferingRow({ serviceType, offering, onSaved }: RowProps): JSX.Element 
 export function OfferingsSection(): JSX.Element {
   const qc = useQueryClient();
   const { t } = useTranslation();
+  // Single-expanded accordion: at most one row open at a time. `null`
+  // collapses everything, which is the default state — providers see a
+  // scannable list rather than 11 expanded forms.
+  const [expanded, setExpanded] = useState<ServiceType | null>(null);
+  const [showInactive, setShowInactive] = useState(false);
 
   const q = useQuery<ServiceOffering[]>({
     queryKey: ['offerings'],
@@ -259,18 +316,61 @@ export function OfferingsSection(): JSX.Element {
     return <p className="text-sm text-red-600">Error: {(q.error as Error).message}</p>;
   }
 
+  // Configured services come first (offering exists, active or paused),
+  // unconfigured services hide behind a "Show all services" toggle.
+  const configured = ALL_SERVICE_TYPES.filter((s) => byType.has(s));
+  const unconfigured = ALL_SERVICE_TYPES.filter((s) => !byType.has(s));
+
+  function handleToggle(s: ServiceType): void {
+    setExpanded((prev) => (prev === s ? null : s));
+  }
+
   return (
-    <ul className="space-y-2">
-      {ALL_SERVICE_TYPES.map((s) => (
-        <OfferingRow
-          key={s}
-          serviceType={s}
-          offering={byType.get(s)}
-          onSaved={() => {
-            void qc.invalidateQueries({ queryKey: ['offerings'] });
-          }}
-        />
-      ))}
-    </ul>
+    <div className="space-y-3">
+      <ul className="space-y-2">
+        {configured.map((s) => (
+          <OfferingRow
+            key={s}
+            serviceType={s}
+            offering={byType.get(s)}
+            expanded={expanded === s}
+            onToggle={() => handleToggle(s)}
+            onSaved={() => {
+              void qc.invalidateQueries({ queryKey: ['offerings'] });
+            }}
+          />
+        ))}
+      </ul>
+
+      {unconfigured.length > 0 ? (
+        <div className="space-y-2 pt-2">
+          <button
+            type="button"
+            onClick={() => setShowInactive((v) => !v)}
+            className="text-sm font-medium text-brand-700 hover:underline dark:text-brand-300"
+          >
+            {showInactive
+              ? t('profile.hideUnconfiguredServices', { count: unconfigured.length })
+              : t('profile.showUnconfiguredServices', { count: unconfigured.length })}
+          </button>
+          {showInactive ? (
+            <ul className="space-y-2">
+              {unconfigured.map((s) => (
+                <OfferingRow
+                  key={s}
+                  serviceType={s}
+                  offering={undefined}
+                  expanded={expanded === s}
+                  onToggle={() => handleToggle(s)}
+                  onSaved={() => {
+                    void qc.invalidateQueries({ queryKey: ['offerings'] });
+                  }}
+                />
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 }
