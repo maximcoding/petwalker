@@ -165,7 +165,7 @@ export function BookingForm({
           </select>
         </label>
 
-        <div>
+        {bookingMode === 'slots' ? <div>
           <span className="mb-2 block text-sm font-medium">Duration</span>
           <div className="flex flex-wrap gap-2">
             {DURATION_PRESETS.map((d) => (
@@ -203,7 +203,7 @@ export function BookingForm({
               min{duration >= 60 ? ` = ${fmtDuration(duration)}` : ''}
             </span>
           </div>
-        </div>
+        </div> : null}
 
         {/* Where */}
         {supports ? (() => {
