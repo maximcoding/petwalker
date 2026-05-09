@@ -1,14 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 interface Props {
-  /** Duration in minutes — determines check-out date. Must be ≥ 1440. */
-  durationMin: number;
-  /** ISO UTC string of the selected check-in, or null if none selected. */
-  value: string | null;
-  onChange: (isoStart: string) => void;
+  /** Called when both dates + time are set. Emits ISO start string and duration in minutes. */
+  onChange: (isoStart: string, durationMin: number) => void;
   onClear: () => void;
+  /** Currently confirmed selection, null if none. */
+  value: { isoStart: string; durationMin: number } | null;
 }
 
 const CHECK_IN_TIMES = [
@@ -18,86 +17,108 @@ const CHECK_IN_TIMES = [
   { label: 'Evening', hour: 18 },
 ] as const;
 
-function formatLocalDate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+function toLocalDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function fmtDisplay(iso: string): string {
+function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
     weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
   });
 }
 
-export function DateRangePicker({ durationMin, value, onChange, onClear }: Props): JSX.Element {
-  const today = formatLocalDate(new Date());
-  const [checkInHour, setCheckInHour] = useState(8);
+function fmtDays(min: number): string {
+  const d = min / 1440;
+  return `${d} day${d !== 1 ? 's' : ''}`;
+}
 
-  const durationDays = Math.round(durationMin / 1440);
+export function DateRangePicker({ onChange, onClear, value }: Props): JSX.Element {
+  const today = toLocalDateStr(new Date());
+  const [checkInDate, setCheckInDate] = useState(value ? toLocalDateStr(new Date(value.isoStart)) : '');
+  const [checkOutDate, setCheckOutDate] = useState(() => {
+    if (!value) return '';
+    const end = new Date(new Date(value.isoStart).getTime() + value.durationMin * 60_000);
+    return toLocalDateStr(end);
+  });
+  const [checkInHour, setCheckInHour] = useState(value ? new Date(value.isoStart).getHours() : 8);
 
-  const checkOutDisplay = useMemo(() => {
-    if (!value) return null;
-    const end = new Date(new Date(value).getTime() + durationMin * 60_000);
-    return fmtDisplay(end.toISOString());
-  }, [value, durationMin]);
-
-  function handleDateChange(dateStr: string): void {
-    if (!dateStr) return;
-    const [y, m, d] = dateStr.split('-').map(Number);
-    // Build local midnight then shift to the chosen check-in hour
-    const local = new Date(y!, m! - 1, d!, checkInHour, 0, 0, 0);
-    onChange(local.toISOString());
+  function emit(inDate: string, outDate: string, hour: number): void {
+    if (!inDate || !outDate) return;
+    const [iy, im, id] = inDate.split('-').map(Number);
+    const [oy, om, od] = outDate.split('-').map(Number);
+    const start = new Date(iy!, im! - 1, id!, hour, 0, 0, 0);
+    const end = new Date(oy!, om! - 1, od!, hour, 0, 0, 0);
+    const durationMin = Math.round((end.getTime() - start.getTime()) / 60_000);
+    if (durationMin <= 0) return;
+    onChange(start.toISOString(), durationMin);
   }
 
-  function handleHourChange(hour: number): void {
-    setCheckInHour(hour);
-    if (!value) return;
-    // Re-emit with the same date but new hour
-    const prev = new Date(value);
-    const updated = new Date(
-      prev.getFullYear(), prev.getMonth(), prev.getDate(), hour, 0, 0, 0,
-    );
-    onChange(updated.toISOString());
+  function handleInDate(v: string): void {
+    setCheckInDate(v);
+    // Reset check-out if it's before or equal to new check-in
+    if (checkOutDate && checkOutDate <= v) setCheckOutDate('');
+    emit(v, checkOutDate, checkInHour);
   }
 
-  const selectedDateStr = value ? formatLocalDate(new Date(value)) : '';
+  function handleOutDate(v: string): void {
+    setCheckOutDate(v);
+    emit(checkInDate, v, checkInHour);
+  }
+
+  function handleHour(h: number): void {
+    setCheckInHour(h);
+    emit(checkInDate, checkOutDate, h);
+  }
+
+  const durationLabel = value ? fmtDays(value.durationMin) : null;
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Selected range summary */}
+      {/* Summary banner */}
       {value ? (
         <div className="flex items-center justify-between rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm dark:border-brand-900 dark:bg-brand-950">
           <div>
             <p className="font-medium text-brand-700 dark:text-brand-200">
-              {fmtDisplay(value)} → {checkOutDisplay}
+              {fmtDate(value.isoStart)} → {fmtDate(new Date(new Date(value.isoStart).getTime() + value.durationMin * 60_000).toISOString())}
             </p>
             <p className="mt-0.5 text-xs text-brand-600 dark:text-brand-300">
-              {durationDays} day{durationDays !== 1 ? 's' : ''} · check-in at {new Date(value).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+              {durationLabel} · check-in at {new Date(value.isoStart).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClear}
-            className="ml-4 text-xs text-brand-600 underline hover:no-underline dark:text-brand-300"
-          >
+          <button type="button" onClick={() => { onClear(); setCheckInDate(''); setCheckOutDate(''); }} className="ml-4 text-xs text-brand-600 underline hover:no-underline dark:text-brand-300">
             Clear
           </button>
         </div>
       ) : null}
 
-      {/* Check-in date */}
-      <div>
-        <label className="mb-1.5 block text-sm font-medium">Check-in date</label>
-        <input
-          type="date"
-          min={today}
-          value={selectedDateStr}
-          onChange={(e) => handleDateChange(e.target.value)}
-          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-        />
+      {/* Date inputs side-by-side */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="mb-1.5 block text-sm font-medium">Check-in</label>
+          <input
+            type="date"
+            min={today}
+            value={checkInDate}
+            onChange={(e) => handleInDate(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium">Check-out</label>
+          <input
+            type="date"
+            min={checkInDate || today}
+            value={checkOutDate}
+            onChange={(e) => handleOutDate(e.target.value)}
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+          />
+        </div>
       </div>
+
+      {/* Duration derived label */}
+      {durationLabel ? (
+        <p className="text-sm text-slate-500">{durationLabel}</p>
+      ) : null}
 
       {/* Check-in time */}
       <div>
@@ -108,7 +129,7 @@ export function DateRangePicker({ durationMin, value, onChange, onClear }: Props
               key={hour}
               type="button"
               aria-pressed={checkInHour === hour}
-              onClick={() => handleHourChange(hour)}
+              onClick={() => handleHour(hour)}
               className={[
                 'rounded-full border px-3 py-1 text-sm transition',
                 checkInHour === hour
@@ -121,18 +142,6 @@ export function DateRangePicker({ durationMin, value, onChange, onClear }: Props
           ))}
         </div>
       </div>
-
-      {/* Check-out preview */}
-      {value ? (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-slate-500">Check-out</p>
-          <p className="mt-0.5 font-medium">{checkOutDisplay}</p>
-        </div>
-      ) : (
-        <div className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400 dark:border-slate-700">
-          Pick a check-in date to see the check-out date.
-        </div>
-      )}
     </div>
   );
 }

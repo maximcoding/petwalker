@@ -84,14 +84,16 @@ export function BookingForm({
   );
   const [customAddress, setCustomAddress] = useState<Address | null>(null);
   const [withAccommodation, setWithAccommodation] = useState(false);
-  /** ISO start for day-range bookings (duration ≥ 1 day). */
-  const [dateStart, setDateStart] = useState<string | null>(null);
+  /** User-chosen booking mode. */
+  const [bookingMode, setBookingMode] = useState<'slots' | 'range'>('slots');
+  /** Date-range selection: start ISO + duration derived from end date. */
+  const [dateRange, setDateRange] = useState<{ isoStart: string; durationMin: number } | null>(null);
 
   const isAtOwnerProperty =
     addressSource === 'owner_pet' || addressSource === 'owner_user';
-  const isDayBased = duration >= 1440;
 
-  const previewCents = offering ? Math.round(offering.hourlyRateCents * (duration / 60)) : 0;
+  const effectiveDuration = bookingMode === 'range' && dateRange ? dateRange.durationMin : duration;
+  const previewCents = offering ? Math.round(offering.hourlyRateCents * (effectiveDuration / 60)) : 0;
 
   // Provider's resolved address for the radio label — the offering override
   // wins, falling back to the provider's user.address. We pull the latter
@@ -106,29 +108,20 @@ export function BookingForm({
   function handleSubmit(e: FormEvent<HTMLFormElement>): void {
     e.preventDefault();
     if (addressSource === 'custom' && (!customAddress || !customAddress.text.trim())) return;
-    if (isDayBased) {
-      if (!dateStart) return;
-      onSubmit({
-        petId,
-        scheduledAts: [dateStart],
-        durationMin: duration,
-        notes: notes || null,
-        addressSource,
-        customAddress: addressSource === 'custom' ? customAddress ?? undefined : undefined,
-        withAccommodation: isAtOwnerProperty && withAccommodation,
-      });
-      return;
-    }
-    if (selectedSlots.size === 0) return;
-    onSubmit({
+    const base = {
       petId,
-      scheduledAts: [...selectedSlots].sort(),
-      durationMin: duration,
       notes: notes || null,
       addressSource,
       customAddress: addressSource === 'custom' ? customAddress ?? undefined : undefined,
       withAccommodation: isAtOwnerProperty && withAccommodation,
-    });
+    };
+    if (bookingMode === 'range') {
+      if (!dateRange) return;
+      onSubmit({ ...base, scheduledAts: [dateRange.isoStart], durationMin: dateRange.durationMin });
+      return;
+    }
+    if (selectedSlots.size === 0) return;
+    onSubmit({ ...base, scheduledAts: [...selectedSlots].sort(), durationMin: duration });
   }
 
   if (!offering) {
@@ -320,15 +313,36 @@ export function BookingForm({
         ) : null}
       </div>
 
-      {/* Right column — When (swaps between date-range and slot picker) */}
+      {/* Right column — When */}
       <div className="flex min-h-0 flex-1 flex-col py-4 pb-2">
-        <span className="mb-2 block shrink-0 text-sm font-medium">When</span>
-        {isDayBased ? (
+        {/* Mode toggle */}
+        <div className="mb-3 flex shrink-0 gap-1 rounded-xl border border-slate-200 p-1 dark:border-slate-800">
+          {(['slots', 'range'] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => {
+                setBookingMode(mode);
+                setSelectedSlots(new Set());
+                setDateRange(null);
+              }}
+              className={[
+                'flex-1 rounded-lg py-1.5 text-sm font-medium transition',
+                bookingMode === mode
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-slate-100'
+                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300',
+              ].join(' ')}
+            >
+              {mode === 'slots' ? 'Time slots' : 'Date range'}
+            </button>
+          ))}
+        </div>
+
+        {bookingMode === 'range' ? (
           <DateRangePicker
-            durationMin={duration}
-            value={dateStart}
-            onChange={setDateStart}
-            onClear={() => setDateStart(null)}
+            value={dateRange}
+            onChange={(isoStart, durationMin) => setDateRange({ isoStart, durationMin })}
+            onClear={() => setDateRange(null)}
           />
         ) : (
           <>
@@ -367,10 +381,10 @@ export function BookingForm({
 
         <div className="rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-900">
           <p>
-            {serviceLabel} · {duration} min · {provider.fullName}
+            {serviceLabel} · {fmtDuration(effectiveDuration)} · {provider.fullName}
           </p>
           <p className="mt-1 font-medium">
-            {selectedSlots.size > 1
+            {bookingMode === 'slots' && selectedSlots.size > 1
               ? `${selectedSlots.size} slots · Total ≈ $${((previewCents * selectedSlots.size) / 100).toFixed(2)} ($${(previewCents / 100).toFixed(2)} each)`
               : `Total ≈ $${(previewCents / 100).toFixed(2)} (${offering.hourlyRateCents / 100}/h)`}
           </p>
@@ -378,14 +392,12 @@ export function BookingForm({
 
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-        <Button type="submit" disabled={busy || (isDayBased ? !dateStart : selectedSlots.size === 0)}>
+        <Button type="submit" disabled={busy || (bookingMode === 'range' ? !dateRange : selectedSlots.size === 0)}>
           {busy
             ? 'Booking…'
-            : isDayBased
-              ? 'Confirm booking'
-              : selectedSlots.size > 1
-                ? `Confirm ${selectedSlots.size} bookings`
-                : 'Confirm booking'}
+            : bookingMode === 'slots' && selectedSlots.size > 1
+              ? `Confirm ${selectedSlots.size} bookings`
+              : 'Confirm booking'}
         </Button>
       </div>
     </form>
