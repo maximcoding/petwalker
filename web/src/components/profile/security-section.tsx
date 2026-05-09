@@ -3,7 +3,6 @@
 import type { User } from '@petwalker/shared/types';
 import { useTranslation } from 'react-i18next';
 
-
 interface Props {
   me: User;
 }
@@ -12,19 +11,17 @@ interface Props {
  * Account & Security card.
  *
  * Auth is currently brokered by Cognito so we don't own password / 2FA /
- * session UI yet. Phase 2 reserves the screen and explains the current
- * state — the Phase-3+ Stripe SetupIntent + saved-cards flow will need a
- * real verify-by-password gate, and that's when this section gets actual
+ * session UI yet. This view is intentionally plain — definition-list of
+ * label + value rows, no nested cards or dashed boxes. The Phase-3+
+ * Stripe SetupIntent + saved-cards flow will need a real verify-by-
+ * password gate; that's when the placeholder rows below get real
  * controls.
- *
- * For now we surface the immutable email (read-only) and the linked
- * Cognito sub so power users can correlate to their auth provider.
  */
 export function SecuritySection({ me }: Props): JSX.Element {
   const { t } = useTranslation();
 
   return (
-    <div className="space-y-4">
+    <dl className="divide-y divide-slate-100 text-sm dark:divide-slate-800">
       <Row label={t('security.email')} value={me.email} hint={t('security.emailHint')} />
       <Row
         label={t('security.linkedAccount')}
@@ -32,10 +29,10 @@ export function SecuritySection({ me }: Props): JSX.Element {
         hint={t('security.linkedAccountHint')}
         mono
       />
-      <Placeholder label={t('security.password')} hint={t('security.passwordHint')} />
-      <Placeholder label={t('security.twoFactor')} hint={t('security.twoFactorHint')} />
-      <Placeholder label={t('security.sessions')} hint={t('security.sessionsHint')} />
-    </div>
+      <PendingRow label={t('security.password')} hint={t('security.passwordHint')} />
+      <PendingRow label={t('security.twoFactor')} hint={t('security.twoFactorHint')} />
+      <PendingRow label={t('security.sessions')} hint={t('security.sessionsHint')} />
+    </dl>
   );
 }
 
@@ -48,32 +45,36 @@ interface RowProps {
 
 function Row({ label, value, hint, mono }: RowProps): JSX.Element {
   return (
-    <div>
-      <p className="text-sm font-medium">{label}</p>
-      <p
-        className={`mt-0.5 ${mono ? 'font-mono text-xs' : 'text-sm'} break-all text-slate-600 dark:text-slate-300`}
+    <div className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-[180px_1fr]">
+      <dt className="font-medium">{label}</dt>
+      <dd
+        className={`break-all ${mono ? 'font-mono text-xs' : ''} text-slate-700 dark:text-slate-200`}
       >
         {value}
-      </p>
-      {hint ? <p className="mt-0.5 text-xs text-slate-500">{hint}</p> : null}
+        {hint ? (
+          <span className="mt-0.5 block text-xs text-slate-500">{hint}</span>
+        ) : null}
+      </dd>
     </div>
   );
 }
 
-interface PlaceholderProps {
+interface PendingRowProps {
   label: string;
   hint: string;
 }
 
-function Placeholder({ label, hint }: PlaceholderProps): JSX.Element {
+function PendingRow({ label, hint }: PendingRowProps): JSX.Element {
   const { t } = useTranslation();
   return (
-    <div className="rounded-lg border border-dashed border-slate-300 p-3 dark:border-slate-700">
-      <p className="text-sm font-medium">{label}</p>
-      <p className="mt-1 text-xs text-slate-500">{hint}</p>
-      <p className="mt-2 text-xs font-medium uppercase tracking-wide text-slate-400">
-        {t('security.comingSoon')}
-      </p>
+    <div className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-[180px_1fr]">
+      <dt className="flex items-center gap-2 font-medium">
+        {label}
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+          {t('common.comingSoon')}
+        </span>
+      </dt>
+      <dd className="text-xs text-slate-500">{hint}</dd>
     </div>
   );
 }

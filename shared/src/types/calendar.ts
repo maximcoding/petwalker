@@ -1,11 +1,20 @@
-/** Provider's iCal feed status — what the profile UI renders. */
-export interface CalendarFeed {
-  icalUrl: string;
-  enabled: boolean;
-  /** ISO 8601 UTC. null until first successful sync. */
-  lastSyncedAt: string | null;
-  /** Last sync error message, if any. Cleared on next successful sync. */
-  lastSyncError: string | null;
+/**
+ * Connection status of the user's Google Calendar — drives the
+ * "Connect Google Calendar" UI:
+ *
+ *   - configured=false                 → backend has no Google OAuth
+ *                                        creds; show a disabled state.
+ *   - configured=true, connected=false → show the Connect button.
+ *   - connected=true                   → show "Connected as {email}"
+ *                                        + Sync now + Disconnect.
+ */
+export interface GoogleCalendarStatus {
+  configured: boolean;
+  connected: boolean;
+  /** Email of the linked Google account, only present when connected. */
+  googleEmail?: string;
+  /** ISO 8601 UTC of the most recent successful sync, when connected. */
+  lastSyncedAt?: string;
 }
 
 /** Result of a manual sync trigger. */

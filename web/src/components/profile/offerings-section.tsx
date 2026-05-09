@@ -8,7 +8,7 @@ import {
   ServiceType,
 } from '@petwalker/shared/enums';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -301,7 +301,12 @@ export function OfferingsSection(): JSX.Element {
   // collapses everything, which is the default state — providers see a
   // scannable list rather than 11 expanded forms.
   const [expanded, setExpanded] = useState<ServiceType | null>(null);
-  const [showInactive, setShowInactive] = useState(false);
+  // Tracks which unconfigured service the user just picked from the
+  // searchable Add-a-service picker. We render exactly that one extra
+  // row inline (auto-expanded) so they can fill out the form right
+  // there. Once saved, the offering exists and the row migrates to the
+  // `configured` list naturally on the next render.
+  const [picking, setPicking] = useState<ServiceType | null>(null);
 
   const q = useQuery<ServiceOffering[]>({
     queryKey: ['offerings'],
@@ -316,13 +321,19 @@ export function OfferingsSection(): JSX.Element {
     return <p className="text-sm text-red-600">Error: {(q.error as Error).message}</p>;
   }
 
-  // Configured services come first (offering exists, active or paused),
-  // unconfigured services hide behind a "Show all services" toggle.
+  // Configured services first; the picked-but-not-yet-saved one (if
+  // any) renders as an extra row at the bottom in expand-state.
   const configured = ALL_SERVICE_TYPES.filter((s) => byType.has(s));
   const unconfigured = ALL_SERVICE_TYPES.filter((s) => !byType.has(s));
+  const pickerOptions = unconfigured.filter((s) => s !== picking);
 
   function handleToggle(s: ServiceType): void {
     setExpanded((prev) => (prev === s ? null : s));
+  }
+
+  function handlePick(s: ServiceType): void {
+    setPicking(s);
+    setExpanded(s);
   }
 
   return (
@@ -340,37 +351,110 @@ export function OfferingsSection(): JSX.Element {
             }}
           />
         ))}
+        {picking ? (
+          <OfferingRow
+            key={picking}
+            serviceType={picking}
+            offering={undefined}
+            expanded={expanded === picking}
+            onToggle={() => handleToggle(picking!)}
+            onSaved={() => {
+              setPicking(null);
+              void qc.invalidateQueries({ queryKey: ['offerings'] });
+            }}
+          />
+        ) : null}
       </ul>
 
-      {unconfigured.length > 0 ? (
-        <div className="space-y-2 pt-2">
-          <button
-            type="button"
-            onClick={() => setShowInactive((v) => !v)}
-            className="text-sm font-medium text-brand-700 hover:underline dark:text-brand-300"
-          >
-            {showInactive
-              ? t('profile.hideUnconfiguredServices', { count: unconfigured.length })
-              : t('profile.showUnconfiguredServices', { count: unconfigured.length })}
-          </button>
-          {showInactive ? (
-            <ul className="space-y-2">
-              {unconfigured.map((s) => (
-                <OfferingRow
-                  key={s}
-                  serviceType={s}
-                  offering={undefined}
-                  expanded={expanded === s}
-                  onToggle={() => handleToggle(s)}
-                  onSaved={() => {
-                    void qc.invalidateQueries({ queryKey: ['offerings'] });
-                  }}
-                />
-              ))}
-            </ul>
-          ) : null}
-        </div>
+      {pickerOptions.length > 0 ? (
+        <AddServicePicker options={pickerOptions} onPick={handlePick} />
       ) : null}
+    </div>
+  );
+}
+
+interface AddServicePickerProps {
+  options: ServiceType[];
+  onPick: (s: ServiceType) => void;
+}
+
+/**
+ * "+ Add a service" → click opens a small inline popover with a search
+ * input and the filtered list of unconfigured services. Picking one
+ * closes the popover and triggers the parent to render that service's
+ * row in expanded state.
+ *
+ * Inline (not a portal modal) so the focus + scroll stay anchored to
+ * the Services card. Click-outside collapses the popover.
+ */
+function AddServicePicker({ options, onPick }: AddServicePickerProps): JSX.Element {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent): void {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const filtered = options.filter((s) => {
+    const label = t(`services.${s}`).toLowerCase();
+    return label.includes(query.toLowerCase());
+  });
+
+  return (
+    <div ref={ref} className="relative">
+      {open ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <input
+            type="text"
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('profile.addServicePlaceholder')}
+            className="mb-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+          />
+          {filtered.length === 0 ? (
+            <p className="px-2 py-3 text-sm text-slate-500">{t('profile.addServiceEmpty')}</p>
+          ) : (
+            <ul className="max-h-72 overflow-y-auto">
+              {filtered.map((s) => {
+                const Icon = ICONS[s];
+                return (
+                  <li key={s}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onPick(s);
+                        setOpen(false);
+                        setQuery('');
+                      }}
+                      className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-900"
+                    >
+                      <Icon className="h-5 w-5 text-slate-500" aria-hidden />
+                      <span className="font-medium">{t(`services.${s}`)}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <div className="mt-2 flex justify-end">
+            <Button variant="secondary" onClick={() => setOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button onClick={() => setOpen(true)}>{t('profile.addService')}</Button>
+      )}
     </div>
   );
 }

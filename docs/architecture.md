@@ -1,4 +1,7 @@
-# PetWalker
+# Architecture
+
+> What the system is, how it's wired, and what each piece is responsible for.
+> For setup steps and keys see [`setup.md`](./setup.md). For what's coming next see [`roadmap.md`](./roadmap.md).
 
 A two-sided pet services marketplace connecting pet owners with professional care providers. Owners browse, book, and pay for services; providers manage their schedule, availability, and earnings — all in one platform.
 
@@ -9,6 +12,7 @@ A two-sided pet services marketplace connecting pet owners with professional car
 Owners register their pets and search for nearby providers across 11 service categories: dog walking, grooming, sitting, boarding, training, daycare, pet photography, massage & wellness, senior pet care, veterinary visits, and fitness. They pick a time slot or date range, pay through the app, and track the session live on a map. Providers set their availability, publish time slots, receive bookings, and get paid via Stripe Connect.
 
 Core user flows:
+
 - **Owner:** register → add pets → find a provider → book a time → pay → track in real time → review
 - **Provider:** register → set service offerings + hourly rates → configure weekly availability → publish slots → confirm bookings → start/end walk → receive payout
 
@@ -22,7 +26,8 @@ dogwalk/
 ├── backend/    # @petwalker/backend — NestJS REST + WebSocket API
 ├── web/        # @petwalker/web — Next.js 14 owner/provider web app
 ├── mobile/     # @petwalker/mobile — Expo (React Native) mobile app
-└── infra/      # Docker Compose for local dev (Postgres, Redis, MinIO, Cognito local)
+├── infra/      # Docker Compose for local dev (Postgres, Redis, MinIO, Cognito local)
+└── docs/       # this folder
 ```
 
 Managed with **pnpm workspaces** and **Turborepo**. Node ≥ 20.11, pnpm 9.12.
@@ -47,9 +52,21 @@ Managed with **pnpm workspaces** and **Turborepo**. Node ≥ 20.11, pnpm 9.12.
 
 ---
 
+## Source of truth
+
+- **App contracts** (enums, interfaces, DTOs) — `@petwalker/shared` only.
+- **Database schema** — Drizzle, in `backend/src/db/schema/`. Migrations in `backend/drizzle/migrations/` are authoritative. `infra/postgres/init/` only seeds the `pgcrypto` + `citext` extensions.
+- **Dev seeds** — `backend/src/db/seed.ts` (small fixtures) and `backend/src/db/bulk-seed.ts` (10K providers, 50K pets, 50K bookings).
+- **External services** — every key, env var and how-to-set-it-up: [`setup.md`](./setup.md). Single source of truth.
+
+Drizzle `pgEnum` definitions import value lists from `@petwalker/shared/enums`, so adding an enum value is a one-line change there. Drizzle inferred row types are suffixed `Row` (e.g. `UserRow`) so they don't shadow the shared `User` interface.
+
+---
+
 ## Features
 
 ### Bookings
+
 - Two booking modes: **time slots** (choose a pre-published discrete slot) and **date range** (multi-day or overnight, e.g. boarding)
 - Lifecycle: `pending → confirmed → in_progress → completed / cancelled`
 - Cancellation with automatic refund calculation and Stripe refund issuance
@@ -58,25 +75,30 @@ Managed with **pnpm workspaces** and **Turborepo**. Node ≥ 20.11, pnpm 9.12.
 - Accommodation flag for overnight stays at the owner's property
 
 ### Providers
+
 - Per-service offerings with hourly rate and booking mode
 - Weekly availability template (recurring time windows per day)
-- Blackout blocks (time-off, imported from external calendars via iCal)
+- Blackout blocks (time-off windows). External busy times pulled from the provider's connected Google Calendar via OAuth + freebusy.query
 - Slot auto-generation from availability template
 - Per-offering service address and supported location sources
 
 ### Payments
+
 - Stripe Connect Express for provider onboarding and payouts
 - 15% platform application fee
 - Dev mode requires zero Stripe credentials (in-process mock)
 - Stripe webhook reconciliation — booking confirmed automatically on `payment_intent.succeeded`
 - Earnings dashboard for providers
+- See [`payments.md`](./payments.md) for the full operational runbook.
 
 ### Real-time
+
 - WebSocket chat between owner and provider per booking
 - Live GPS polyline tracking during active walks (lat/lng/timestamp samples stored as JSONB)
 - Web push notifications via WebSocket; mobile push via Expo
 
 ### Other
+
 - Photo uploads for users and pets (pre-signed S3 PUT, client uploads directly)
 - Favorites — owners bookmark providers
 - Reviews — one star rating + text review per completed booking
@@ -98,7 +120,7 @@ Managed with **pnpm workspaces** and **Turborepo**. Node ≥ 20.11, pnpm 9.12.
 | `payments` | Stripe Connect onboarding, payment intents, earnings, webhooks |
 | `reviews` | Create and list reviews |
 | `favorites` | Toggle and list favorited providers |
-| `calendar` | iCal feed import and blackout sync |
+| `calendar` | Google Calendar OAuth (freebusy.query) — replaces v1 iCal feeds. See [`google-calendar-setup.md`](./google-calendar-setup.md). |
 | `notifications` | Push token registration, Expo push dispatch via BullMQ |
 | `storage` | S3/MinIO pre-signed URL generation |
 | `ws` | WebSocket gateways: chat, GPS tracking, web notifications |
@@ -112,7 +134,7 @@ Managed with **pnpm workspaces** and **Turborepo**. Node ≥ 20.11, pnpm 9.12.
 `messages` · `user_favorites` · `reviews`
 `stripe_accounts` · `payments`
 `recurring_series`
-`push_tokens` · `web_notifications` · `calendar_feeds`
+`push_tokens` · `web_notifications` · `google_oauth_tokens` · `external_busy_blocks`
 
 PostgreSQL enums: `user_role`, `booking_status`, `payment_status`, `push_platform`, `service_type`
 
@@ -120,58 +142,25 @@ Migrations are managed with Drizzle Kit (`drizzle/migrations/`). Schema changes 
 
 ---
 
-## Local development
+## Real-time architecture
 
-**Prerequisites:** Docker, Node ≥ 20.11, pnpm 9.12
-
-```bash
-# Start infrastructure (Postgres, Redis, MinIO, cognito-local, pgAdmin)
-cd infra && docker compose up -d
-
-# Install dependencies
-pnpm install
-
-# Apply migrations and seed
-pnpm --filter @petwalker/backend db:migrate
-pnpm --filter @petwalker/backend db:seed
-
-# Build shared package (required before running web or mobile)
-pnpm --filter @petwalker/shared build
-
-# Run all apps
-pnpm dev
-```
-
-Default ports: API `3001` · Web `3030` · pgAdmin `5050` · MinIO console `9001`
+- **GPS tracking** — Expo client emits position over WebSocket (`/ws/tracking`), API gateway publishes to Redis channel `walk:{id}`, owner client subscribes via WS to same channel. Pings batch-write to `gps_pings` every N seconds.
+- **Chat** — same pattern, room key `booking:{id}:chat`. Messages persisted on send, dropped to subscribers via Redis fanout. Unread counters in Redis hash.
 
 ---
 
-## Environment variables
+## Auth strategy
 
-Copy `backend/.env.example` → `backend/.env` and `web/.env.example` → `web/.env.local`. The defaults work with the Docker Compose setup out of the box.
+**Backend does NOT implement authentication. Backend only accepts authorized calls.**
 
-Key variables:
-
-| Variable | Notes |
-|---|---|
-| `DATABASE_URL` | Postgres connection string |
-| `REDIS_URL` | Redis connection string |
-| `APP_ENV` | `dev` (mock Stripe, local Cognito) or `prod` |
-| `COGNITO_USER_POOL_ID` | `local_petwalker` in dev |
-| `STRIPE_SECRET_KEY` | Leave empty in dev to use the in-process mock |
-| `AWS_S3_ENDPOINT` | Set to MinIO URL in dev |
-| `EXPO_ACCESS_TOKEN` | Required in prod for push notification delivery |
+- **Cognito does everything auth-related.** Sign-up, confirm, sign-in, refresh, sign-out, MFA, password reset, email verification — all happen client-side against Cognito's own API (`@aws-amplify/auth` on web; `@aws-amplify/auth` or `amazon-cognito-identity-js` on mobile). We never proxy any of these through our backend.
+- Once the client has a valid Cognito ID token, it sends it to the API as `Authorization: Bearer <id_token>`.
+- Backend `CognitoGuard` verifies the JWT via `aws-jwt-verify` (JWKS auto-cached) and rejects with 401 otherwise. On the first authenticated request, `AuthService.upsertUser()` creates a row in `users` keyed by `cognito_sub` — that's the only mutation in the auth path. After that, `cognito_sub` is the join key everywhere.
+- The backend has exactly **one** auth-related endpoint: `GET /auth/me`. There is no `/auth/sign-up`, `/auth/sign-in`, `/auth/refresh`, `/auth/confirm` — and there never will be.
+- We never see passwords. Cognito owns the credential lifecycle.
 
 ---
 
-## Project status
+## What's done, what's next
 
-| Milestone | Status |
-|---|---|
-| M0 — Core auth, users, pets | ✅ Done |
-| M1 — Provider profiles, availability, offerings | ✅ Done |
-| M2 — Booking creation and lifecycle | ✅ Done |
-| M3 — Live GPS tracking, messaging | ✅ Done |
-| M4 — Stripe payments | ✅ Done |
-| M5 — Push notifications, reviews, favorites | ✅ Done |
-| M6 — CI/CD, production deploy | 🔜 Planned |
+Milestone status and dependency-ordered task breakdowns are in [`roadmap.md`](./roadmap.md) — single source of truth for "what shipped" and "what's coming".

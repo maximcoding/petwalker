@@ -65,6 +65,18 @@ const RawEnvSchema = z.object({
   // --- Expo Push (M5) ---
   EXPO_ACCESS_TOKEN: optionalNonEmpty,
 
+  // --- Google Calendar OAuth ---
+  // Same Google Cloud project that backs the Cognito Google IdP — we
+  // need the *backend's* client id/secret here to do the calendar
+  // OAuth handshake (Cognito's federation only gives us the user's
+  // identity, not API tokens we can use against Google APIs).
+  GOOGLE_OAUTH_CLIENT_ID: optionalNonEmpty,
+  GOOGLE_OAUTH_CLIENT_SECRET: optionalNonEmpty,
+  /** Public callback URL — must match the redirect URI registered in Google Cloud. */
+  GOOGLE_OAUTH_REDIRECT_URI: optionalUrl,
+  /** Where the backend bounces the user after a successful (or failed) consent. */
+  GOOGLE_OAUTH_FRONTEND_RETURN_URL: optionalUrl,
+
   /** Public origin used to compose URLs (CORS, etc.). */
   PUBLIC_API_URL: z.string().url().default('http://localhost:3001'),
 });

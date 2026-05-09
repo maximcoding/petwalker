@@ -15,14 +15,31 @@ interface Props {
 /**
  * Horizontally scrollable strip of service chips.
  *
- * Single-select for now — mirrors the backend search which takes one
- * serviceType. Multi-select would require a wider search API change.
+ * Visual treatment:
+ *  - Native scrollbar hidden (Firefox + WebKit) — the row is meant to
+ *    feel like a Stories tray, not a scrollable container.
+ *  - Soft gradient masks fade chips into the right/left edges so users
+ *    intuit there's more without seeing a hard cut-off.
+ *  - Active chip uses a filled brand pill; inactive chips have no
+ *    border so the whole row reads as one tray instead of nine boxes.
  */
 export function ServiceChipRow({ value, onChange }: Props): JSX.Element {
   const { t } = useTranslation();
   return (
-    <div className="-mx-6 overflow-x-auto px-6">
-      <ul className="flex w-max gap-2 pb-1">
+    <div
+      className="-mx-1 px-1"
+      style={{
+        // Fade the last ~32px on each side so the strip clearly continues
+        // off-screen but the inner chips render at full opacity.
+        WebkitMaskImage:
+          'linear-gradient(to right, transparent 0, black 24px, black calc(100% - 24px), transparent 100%)',
+        maskImage:
+          'linear-gradient(to right, transparent 0, black 24px, black calc(100% - 24px), transparent 100%)',
+      }}
+    >
+      <ul
+        className="flex w-max gap-2 overflow-x-auto scroll-smooth py-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         {ALL_SERVICE_TYPES.map((s) => {
           const Icon = ICONS[s];
           const active = s === value;
@@ -33,13 +50,13 @@ export function ServiceChipRow({ value, onChange }: Props): JSX.Element {
                 onClick={() => onChange(s)}
                 aria-pressed={active}
                 className={[
-                  'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm transition',
+                  'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-medium transition-all',
                   active
-                    ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-200'
-                    : 'border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:text-slate-100',
+                    ? 'bg-brand-600 text-white shadow-sm hover:bg-brand-700'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700',
                 ].join(' ')}
               >
-                <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                <Icon className="h-4 w-4" aria-hidden="true" />
                 {t(`services.${s}`)}
               </button>
             </li>

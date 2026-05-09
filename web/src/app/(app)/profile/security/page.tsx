@@ -4,7 +4,6 @@ import type { User } from '@petwalker/shared/types';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
-import { Card } from '@/components/profile/card';
 import { SecuritySection } from '@/components/profile/security-section';
 import { api } from '@/lib/api';
 
@@ -12,10 +11,14 @@ import { api } from '@/lib/api';
 /**
  * Security tab.
  *
- * Auth is brokered by Cognito today, so the actual password / 2FA /
- * sessions controls are stubbed — see `SecuritySection` for the
- * placeholder rationale. The screen still ships now so the IA contract
- * is complete and links from the user menu have a real destination.
+ * Single-section page — the tab itself is "Account & security", so we
+ * render the section directly instead of wrapping it in a Card with the
+ * same title (which would say "Account & security" twice).
+ *
+ * Auth is brokered by Cognito today, so password / 2FA / sessions are
+ * stubbed; see `SecuritySection` for the placeholder rationale. The
+ * subhead lives here so the user still gets context without the
+ * duplicated H2.
  */
 export default function SecurityPage(): JSX.Element {
   const { t } = useTranslation();
@@ -35,10 +38,9 @@ export default function SecurityPage(): JSX.Element {
   }
 
   return (
-    <div className="space-y-6">
-      <Card title={t('profile.security')} hint={t('security.hint')}>
-        <SecuritySection me={me.data} />
-      </Card>
+    <div className="space-y-4">
+      <p className="text-sm text-slate-500">{t('security.hint')}</p>
+      <SecuritySection me={me.data} />
     </div>
   );
 }

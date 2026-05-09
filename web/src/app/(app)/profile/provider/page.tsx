@@ -1,6 +1,5 @@
 'use client';
 
-import { UserRole } from '@petwalker/shared/enums';
 import type { User } from '@petwalker/shared/types';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -11,6 +10,7 @@ import { AvailabilitySection } from '@/components/profile/availability-section';
 import { BlackoutsSection } from '@/components/profile/blackouts-section';
 import { Card } from '@/components/profile/card';
 import { OfferingsSection } from '@/components/profile/offerings-section';
+import { useViewMode } from '@/contexts/view-mode-context';
 import { api } from '@/lib/api';
 
 
@@ -33,19 +33,22 @@ import { api } from '@/lib/api';
 export default function ProviderPage(): JSX.Element {
   const { t } = useTranslation();
   const router = useRouter();
+  const { mode } = useViewMode();
   const me = useQuery<User>({
     queryKey: ['me'],
     queryFn: () => api.auth.me(),
   });
 
-  const isProvider =
-    me.data?.role === UserRole.Provider || me.data?.role === UserRole.Both;
+  // Gate by active view mode, not raw role. A `both` user toggling to
+  // Owner mode in the UserMenu should bounce out of /profile/provider
+  // even though their role still allows provider features.
+  const isProviderView = mode === 'provider';
 
   useEffect(() => {
-    if (me.data && !isProvider) {
+    if (me.data && !isProviderView) {
       router.replace('/profile/personal');
     }
-  }, [me.data, isProvider, router]);
+  }, [me.data, isProviderView, router]);
 
   if (me.isLoading) {
     return <p className="text-sm text-slate-500">{t('common.loading')}</p>;
@@ -53,7 +56,7 @@ export default function ProviderPage(): JSX.Element {
   if (me.error) {
     return <p className="text-sm text-red-600">Error: {(me.error as Error).message}</p>;
   }
-  if (!me.data || !isProvider) {
+  if (!me.data || !isProviderView) {
     return <p className="text-sm text-slate-500">{t('common.loading')}</p>;
   }
 

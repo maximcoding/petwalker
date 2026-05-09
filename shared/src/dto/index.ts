@@ -12,7 +12,6 @@ export * from './review.dto.js';
 export * from './payment.dto.js';
 export * from './push.dto.js';
 export * from './upload.dto.js';
-export * from './calendar.dto.js';
 export * from './free-slots.dto.js';
 export * from './favorites.dto.js';
 export * from './blackout.dto.js';

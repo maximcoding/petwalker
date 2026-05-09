@@ -1,6 +1,5 @@
 'use client';
 
-import { UserRole } from '@petwalker/shared/enums';
 import type { User } from '@petwalker/shared/types';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +8,7 @@ import { BillingHistorySection } from '@/components/profile/billing-history-sect
 import { Card } from '@/components/profile/card';
 import { PaymentMethodsSection } from '@/components/profile/payment-methods-section';
 import { StripeSection } from '@/components/profile/stripe-section';
+import { useViewMode } from '@/contexts/view-mode-context';
 import { api } from '@/lib/api';
 
 
@@ -21,6 +21,7 @@ import { api } from '@/lib/api';
  */
 export default function FinancesPage(): JSX.Element {
   const { t } = useTranslation();
+  const { mode } = useViewMode();
   const me = useQuery<User>({
     queryKey: ['me'],
     queryFn: () => api.auth.me(),
@@ -36,8 +37,9 @@ export default function FinancesPage(): JSX.Element {
     return <p className="text-sm text-slate-500">Not signed in.</p>;
   }
 
-  const isProvider =
-    me.data.role === UserRole.Provider || me.data.role === UserRole.Both;
+  // Payouts row is provider-only; gate by active view mode (not role)
+  // so a `both` user toggling to Owner mode hides it.
+  const isProviderView = mode === 'provider';
 
   return (
     <div className="space-y-6">
@@ -55,7 +57,7 @@ export default function FinancesPage(): JSX.Element {
         <BillingHistorySection />
       </Card>
 
-      {isProvider ? (
+      {isProviderView ? (
         <Card title={t('profile.payouts')}>
           <StripeSection />
         </Card>
