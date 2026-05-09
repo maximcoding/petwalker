@@ -294,8 +294,8 @@ export function BookingForm({
           );
         })() : null}
 
-        {/* Accommodation — only when service is at owner's property */}
-        {isAtOwnerProperty ? (
+        {/* Accommodation — only for date-range bookings at owner's property */}
+        {bookingMode === 'range' && isAtOwnerProperty ? (
           <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm transition hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700">
             <input
               type="checkbox"
