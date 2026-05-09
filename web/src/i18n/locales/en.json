@@ -164,13 +164,13 @@
     "provider": "Provider",
     "both": "Both",
     "current": "current",
-    "switchRoleHint": "Switch to Provider or Both to expose the provider sections below.",
+    "switchRoleHint": "Switch to Provider or Both to expose your service-provider sections.",
     "providerProfile": "Provider profile",
-    "offerings": "Offerings",
-    "weeklyAvailability": "Weekly availability",
+    "offerings": "Services",
+    "weeklyAvailability": "Working hours",
     "payouts": "Payouts (Stripe Connect)",
     "becomeProvider": "Become a provider",
-    "becomeProviderHint": "Switch your role to Provider or Both above to set up your bio, prices, and weekly schedule.",
+    "becomeProviderHint": "Switch your role to Provider or Both above to set up your bio, prices, and working hours.",
     "offeringActive": "active",
     "bookingMode": "Booking mode",
     "modeWindow": "Window — owner picks any time",
@@ -210,15 +210,19 @@
     "tabs": {
       "personal": "Personal",
       "security": "Security",
-      "provider": "Provider tools",
-      "finances": "Finances"
+      "provider": "Services",
+      "finances": "Finances",
+      "preferences": "Preferences"
     },
     "aboutMe": "About me",
     "security": "Account & security",
     "unavailability": {
-      "title": "Unavailability periods",
-      "hint": "Recurring bookings skip any dates that fall within these windows (e.g. vacations)."
-    }
+      "title": "Time off",
+      "hint": "Recurring bookings skip dates that fall in these windows (vacations, etc.)."
+    },
+    "providerProfileHint": "Public info shown on your provider listing card and detail page.",
+    "showUnconfiguredServices": "Show {{count}} more services",
+    "hideUnconfiguredServices": "Hide {{count}} unconfigured services"
   },
   "errors": {
     "generic": "Something went wrong",
@@ -354,10 +358,6 @@
     "comingSoon": "Coming soon"
   },
   "finances": {
-    "currency": {
-      "title": "Display currency",
-      "hint": "Sets the currency shown for prices and invoices."
-    },
     "paymentMethods": {
       "title": "Payment methods",
       "hint": "Save credit cards for faster checkout.",
@@ -368,5 +368,48 @@
       "hint": "Past charges and downloadable invoices.",
       "body": "Invoice PDFs and a sortable history of charges land in the next phase. Per-booking receipts are available from each booking detail page."
     }
+  },
+  "paymentMethods": {
+    "addCard": "Add card",
+    "added": "Card saved",
+    "removed": "Card removed",
+    "empty": "You haven't saved any cards yet.",
+    "default": "Default",
+    "devTag": "Dev",
+    "brandLabel": "Card brand: {{brand}}",
+    "last4": "Last 4",
+    "expMonth": "Exp month",
+    "expYear": "Exp year",
+    "makeDefault": "Make this my default card",
+    "devFormTitle": "Dev mode — fake card details (no real Stripe)",
+    "realStripeNotYetWired": "Stripe Elements integration is part of a follow-up slice. With STRIPE_SECRET_KEY set, the SetupIntent endpoint already mints real intents — hooking up the client-side Elements form is the remaining step.",
+    "confirmRemoveTitle": "Remove card?",
+    "confirmRemoveBody": "This detaches the card from your Stripe Customer. You can add it again any time."
+  },
+  "billingHistory": {
+    "empty": "No charges yet. Once you book and pay for a service, it will appear here.",
+    "date": "Date",
+    "service": "Service",
+    "counterparty": "Provider",
+    "amount": "Amount",
+    "refund": "Refund",
+    "net": "Net",
+    "status": "Status",
+    "invoice": "Invoice",
+    "invoicePdf": "Download PDF",
+    "loadMore": "Load more"
+  },
+  "preferences": {
+    "language": {
+      "title": "Language",
+      "hint": "Sets the language across the entire app. Hebrew switches the layout to right-to-left."
+    },
+    "currency": {
+      "title": "Display currency",
+      "hint": "Sets the currency shown for prices and invoices. Conversion rates are not applied."
+    }
+  },
+  "language": {
+    "hint": "Saved on this device — picked up on every page load."
   }
 }

@@ -7,8 +7,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, type PropsWithChildren } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { LangSwitcher } from '@/components/lang-switcher';
 import { NotificationBell } from '@/components/notification-bell';
+import { SiteFooter } from '@/components/site-footer';
 import { PageLoading } from '@/components/ui/spinner';
 import { UserMenu } from '@/components/user-menu';
 import { NotificationsProvider } from '@/contexts/notifications-context';
@@ -64,7 +64,7 @@ function NavBar({ me }: { me: User }): JSX.Element {
   const homeHref = mode === 'provider' ? '/feed' : '/providers';
 
   return (
-    <header className="shrink-0 border-b border-slate-200 dark:border-slate-800">
+    <header className="shrink-0 border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-3">
         <div className="flex items-center gap-6">
           <Link href={homeHref} className="font-semibold">
@@ -91,7 +91,6 @@ function NavBar({ me }: { me: User }): JSX.Element {
         </div>
         <div className="flex items-center gap-3">
           <NotificationBell />
-          <LangSwitcher />
           <UserMenu me={me} />
         </div>
       </div>
@@ -129,10 +128,12 @@ export default function AppLayout({ children }: PropsWithChildren): JSX.Element 
     return <PageLoading />;
   }
 
-  // App shell: header is fixed (shrink-0), main is overflow-hidden. Each
-  // page is given the full remaining height (h-full) and decides its own
-  // scroll layout — list pages keep their title + filters fixed and scroll
-  // only the items list, while content pages scroll their body normally.
+  // App shell: header (shrink-0) at top, main (overflow-hidden) in the
+  // middle, SiteFooter (shrink-0) pinned to the bottom of the viewport.
+  // Each page is given the full remaining height (h-full) and decides
+  // its own scroll layout — list pages keep their title + filters fixed
+  // and scroll only the items list, while content pages scroll their
+  // body normally. The footer stays out of every page's scroll area.
   return (
     <ViewModeProvider me={me.data}>
       <NotificationsProvider>
@@ -141,6 +142,7 @@ export default function AppLayout({ children }: PropsWithChildren): JSX.Element 
           <main className="flex-1 overflow-hidden">
             <div className="mx-auto h-full w-full max-w-5xl px-6">{children}</div>
           </main>
+          <SiteFooter />
         </div>
       </NotificationsProvider>
     </ViewModeProvider>

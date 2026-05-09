@@ -9,10 +9,8 @@ import { useTranslation } from 'react-i18next';
 
 import { AvailabilitySection } from '@/components/profile/availability-section';
 import { BlackoutsSection } from '@/components/profile/blackouts-section';
-import { CalendarFeedSection } from '@/components/profile/calendar-feed-section';
 import { Card } from '@/components/profile/card';
 import { OfferingsSection } from '@/components/profile/offerings-section';
-import { ServiceProfileSection } from '@/components/profile/service-profile-section';
 import { api } from '@/lib/api';
 
 
@@ -59,12 +57,14 @@ export default function ProviderPage(): JSX.Element {
     return <p className="text-sm text-slate-500">{t('common.loading')}</p>;
   }
 
+  // Provider tools = operational config only.
+  // - Public-facing provider profile (bio, base city/radius,
+  //   experience year) and external-calendar connection both live on
+  //   /profile/personal — they're account-level data, not tools.
+  // - This tab only holds the actual operational levers a provider
+  //   pulls to take work.
   return (
     <div className="space-y-6">
-      <Card title={t('profile.providerProfile')}>
-        <ServiceProfileSection />
-      </Card>
-
       <Card title={t('profile.offerings')}>
         <OfferingsSection />
       </Card>
@@ -75,10 +75,6 @@ export default function ProviderPage(): JSX.Element {
 
       <Card title={t('profile.unavailability.title')} hint={t('profile.unavailability.hint')}>
         <BlackoutsSection />
-      </Card>
-
-      <Card title={t('profile.calendar.title')} hint={t('profile.calendar.subtitle')}>
-        <CalendarFeedSection />
       </Card>
     </div>
   );

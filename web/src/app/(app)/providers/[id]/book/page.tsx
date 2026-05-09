@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 
 import { BookingForm } from '@/components/booking-form';
 import { ScrollPage } from '@/components/scroll-page';
+import { SiteFooter } from '@/components/site-footer';
 import { api } from '@/lib/api';
 
 export default function BookProviderPage(): JSX.Element {
@@ -122,29 +123,32 @@ export default function BookProviderPage(): JSX.Element {
     <div className="flex h-full flex-col overflow-hidden">
       {/* Pinned page header */}
       <div className="shrink-0 border-b border-slate-200 px-4 py-4 dark:border-slate-800 sm:px-8">
-        <div className="mx-auto max-w-5xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <Link
             href={`/providers/${id}`}
-            className="text-sm text-slate-500 hover:underline"
+            className="text-xs text-slate-400 hover:text-slate-600 hover:underline dark:hover:text-slate-300"
           >
             ← Back to {provider.data.fullName}
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold">
-            Book {t(`services.${serviceType}`)} with {provider.data.fullName}
+          <h1 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+            Book {t(`services.${serviceType}`)} · {provider.data.fullName}
           </h1>
         </div>
       </div>
 
-      {/* BookingForm fills remaining height */}
-      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-4 sm:px-8">
-        <BookingForm
-          provider={provider.data}
-          serviceType={serviceType}
-          pets={pets.data ?? []}
-          busy={busy}
-          error={err}
-          onSubmit={(v) => void createBookings(v)}
-        />
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-x-hidden overflow-y-auto">
+        <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-8">
+          <BookingForm
+            provider={provider.data}
+            serviceType={serviceType}
+            pets={pets.data ?? []}
+            busy={busy}
+            error={err}
+            onSubmit={(v) => void createBookings(v)}
+          />
+          <SiteFooter />
+        </div>
       </div>
     </div>
   );

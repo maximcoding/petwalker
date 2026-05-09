@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   HttpCode,
@@ -8,10 +9,12 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
-import type { FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import { ENV_TOKEN, type Env } from '../../config/env.js';
@@ -19,16 +22,25 @@ import { AuthService } from '../auth/auth.service.js';
 import { CognitoGuard } from '../auth/cognito.guard.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 
-import { PaymentsService, type EarningsSummary } from './payments.service.js';
+import {
+  PaymentsService,
+  type BillingHistoryPage,
+  type EarningsSummary,
+} from './payments.service.js';
 
 import {
+  BillingHistoryQuery as BillingHistoryQuerySchema,
   type CreatePaymentIntentDto,
   CreatePaymentIntentDto as CreatePaymentIntentSchema,
+  type DevAttachPaymentMethodDto,
+  DevAttachPaymentMethodDto as DevAttachPaymentMethodSchema,
 } from '@petwalker/shared';
 
 import type {
   Payment,
   PaymentIntentResponse,
+  SavedPaymentMethod,
+  SetupIntentResponse,
   StripeAccount,
   StripeConnectOnboardResponse,
 } from '@petwalker/shared';
@@ -106,6 +118,87 @@ export class PaymentsController {
   ): Promise<EarningsSummary> {
     const me = await this.auth.upsertUser(ctx.sub, ctx.email);
     return this.payments.earnings(me.id);
+  }
+
+  // ────────────── saved cards (Phase 3) ──────────────
+
+  /** Mints a SetupIntent the client can confirm via Stripe Elements. */
+  @Post('payment-methods/setup-intent')
+  @UseGuards(CognitoGuard)
+  async createSetupIntent(
+    @CurrentUser() ctx: { sub: string; email: string },
+  ): Promise<SetupIntentResponse> {
+    const me = await this.auth.upsertUser(ctx.sub, ctx.email);
+    return this.payments.createSetupIntent(me.id);
+  }
+
+  @Get('payment-methods')
+  @UseGuards(CognitoGuard)
+  async listMyPaymentMethods(
+    @CurrentUser() ctx: { sub: string; email: string },
+  ): Promise<SavedPaymentMethod[]> {
+    const me = await this.auth.upsertUser(ctx.sub, ctx.email);
+    return this.payments.listPaymentMethods(me.id);
+  }
+
+  @Delete('payment-methods/:id')
+  @UseGuards(CognitoGuard)
+  @HttpCode(204)
+  async removeMyPaymentMethod(
+    @CurrentUser() ctx: { sub: string; email: string },
+    @Param('id') paymentMethodId: string,
+  ): Promise<void> {
+    const me = await this.auth.upsertUser(ctx.sub, ctx.email);
+    await this.payments.removePaymentMethod(me.id, paymentMethodId);
+  }
+
+  /** Dev-only fast path; refused when STRIPE_SECRET_KEY is set. */
+  @Post('payment-methods/dev')
+  @UseGuards(CognitoGuard)
+  async devAttachPaymentMethod(
+    @CurrentUser() ctx: { sub: string; email: string },
+    @Body(new ZodValidationPipe(DevAttachPaymentMethodSchema)) dto: DevAttachPaymentMethodDto,
+  ): Promise<SavedPaymentMethod> {
+    const me = await this.auth.upsertUser(ctx.sub, ctx.email);
+    return this.payments.devAddPaymentMethod(me.id, dto);
+  }
+
+  /**
+   * Owner-side billing history. Cursor-paginated; the cursor is
+   * `${createdAt}|${paymentId}` and is opaque on the wire.
+   */
+  @Get('billing')
+  @UseGuards(CognitoGuard)
+  async billing(
+    @CurrentUser() ctx: { sub: string; email: string },
+    @Query(new ZodValidationPipe(BillingHistoryQuerySchema)) q: { cursor?: string; limit: number },
+  ): Promise<BillingHistoryPage> {
+    const me = await this.auth.upsertUser(ctx.sub, ctx.email);
+    return this.payments.billingHistory(me.id, q);
+  }
+
+  /**
+   * Per-booking invoice PDF. Streamed inline with a Content-Disposition
+   * filename so the browser shows it inline by default but a "Save as"
+   * grabs the right name. Owner OR provider on the booking can fetch.
+   */
+  @Get('booking/:id/invoice.pdf')
+  @UseGuards(CognitoGuard)
+  async invoicePdf(
+    @CurrentUser() ctx: { sub: string; email: string },
+    @Param('id', new ParseUUIDPipe()) bookingId: string,
+    @Res({ passthrough: false }) reply: FastifyReply,
+  ): Promise<void> {
+    const me = await this.auth.upsertUser(ctx.sub, ctx.email);
+    const pdf = await this.payments.getBookingInvoice(me.id, bookingId);
+    reply
+      .header('Content-Type', 'application/pdf')
+      .header(
+        'Content-Disposition',
+        `inline; filename="invoice-${bookingId.slice(0, 8)}.pdf"`,
+      )
+      .header('Content-Length', String(pdf.length))
+      .send(pdf);
   }
 
   // ────────────── webhook (no guard — Stripe-Signature verifies it) ──────────────

@@ -1,11 +1,24 @@
 import type {
+  BillingHistoryQuery,
   CreatePaymentIntentDto,
+  DevAttachPaymentMethodDto,
   PaymentIntentResponse,
+  SetupIntentResponse,
   StripeConnectOnboardResponse,
 } from '../../dto/payment.dto.js';
 import type { UUID } from '../../types/common.js';
-import type { Payment, StripeAccount } from '../../types/payment.js';
+import type {
+  BillingHistoryEntry,
+  Payment,
+  SavedPaymentMethod,
+  StripeAccount,
+} from '../../types/payment.js';
 import type { HttpClient } from '../http.js';
+
+export interface BillingHistoryPageDto {
+  items: BillingHistoryEntry[];
+  nextCursor: string | null;
+}
 
 export interface EarningsSummary {
   totalCents: number;
@@ -51,5 +64,48 @@ export class PaymentsApi {
    */
   devConfirm(paymentIntentId: string): Promise<void> {
     return this.http.post(`/payments/dev/confirm/${paymentIntentId}`);
+  }
+
+  // ─────── saved cards (Phase 3) ─────────────────────────────────────
+
+  /** Mints a SetupIntent for client-side Elements card collection. */
+  createSetupIntent(): Promise<SetupIntentResponse> {
+    return this.http.post('/payments/payment-methods/setup-intent');
+  }
+
+  /** Lists the user's saved cards. Returns [] when nothing's been saved. */
+  listPaymentMethods(): Promise<SavedPaymentMethod[]> {
+    return this.http.get('/payments/payment-methods');
+  }
+
+  removePaymentMethod(paymentMethodId: string): Promise<void> {
+    return this.http.delete(`/payments/payment-methods/${paymentMethodId}`);
+  }
+
+  /**
+   * Dev-only fast path — refused by the backend when STRIPE_SECRET_KEY
+   * is set. Lets the dev UI synthesize fake `pm_dev_*` methods directly
+   * without pulling Stripe.js / publishable keys.
+   */
+  devAttachPaymentMethod(body: DevAttachPaymentMethodDto): Promise<SavedPaymentMethod> {
+    return this.http.post('/payments/payment-methods/dev', body);
+  }
+
+  /** Owner-side billing history — paginated. */
+  billing(query?: Partial<BillingHistoryQuery>): Promise<BillingHistoryPageDto> {
+    const qs = new URLSearchParams();
+    if (query?.cursor) qs.set('cursor', query.cursor);
+    if (query?.limit != null) qs.set('limit', String(query.limit));
+    const suffix = qs.toString() ? `?${qs}` : '';
+    return this.http.get(`/payments/billing${suffix}`);
+  }
+
+  /**
+   * Fetches the booking-invoice PDF as raw bytes. The endpoint sits
+   * behind CognitoGuard so a plain `<a href>` won't carry auth — the UI
+   * pipes this Blob into URL.createObjectURL + `<a download>` instead.
+   */
+  invoicePdf(bookingId: UUID): Promise<Blob> {
+    return this.http.getBlob(`/payments/booking/${bookingId}/invoice.pdf`);
   }
 }

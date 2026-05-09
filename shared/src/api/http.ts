@@ -63,6 +63,25 @@ export class HttpClient {
     return this.request<T>({ method: 'DELETE', path });
   }
 
+  /**
+   * GET that returns the raw response body as a Blob. Adds the auth
+   * header like the JSON paths so endpoints behind CognitoGuard work.
+   * Use for binary downloads (PDF, images, etc.) where JSON parsing
+   * would corrupt the bytes.
+   */
+  async getBlob(path: string): Promise<Blob> {
+    const url = new URL(this.opts.baseUrl + path);
+    const headers: Record<string, string> = {};
+    const token = await this.opts.getToken?.();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await this.opts.fetch(url.toString(), { method: 'GET', headers });
+    if (!res.ok) {
+      const body = await res.text().catch(() => undefined);
+      throw new HttpError(res.status, res.statusText, body);
+    }
+    return res.blob();
+  }
+
   private async request<T>(opts: RequestOpts): Promise<T> {
     const url = new URL(this.opts.baseUrl + opts.path);
     if (opts.query) {
