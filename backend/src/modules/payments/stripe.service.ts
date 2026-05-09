@@ -72,6 +72,32 @@ export interface NormalizedWebhookEvent {
   };
 }
 
+/** Snapshot of a saved card on a Customer. */
+export interface SavedPaymentMethodSnapshot {
+  id: string;
+  brand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+  isDefault: boolean;
+}
+
+/** Result of `createSetupIntent` — same shape across real / dev. */
+export interface SetupIntentSnapshot {
+  id: string;
+  clientSecret: string;
+}
+
+/** Input for the dev-only fast path that mints a fake card. */
+export interface DevAttachPaymentMethodInput {
+  customerId: string;
+  brand: 'visa' | 'mastercard' | 'amex';
+  last4: string;
+  expMonth: number;
+  expYear: number;
+  makeDefault: boolean;
+}
+
 export const STRIPE_SERVICE = Symbol('STRIPE_SERVICE');
 
 /**
@@ -85,6 +111,16 @@ export interface StripeService {
   createConnectAccount(input: { email: string; userId: string }): Promise<StripeAccountSnapshot>;
   createAccountLink(accountId: string, returnUrl: string): Promise<{ url: string; expiresAt: Date }>;
   getAccount(accountId: string): Promise<StripeAccountSnapshot>;
+
+  // Customer + saved payment methods (Phase 3)
+  /** Idempotent — creates a Customer if userId/email haven't been seen, otherwise returns the existing id. */
+  ensureCustomer(input: { userId: string; email: string }): Promise<{ customerId: string }>;
+  /** SetupIntent for client-side card collection (Stripe Elements). */
+  createSetupIntent(input: { customerId: string }): Promise<SetupIntentSnapshot>;
+  listPaymentMethods(customerId: string): Promise<SavedPaymentMethodSnapshot[]>;
+  detachPaymentMethod(input: { customerId: string; paymentMethodId: string }): Promise<void>;
+  /** Dev-only: skip Stripe.js and synthesize a fake `pm_dev_*` directly. */
+  devAttachPaymentMethod(input: DevAttachPaymentMethodInput): Promise<SavedPaymentMethodSnapshot>;
 
   // Payment intent lifecycle
   createPaymentIntent(input: CreatePaymentIntentInput): Promise<PaymentIntentSnapshot>;
@@ -159,6 +195,72 @@ export class StripeRealService implements StripeService {
   async getAccount(accountId: string): Promise<StripeAccountSnapshot> {
     const acct = await this.stripe.accounts.retrieve(accountId);
     return this.toAccountSnapshot(acct);
+  }
+
+  async ensureCustomer(input: { userId: string; email: string }): Promise<{ customerId: string }> {
+    // We don't persist the customer id on the user row from inside this
+    // method — the caller does (so we keep this service free of DB
+    // concerns). Lookup by metadata.userId so a re-call without a stored
+    // id still finds the existing customer instead of duplicating.
+    const search = await this.stripe.customers.search({
+      query: `metadata['userId']:'${input.userId}'`,
+      limit: 1,
+    });
+    const existing = search.data[0];
+    if (existing) return { customerId: existing.id };
+    const created = await this.stripe.customers.create({
+      email: input.email,
+      metadata: { userId: input.userId },
+    });
+    return { customerId: created.id };
+  }
+
+  async createSetupIntent(input: { customerId: string }): Promise<SetupIntentSnapshot> {
+    const si = await this.stripe.setupIntents.create({
+      customer: input.customerId,
+      payment_method_types: ['card'],
+      usage: 'off_session',
+    });
+    return { id: si.id, clientSecret: si.client_secret ?? '' };
+  }
+
+  async listPaymentMethods(customerId: string): Promise<SavedPaymentMethodSnapshot[]> {
+    const [methodsResp, customer] = await Promise.all([
+      this.stripe.paymentMethods.list({ customer: customerId, type: 'card', limit: 20 }),
+      this.stripe.customers.retrieve(customerId),
+    ]);
+    const defaultId =
+      'invoice_settings' in customer
+        ? typeof customer.invoice_settings?.default_payment_method === 'string'
+          ? customer.invoice_settings.default_payment_method
+          : (customer.invoice_settings?.default_payment_method?.id ?? null)
+        : null;
+    return methodsResp.data
+      .filter((pm) => pm.card != null)
+      .map((pm) => ({
+        id: pm.id,
+        brand: pm.card!.brand,
+        last4: pm.card!.last4,
+        expMonth: pm.card!.exp_month,
+        expYear: pm.card!.exp_year,
+        isDefault: pm.id === defaultId,
+      }));
+  }
+
+  async detachPaymentMethod(input: {
+    customerId: string;
+    paymentMethodId: string;
+  }): Promise<void> {
+    await this.stripe.paymentMethods.detach(input.paymentMethodId);
+  }
+
+  async devAttachPaymentMethod(): Promise<SavedPaymentMethodSnapshot> {
+    // Real Stripe never mints fake PMs — the controller refuses the call
+    // before it reaches us. This branch exists only to satisfy the
+    // interface; throwing keeps the contract honest if called directly.
+    throw new InternalServerErrorException(
+      'devAttachPaymentMethod is not available with real Stripe',
+    );
   }
 
   async createPaymentIntent(input: CreatePaymentIntentInput): Promise<PaymentIntentSnapshot> {
@@ -302,6 +404,28 @@ interface DevPaymentIntent {
   refundedCents: number;
 }
 
+interface DevCustomer {
+  id: string;
+  userId: string;
+  email: string;
+  /** Currently-default payment method id, or null. */
+  defaultPaymentMethodId: string | null;
+}
+
+interface DevPaymentMethod {
+  id: string;
+  customerId: string;
+  brand: 'visa' | 'mastercard' | 'amex';
+  last4: string;
+  expMonth: number;
+  expYear: number;
+}
+
+interface DevSetupIntent {
+  id: string;
+  customerId: string;
+}
+
 const DEV_WEBHOOK_DELAY_MS = 800;
 
 @Injectable()
@@ -310,6 +434,13 @@ export class StripeDevService implements StripeService {
   private readonly events = new EventEmitter();
   private readonly accounts = new Map<string, DevAccount>(); // by accountId
   private readonly intents = new Map<string, DevPaymentIntent>(); // by intentId
+  // Customer + payment-method state for the saved-cards flow (Phase 3).
+  // Kept in maps keyed by id; the userId↔customerId relationship is
+  // mirrored through `customersByUser` so ensureCustomer is O(1).
+  private readonly customers = new Map<string, DevCustomer>(); // by customerId
+  private readonly customersByUser = new Map<string, string>(); // userId → customerId
+  private readonly paymentMethods = new Map<string, DevPaymentMethod>(); // by paymentMethodId
+  private readonly setupIntents = new Map<string, DevSetupIntent>(); // by setupIntentId
 
   constructor(@Inject(ENV_TOKEN) private readonly env: Env) {
     this.logger.log('Stripe DEV mode — fake IDs, in-process webhooks, no network');
@@ -373,6 +504,90 @@ export class StripeDevService implements StripeService {
     const acct = this.accounts.get(accountId);
     if (!acct) throw new InternalServerErrorException('Unknown dev account');
     return this.toSnapshot(acct);
+  }
+
+  async ensureCustomer(input: { userId: string; email: string }): Promise<{ customerId: string }> {
+    const existing = this.customersByUser.get(input.userId);
+    if (existing) return { customerId: existing };
+    const id = `cus_dev_${randomUUID().slice(0, 10)}`;
+    this.customers.set(id, {
+      id,
+      userId: input.userId,
+      email: input.email,
+      defaultPaymentMethodId: null,
+    });
+    this.customersByUser.set(input.userId, id);
+    return { customerId: id };
+  }
+
+  async createSetupIntent(input: { customerId: string }): Promise<SetupIntentSnapshot> {
+    if (!this.customers.has(input.customerId)) {
+      throw new InternalServerErrorException('Unknown dev customer');
+    }
+    const id = `seti_dev_${randomUUID().slice(0, 12)}`;
+    this.setupIntents.set(id, { id, customerId: input.customerId });
+    return { id, clientSecret: `${id}_secret_dev` };
+  }
+
+  async listPaymentMethods(customerId: string): Promise<SavedPaymentMethodSnapshot[]> {
+    const customer = this.customers.get(customerId);
+    if (!customer) return [];
+    return [...this.paymentMethods.values()]
+      .filter((pm) => pm.customerId === customerId)
+      .map((pm) => ({
+        id: pm.id,
+        brand: pm.brand,
+        last4: pm.last4,
+        expMonth: pm.expMonth,
+        expYear: pm.expYear,
+        isDefault: customer.defaultPaymentMethodId === pm.id,
+      }));
+  }
+
+  async detachPaymentMethod(input: {
+    customerId: string;
+    paymentMethodId: string;
+  }): Promise<void> {
+    const pm = this.paymentMethods.get(input.paymentMethodId);
+    if (!pm || pm.customerId !== input.customerId) return;
+    this.paymentMethods.delete(input.paymentMethodId);
+    const customer = this.customers.get(input.customerId);
+    if (customer && customer.defaultPaymentMethodId === input.paymentMethodId) {
+      // Promote a remaining card to default to keep the contract simple
+      // (every customer with ≥1 card has a default). Picks the
+      // arbitrary first one — the UI surfaces a "Make default" affordance
+      // for explicit choice.
+      const next = [...this.paymentMethods.values()].find((p) => p.customerId === input.customerId);
+      customer.defaultPaymentMethodId = next?.id ?? null;
+    }
+  }
+
+  async devAttachPaymentMethod(
+    input: DevAttachPaymentMethodInput,
+  ): Promise<SavedPaymentMethodSnapshot> {
+    const customer = this.customers.get(input.customerId);
+    if (!customer) throw new InternalServerErrorException('Unknown dev customer');
+    const id = `pm_dev_${randomUUID().slice(0, 12)}`;
+    this.paymentMethods.set(id, {
+      id,
+      customerId: input.customerId,
+      brand: input.brand,
+      last4: input.last4,
+      expMonth: input.expMonth,
+      expYear: input.expYear,
+    });
+    // First card auto-becomes default; explicit makeDefault overrides.
+    if (input.makeDefault || customer.defaultPaymentMethodId == null) {
+      customer.defaultPaymentMethodId = id;
+    }
+    return {
+      id,
+      brand: input.brand,
+      last4: input.last4,
+      expMonth: input.expMonth,
+      expYear: input.expYear,
+      isDefault: customer.defaultPaymentMethodId === id,
+    };
   }
 
   async createPaymentIntent(input: CreatePaymentIntentInput): Promise<PaymentIntentSnapshot> {

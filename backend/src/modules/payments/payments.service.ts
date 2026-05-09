@@ -16,10 +16,12 @@ import {
   bookings,
   payments,
   stripeAccounts,
+  users,
   type PaymentRow,
   type StripeAccountRow,
 } from '../../db/schema/index.js';
 
+import { buildInvoicePdf } from './invoice-pdf.js';
 import { mapPaymentRow, mapStripeAccountRow } from './payment.mapper.js';
 import {
   STRIPE_SERVICE,
@@ -29,7 +31,16 @@ import {
 
 import { PaymentStatus } from '@petwalker/shared/enums';
 
-import type { Payment, StripeAccount, UUID } from '@petwalker/shared';
+import type {
+  BillingHistoryEntry,
+  BillingHistoryQuery,
+  DevAttachPaymentMethodDto,
+  Payment,
+  SavedPaymentMethod,
+  SetupIntentResponse,
+  StripeAccount,
+  UUID,
+} from '@petwalker/shared';
 
 const APPLICATION_FEE_PCT = 0.15; // matches cancellation-policy.ts
 
@@ -47,6 +58,12 @@ export interface EarningsSummary {
   totalCents: number;
   payoutCents: number;
   payments: Payment[];
+}
+
+export interface BillingHistoryPage {
+  items: BillingHistoryEntry[];
+  /** Opaque cursor — feed to next call as `cursor`. Null when at end. */
+  nextCursor: string | null;
 }
 
 @Injectable()
@@ -373,4 +390,275 @@ export class PaymentsService implements OnModuleInit {
       .where(eq(stripeAccounts.userId, userId));
     return (row as StripeAccountRow | undefined) ?? null;
   }
+
+  // ─────── saved cards (Phase 3) ───────────────────────────────────────
+
+  /**
+   * Look up the user's Stripe Customer id, minting one (and persisting
+   * it on the user row) the first time. Same idempotency guarantee as
+   * the underlying StripeService.ensureCustomer.
+   */
+  private async ensureCustomerForUser(userId: UUID): Promise<string> {
+    const [row] = await this.db
+      .select({
+        id: users.id,
+        email: users.email,
+        stripeCustomerId: users.stripeCustomerId,
+      })
+      .from(users)
+      .where(eq(users.id, userId));
+    if (!row) throw new NotFoundException('User not found');
+    if (row.stripeCustomerId) return row.stripeCustomerId;
+
+    const { customerId } = await this.stripe.ensureCustomer({
+      userId: row.id,
+      email: row.email,
+    });
+    await this.db
+      .update(users)
+      .set({ stripeCustomerId: customerId, updatedAt: sql`now()` })
+      .where(eq(users.id, userId));
+    return customerId;
+  }
+
+  async createSetupIntent(userId: UUID): Promise<SetupIntentResponse> {
+    const customerId = await this.ensureCustomerForUser(userId);
+    const si = await this.stripe.createSetupIntent({ customerId });
+    return {
+      setupIntentId: si.id,
+      clientSecret: si.clientSecret,
+      dev: this.stripe.isDevMode(),
+    };
+  }
+
+  async listPaymentMethods(userId: UUID): Promise<SavedPaymentMethod[]> {
+    // Don't auto-mint a customer for a read — if the user has never
+    // started the add-card flow they have nothing saved, return [].
+    const [row] = await this.db
+      .select({ stripeCustomerId: users.stripeCustomerId })
+      .from(users)
+      .where(eq(users.id, userId));
+    if (!row?.stripeCustomerId) return [];
+    const list = await this.stripe.listPaymentMethods(row.stripeCustomerId);
+    return list.map((pm) => ({ ...pm, dev: this.stripe.isDevMode() }));
+  }
+
+  async removePaymentMethod(userId: UUID, paymentMethodId: string): Promise<void> {
+    const [row] = await this.db
+      .select({ stripeCustomerId: users.stripeCustomerId })
+      .from(users)
+      .where(eq(users.id, userId));
+    if (!row?.stripeCustomerId) {
+      throw new NotFoundException('No saved cards on this account');
+    }
+    await this.stripe.detachPaymentMethod({
+      customerId: row.stripeCustomerId,
+      paymentMethodId,
+    });
+  }
+
+  async devAddPaymentMethod(
+    userId: UUID,
+    dto: DevAttachPaymentMethodDto,
+  ): Promise<SavedPaymentMethod> {
+    if (!this.stripe.isDevMode()) {
+      throw new ForbiddenException(
+        'Dev card-attach is only available when STRIPE_SECRET_KEY is unset',
+      );
+    }
+    const customerId = await this.ensureCustomerForUser(userId);
+    const pm = await this.stripe.devAttachPaymentMethod({
+      customerId,
+      brand: dto.brand,
+      last4: dto.last4,
+      expMonth: dto.expMonth,
+      expYear: dto.expYear,
+      makeDefault: dto.makeDefault ?? false,
+    });
+    return { ...pm, dev: true };
+  }
+
+  // ─────── billing history (Phase 3) ──────────────────────────────────
+
+  /**
+   * Owner-side view of past payments. Joins payments → bookings to pull
+   * the service type and the provider as the "counterparty". Cursor
+   * pagination uses `(createdAt DESC, id DESC)` for stable ordering even
+   * when multiple rows share a timestamp.
+   *
+   * The cursor is `${createdAt.toISOString()}|${id}` opaquely — callers
+   * treat it as a string. Decoding here lives in `parseBillingCursor` so
+   * any future change to the ordering tuple is one-line.
+   */
+  async billingHistory(userId: UUID, q: BillingHistoryQuery): Promise<BillingHistoryPage> {
+    const limit = q.limit;
+    const cursor = q.cursor ? parseBillingCursor(q.cursor) : null;
+
+    // Drizzle's typed query builder doesn't give us a clean way to do
+    // "WHERE (created_at, id) < ($cursorAt, $cursorId)" without leaving
+    // the ORM, so we lower to raw SQL for the cursor predicate. Bound
+    // params via sql.placeholder/raw to stay injection-safe.
+    const cursorPredicate = cursor
+      ? sql`AND (p.created_at, p.id) < (${cursor.createdAt}::timestamptz, ${cursor.id}::uuid)`
+      : sql``;
+
+    type Row = {
+      paymentId: string;
+      bookingId: string;
+      occurredAt: Date;
+      amountCents: number;
+      refundedCents: number;
+      currency: string;
+      status: string;
+      serviceType: string;
+      counterpartyName: string | null;
+    };
+
+    const rows = (await this.db.execute(sql`
+      SELECT
+        p.id            AS "paymentId",
+        p.booking_id    AS "bookingId",
+        p.created_at    AS "occurredAt",
+        p.amount_cents  AS "amountCents",
+        p.refunded_cents AS "refundedCents",
+        p.currency      AS "currency",
+        p.status        AS "status",
+        b.service_type  AS "serviceType",
+        u.full_name     AS "counterpartyName"
+      FROM payments p
+      JOIN bookings b ON b.id = p.booking_id
+      JOIN users u    ON u.id = b.provider_id
+      WHERE b.owner_id = ${userId}::uuid
+      ${cursorPredicate}
+      ORDER BY p.created_at DESC, p.id DESC
+      LIMIT ${limit + 1}
+    `)) as unknown as Row[];
+
+    const hasMore = rows.length > limit;
+    const slice = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor =
+      hasMore && slice.length > 0
+        ? makeBillingCursor(slice[slice.length - 1]!.occurredAt, slice[slice.length - 1]!.paymentId)
+        : null;
+
+    const items: BillingHistoryEntry[] = slice.map((r) => ({
+      paymentId: r.paymentId,
+      bookingId: r.bookingId,
+      occurredAt: r.occurredAt.toISOString(),
+      amountCents: r.amountCents,
+      refundedCents: r.refundedCents,
+      netCents: r.amountCents - r.refundedCents,
+      currency: r.currency,
+      status: r.status as BillingHistoryEntry['status'],
+      serviceType: r.serviceType,
+      counterpartyName: r.counterpartyName,
+    }));
+
+    return { items, nextCursor };
+  }
+}
+
+function makeBillingCursor(createdAt: Date, id: string): string {
+  return `${createdAt.toISOString()}|${id}`;
+}
+
+/**
+ * Bound on the prototype so the controller can stay thin. Lives outside
+ * the class as a free helper because tsc treats class augmentations as
+ * second-class — and the inline body would dwarf the controller.
+ */
+declare module './payments.service.js' {
+  interface PaymentsService {
+    getBookingInvoice(viewerId: UUID, bookingId: UUID): Promise<Buffer>;
+  }
+}
+
+PaymentsService.prototype.getBookingInvoice = async function getBookingInvoice(
+  this: PaymentsService,
+  viewerId: UUID,
+  bookingId: UUID,
+): Promise<Buffer> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = (this as unknown as { db: Database }).db;
+  type Row = {
+    bookingId: string;
+    ownerId: string;
+    providerId: string;
+    serviceType: string;
+    durationMin: number;
+    priceCents: number;
+    refundCents: number;
+    appFeeCents: number;
+    providerFeeCents: number;
+    scheduledAt: Date;
+    createdAt: Date;
+    ownerName: string | null;
+    ownerEmail: string;
+    providerName: string | null;
+    providerEmail: string;
+  };
+  const rows = (await db.execute(sql`
+    SELECT
+      b.id              AS "bookingId",
+      b.owner_id        AS "ownerId",
+      b.provider_id     AS "providerId",
+      b.service_type    AS "serviceType",
+      b.duration_min    AS "durationMin",
+      b.price_cents     AS "priceCents",
+      b.refund_cents    AS "refundCents",
+      b.app_fee_cents   AS "appFeeCents",
+      b.provider_fee_cents AS "providerFeeCents",
+      b.scheduled_at    AS "scheduledAt",
+      b.created_at      AS "createdAt",
+      ou.full_name      AS "ownerName",
+      ou.email          AS "ownerEmail",
+      pu.full_name      AS "providerName",
+      pu.email          AS "providerEmail"
+    FROM bookings b
+    JOIN users ou ON ou.id = b.owner_id
+    JOIN users pu ON pu.id = b.provider_id
+    WHERE b.id = ${bookingId}::uuid
+    LIMIT 1
+  `)) as unknown as Row[];
+
+  const row = rows[0];
+  if (!row) throw new NotFoundException('Booking not found');
+  if (row.ownerId !== viewerId && row.providerId !== viewerId) {
+    throw new ForbiddenException('Not your booking');
+  }
+
+  const fmtMoney = (cents: number): string => `$${(cents / 100).toFixed(2)}`;
+  const lines = [
+    {
+      label: `${row.serviceType.replace('_', ' ')} — ${row.durationMin} min`,
+      amount: fmtMoney(row.priceCents),
+    },
+  ];
+  const refundLabel = row.refundCents > 0 ? 'Refund' : undefined;
+  const refundAmount = row.refundCents > 0 ? `−${fmtMoney(row.refundCents)}` : undefined;
+  const totalCents = row.priceCents - row.refundCents;
+
+  return buildInvoicePdf({
+    invoiceNumber: row.bookingId.slice(0, 8).toUpperCase(),
+    issuedAt: row.createdAt.toISOString().slice(0, 10),
+    ownerName: row.ownerName ?? row.ownerEmail,
+    ownerEmail: row.ownerEmail,
+    providerName: row.providerName ?? row.providerEmail,
+    providerEmail: row.providerEmail,
+    lines,
+    refundLabel,
+    refundAmount,
+    totalLabel: 'Total',
+    totalAmount: fmtMoney(totalCents),
+    footerNote: 'Thank you for using petwalker.',
+  });
+};
+
+function parseBillingCursor(raw: string): { createdAt: string; id: string } | null {
+  const idx = raw.lastIndexOf('|');
+  if (idx === -1) return null;
+  const createdAt = raw.slice(0, idx);
+  const id = raw.slice(idx + 1);
+  if (!createdAt || !id) return null;
+  return { createdAt, id };
 }
