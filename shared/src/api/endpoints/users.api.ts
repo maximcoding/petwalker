@@ -1,4 +1,3 @@
-import type { CreateBlackoutDto } from '../../dto/blackout.dto.js';
 import type { ReplaceAvailabilityDto } from '../../dto/availability.dto.js';
 import type {
   UpsertServiceOfferingDto,
@@ -6,7 +5,6 @@ import type {
 } from '../../dto/service-provider.dto.js';
 import type { UpdateUserDto } from '../../dto/user.dto.js';
 import type { AvailabilitySlot } from '../../types/availability.js';
-import type { ProviderBlackout } from '../../types/blackout.js';
 import type { ServiceOffering, ServiceProviderProfile } from '../../types/service-provider.js';
 import type { User } from '../../types/user.js';
 import type { HttpClient } from '../http.js';
@@ -56,18 +54,5 @@ export class UsersApi {
 
   replaceAvailability(body: ReplaceAvailabilityDto): Promise<AvailabilitySlot[]> {
     return this.http.put('/users/me/availability', body);
-  }
-
-  /** Provider unavailability windows (vacations, blocked dates). */
-  listBlackouts(): Promise<ProviderBlackout[]> {
-    return this.http.get('/users/me/blackouts');
-  }
-
-  createBlackout(body: CreateBlackoutDto): Promise<ProviderBlackout> {
-    return this.http.post('/users/me/blackouts', body);
-  }
-
-  deleteBlackout(id: string): Promise<void> {
-    return this.http.delete(`/users/me/blackouts/${id}`);
   }
 }

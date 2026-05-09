@@ -21,8 +21,6 @@ import { CurrentUser } from '../auth/current-user.decorator.js';
 import { UsersService } from './users.service.js';
 
 import {
-  CreateBlackoutSchema,
-  type CreateBlackoutDto,
   type ReplaceAvailabilityDto,
   ReplaceAvailabilityDto as ReplaceAvailabilitySchema,
   type UpdateUserDto,
@@ -35,7 +33,6 @@ import {
 import { type ServiceType, SERVICE_TYPES } from '@petwalker/shared/enums';
 import type {
   AvailabilitySlot,
-  ProviderBlackout,
   ServiceOffering,
   ServiceProviderProfile,
   User,
@@ -148,34 +145,5 @@ export class UsersController {
   ): Promise<AvailabilitySlot[]> {
     const me = await this.auth.upsertUser(ctx.sub, ctx.email);
     return this.users.replaceAvailability(me.id, dto);
-  }
-
-  // ---- blackouts -------------------------------------------------------
-
-  @Get('me/blackouts')
-  async listBlackouts(
-    @CurrentUser() ctx: { sub: string; email: string },
-  ): Promise<ProviderBlackout[]> {
-    const me = await this.auth.upsertUser(ctx.sub, ctx.email);
-    return this.users.listBlackouts(me.id);
-  }
-
-  @Post('me/blackouts')
-  async createBlackout(
-    @CurrentUser() ctx: { sub: string; email: string },
-    @Body(new ZodValidationPipe(CreateBlackoutSchema)) dto: CreateBlackoutDto,
-  ): Promise<ProviderBlackout> {
-    const me = await this.auth.upsertUser(ctx.sub, ctx.email);
-    return this.users.createBlackout(me.id, dto);
-  }
-
-  @Delete('me/blackouts/:id')
-  @HttpCode(204)
-  async deleteBlackout(
-    @CurrentUser() ctx: { sub: string; email: string },
-    @Param('id') id: string,
-  ): Promise<void> {
-    const me = await this.auth.upsertUser(ctx.sub, ctx.email);
-    await this.users.deleteBlackout(me.id, id);
   }
 }
