@@ -15,3 +15,4 @@ export * from './upload.dto.js';
 export * from './calendar.dto.js';
 export * from './free-slots.dto.js';
 export * from './favorites.dto.js';
+export * from './blackout.dto.js';

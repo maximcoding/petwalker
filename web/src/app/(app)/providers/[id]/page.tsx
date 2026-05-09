@@ -125,9 +125,14 @@ export default function ProviderDetailPage(): JSX.Element {
                         <p className="text-sm text-slate-500">{formatHourly(o.hourlyRateCents)}</p>
                       </div>
                     </div>
-                    <Link href={`/providers/${p.userId}/book?service=${o.serviceType}`}>
-                      <Button>Book</Button>
-                    </Link>
+                    <div className="flex gap-2">
+                      <Link href={`/providers/${p.userId}/book?service=${o.serviceType}`}>
+                        <Button variant="secondary">Book once</Button>
+                      </Link>
+                      <Link href={`/bookings/recurring/new?providerId=${p.userId}&service=${o.serviceType}`}>
+                        <Button>Book recurring</Button>
+                      </Link>
+                    </div>
                   </li>
                 );
               })}

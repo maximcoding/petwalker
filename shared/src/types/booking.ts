@@ -26,6 +26,8 @@ export interface Booking {
   address: Address;
   /** Where `address` was sourced from on create. */
   addressSource: AddressSource;
+  /** Owner provides accommodation at their property (overnight/multi-day). */
+  withAccommodation: boolean;
 
   // Cancellation outcome — populated on cancel; M4 (payments) acts on these.
   cancelledBy?: CancelledBy | null;

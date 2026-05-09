@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { OLIVIA_EMAIL, signIn } from './fixtures/auth';
+import { signIn } from './fixtures/auth';
 
 /**
  * Smoke tests — anything that goes wrong here invalidates the rest of
@@ -16,12 +16,13 @@ test.describe('smoke + auth', () => {
     await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
   });
 
-  test('Olivia signs in and lands on /me', async ({ page }) => {
+  test('Olivia signs in and lands on /providers', async ({ page }) => {
     await signIn(page);
-    // /me should render a greeting that includes either Olivia's name or
-    // her email (the page falls back to email when fullName is null).
-    const greeting = page.getByRole('heading', { level: 1 });
-    await expect(greeting).toContainText(/Welcome,/i);
-    await expect(greeting).toContainText(new RegExp(OLIVIA_EMAIL.split('@')[0]!, 'i'));
+    // After Phase 1 the post-sign-in landing is /providers. Confirm the
+    // URL and that the page mounted (the header nav is asserted inside
+    // signIn, so the H1 here is just a sanity check on the destination).
+    await expect(page).toHaveURL(/\/providers(\?|$)/);
+    const heading = page.getByRole('heading', { level: 1 });
+    await expect(heading).toBeVisible();
   });
 });
