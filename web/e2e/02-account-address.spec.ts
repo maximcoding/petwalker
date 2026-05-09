@@ -3,15 +3,19 @@ import { expect, test } from '@playwright/test';
 import { signIn } from './fixtures/auth';
 
 /**
- * The Account section on /profile gained an address textarea in Slice 1.
- * Verify it round-trips: type something, save, reload, the value is
- * still there. Also confirms the user.address field is being persisted
- * through the API and re-read by the form.
+ * The Account section on /profile/personal has an address textarea
+ * (added in Slice 1; tab moved in Phase 2). Verify it round-trips:
+ * type something, save, reload, the value is still there. Also
+ * confirms the user.address field is being persisted through the API
+ * and re-read by the form.
+ *
+ * `/profile` redirects to `/profile/personal` so either URL works as
+ * an entry point.
  */
 test.describe('account home address', () => {
   test('save and round-trip', async ({ page }) => {
     await signIn(page);
-    await page.goto('/profile');
+    await page.goto('/profile/personal');
 
     // The "Account" card renders the AddressField with label
     // "Home address" — see web/src/i18n/locales/en.json (address.homeLabel).
@@ -32,7 +36,7 @@ test.describe('account home address', () => {
 
   test('clearing the field saves null', async ({ page }) => {
     await signIn(page);
-    await page.goto('/profile');
+    await page.goto('/profile/personal');
 
     // Set then clear, then save — this exercises the tri-state semantics
     // the backend uses for `address: null` (clear) vs `address: undefined`

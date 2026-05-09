@@ -1,16 +1,42 @@
 {
   "nav": {
-    "me": "Me",
     "pets": "Pets",
     "providers": "Find a provider",
     "favorites": "Favorites",
     "bookings": "Bookings",
+    "myBookings": "My bookings",
+    "managedBookings": "Managed bookings",
+    "feed": "Order feed",
+    "messages": "Messages",
     "profile": "Profile",
     "signOut": "Sign out",
     "signIn": "Sign in",
     "signUp": "Sign up",
     "createOne": "Create one",
     "noAccount": "No account?"
+  },
+  "userMenu": {
+    "openLabel": "Open user menu",
+    "profile": "Profile & settings",
+    "switchTo": {
+      "owner": "Switch to Owner mode",
+      "provider": "Switch to Provider mode"
+    },
+    "currentMode": {
+      "owner": "Owner",
+      "provider": "Provider"
+    }
+  },
+  "feed": {
+    "title": "Order feed",
+    "comingSoonTag": "Coming soon",
+    "placeholderBody": "Open booking requests from owners will appear here. You'll be able to review the request, see the dog and the owner's profile, and submit a bid."
+  },
+  "messages": {
+    "title": "Messages",
+    "comingSoonTag": "Coming soon",
+    "placeholderBody": "A unified inbox is on the way. For now, every booking has its own chat thread — open a booking to talk with the other party.",
+    "openBookings": "Go to bookings"
   },
   "auth": {
     "signInTitle": "Sign in",
@@ -43,7 +69,8 @@
     "notes": "Notes",
     "language": "Language",
     "add": "Add",
-    "remove": "Remove"
+    "remove": "Remove",
+    "comingSoon": "Coming soon"
   },
   "pets": {
     "title": "My pets",
@@ -178,6 +205,19 @@
       "lastError": "Last error",
       "syncedCount_one": "Synced {{count}} event",
       "syncedCount_other": "Synced {{count}} events"
+    },
+    "tabsLabel": "Profile sections",
+    "tabs": {
+      "personal": "Personal",
+      "security": "Security",
+      "provider": "Provider tools",
+      "finances": "Finances"
+    },
+    "aboutMe": "About me",
+    "security": "Account & security",
+    "unavailability": {
+      "title": "Unavailability periods",
+      "hint": "Recurring bookings skip any dates that fall within these windows (e.g. vacations)."
     }
   },
   "errors": {
@@ -281,5 +321,52 @@
     "title": "Notifications",
     "markAllRead": "Mark all read",
     "empty": "No notifications yet"
+  },
+  "aboutMe": {
+    "label": "About me",
+    "placeholder": "Tell other pet parents a bit about yourself, your experience, and how you care for animals.",
+    "hint": "Shown on your public profile and provider listing card.",
+    "empty": "You haven't added a bio yet.",
+    "add": "Add bio",
+    "charCount": "{{remaining}} characters left"
+  },
+  "currency": {
+    "label": "Display currency",
+    "hint": "Used for prices and invoices across the app. You can change this any time.",
+    "codes": {
+      "USD": "US Dollar (USD)",
+      "EUR": "Euro (EUR)",
+      "ILS": "Israeli Shekel (ILS)"
+    }
+  },
+  "security": {
+    "hint": "Manage how you sign in and what devices have access to your account.",
+    "email": "Email address",
+    "emailHint": "Used to sign in. To change it, contact support.",
+    "linkedAccount": "Linked account ID",
+    "linkedAccountHint": "Internal identifier from your authentication provider. Useful when contacting support.",
+    "password": "Password",
+    "passwordHint": "Change the password you use to sign in.",
+    "twoFactor": "Two-factor authentication",
+    "twoFactorHint": "Add a one-time code from an authenticator app for stronger sign-in security.",
+    "sessions": "Active sessions",
+    "sessionsHint": "Review devices currently signed in to your account and sign them out remotely.",
+    "comingSoon": "Coming soon"
+  },
+  "finances": {
+    "currency": {
+      "title": "Display currency",
+      "hint": "Sets the currency shown for prices and invoices."
+    },
+    "paymentMethods": {
+      "title": "Payment methods",
+      "hint": "Save credit cards for faster checkout.",
+      "body": "Credit-card vaulting via Stripe SetupIntent isn't wired up yet — for now, payment is collected at booking time."
+    },
+    "billingHistory": {
+      "title": "Billing history",
+      "hint": "Past charges and downloadable invoices.",
+      "body": "Invoice PDFs and a sortable history of charges land in the next phase. Per-booking receipts are available from each booking detail page."
+    }
   }
 }

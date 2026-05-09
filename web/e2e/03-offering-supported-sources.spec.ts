@@ -9,21 +9,24 @@ import { signIn } from './fixtures/auth';
  *   - selections round-trip through save + reload
  *
  * Olivia is bootstrapped as `role: 'owner'` by the seed; promote her to
- * `both` so the Offerings section is visible. We do this via the same
- * /profile UI to keep the test honest about real user paths.
+ * `both` so the Provider tools tab becomes available. The role toggle
+ * lives on /profile/personal (Phase 2 IA refactor); Offerings live on
+ * /profile/provider. We bounce between the two via the real UI to keep
+ * the test honest about user paths.
  */
 test.describe('offering supported sources', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page);
-    await page.goto('/profile');
-    // Switch to Both so provider sections render. Idempotent: clicking
-    // "Both" twice is fine.
+    await page.goto('/profile/personal');
+    // Switch to Both so the Provider tools tab + sections become available.
+    // Idempotent: clicking "Both" twice is fine.
     const bothBtn = page.getByRole('button', { name: /^both$/i });
     if (await bothBtn.isVisible().catch(() => false)) {
       await bothBtn.click();
-      // Wait for the Offerings card to appear after the role flip.
-      await expect(page.getByRole('heading', { name: /offerings/i })).toBeVisible();
     }
+    // Provider tools live on their own sub-route now.
+    await page.goto('/profile/provider');
+    await expect(page.getByRole('heading', { name: /offerings/i })).toBeVisible();
   });
 
   test('three supported-source checkboxes render on each offering row', async ({ page }) => {

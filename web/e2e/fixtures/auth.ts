@@ -15,8 +15,8 @@ export const OLIVIA_PASSWORD =
  * Sign in via the UI. Uses the email/password fields directly — selectors
  * key off the visible label text so they don't break when classNames change.
  *
- * Returns once the post-sign-in route (/me) has rendered. Throws via
- * Playwright's expect if anything along the way doesn't behave.
+ * Returns once the post-sign-in landing route (/providers) has rendered.
+ * Throws via Playwright's expect if anything along the way doesn't behave.
  */
 export async function signIn(
   page: Page,
@@ -27,9 +27,11 @@ export async function signIn(
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: /sign in/i }).click();
-  // After auth Next.js pushes /me. Wait for the URL change explicitly so
+  // After the IA refactor (Phase 1), sign-in pushes to /providers — the
+  // owner's default landing page. Wait for the URL change explicitly so
   // we don't race the page-load below.
-  await page.waitForURL(/\/me$/, { timeout: 15_000 });
-  // Smoke: header nav should mount once /me renders.
+  await page.waitForURL(/\/providers(\?|$)/, { timeout: 15_000 });
+  // Smoke: header nav should mount once the (app) shell renders. "Pets"
+  // is owner-mode only and Olivia is a seeded owner.
   await expect(page.getByRole('link', { name: /pets/i })).toBeVisible();
 }

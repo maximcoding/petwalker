@@ -5,10 +5,12 @@ import { DRIZZLE_DB } from '../../database/database.module.js';
 import type { Database } from '../../db/client.js';
 import {
   providerAvailability,
+  providerBlackouts,
   providerServiceOfferings,
   serviceProviderProfiles,
   users,
   type ProviderAvailabilityRow,
+  type ProviderBlackoutRow,
   type ServiceOfferingRow,
   type ServiceProviderProfileRow,
   type UserRow,
@@ -26,6 +28,7 @@ import {
 } from '@petwalker/shared/enums';
 
 import type {
+  CreateBlackoutDto,
   ReplaceAvailabilityDto,
   UpdateUserDto,
   UpsertServiceOfferingDto,
@@ -34,6 +37,7 @@ import type {
 import type { ServiceType } from '@petwalker/shared/enums';
 import type {
   AvailabilitySlot,
+  ProviderBlackout,
   ServiceOffering,
   ServiceProviderProfile,
   User,
@@ -68,6 +72,10 @@ export class UsersService {
         ...(dto.phone !== undefined ? { phone: dto.phone ?? null } : {}),
         ...(dto.avatarUrl !== undefined ? { avatarUrl: dto.avatarUrl ?? null } : {}),
         ...(dto.role !== undefined ? { role: dto.role } : {}),
+        ...(dto.aboutMe !== undefined ? { aboutMe: dto.aboutMe ?? null } : {}),
+        ...(dto.preferredCurrency !== undefined
+          ? { preferredCurrency: dto.preferredCurrency ?? null }
+          : {}),
         ...addressUpdate,
         updatedAt: sql`now()`,
       })
@@ -293,6 +301,42 @@ export class UsersService {
 
     return this.getAvailability(userId);
   }
+
+  // ---- blackouts (vacation / unavailable date ranges) -----------------
+
+  async listBlackouts(userId: string): Promise<ProviderBlackout[]> {
+    const rows = await this.db
+      .select()
+      .from(providerBlackouts)
+      .where(eq(providerBlackouts.providerId, userId))
+      .orderBy(providerBlackouts.startDate);
+    return rows.map(mapBlackoutRow);
+  }
+
+  async createBlackout(userId: string, dto: CreateBlackoutDto): Promise<ProviderBlackout> {
+    await this.upsertServiceProfile(userId, {});
+    const [row] = await this.db
+      .insert(providerBlackouts)
+      .values({
+        providerId: userId,
+        startDate: dto.startDate,
+        endDate: dto.endDate,
+        reason: dto.reason ?? null,
+      })
+      .returning();
+    return mapBlackoutRow(row as ProviderBlackoutRow);
+  }
+
+  async deleteBlackout(userId: string, blackoutId: string): Promise<void> {
+    await this.db
+      .delete(providerBlackouts)
+      .where(
+        and(
+          eq(providerBlackouts.id, blackoutId),
+          eq(providerBlackouts.providerId, userId),
+        ),
+      );
+  }
 }
 
 function mapAvailabilityRow(row: ProviderAvailabilityRow): AvailabilitySlot {
@@ -301,5 +345,16 @@ function mapAvailabilityRow(row: ProviderAvailabilityRow): AvailabilitySlot {
     dayOfWeek: row.dayOfWeek as 0 | 1 | 2 | 3 | 4 | 5 | 6,
     startTime: row.startTime.slice(0, 5),
     endTime: row.endTime.slice(0, 5),
+  };
+}
+
+function mapBlackoutRow(row: ProviderBlackoutRow): ProviderBlackout {
+  return {
+    id: row.id,
+    providerId: row.providerId,
+    startDate: row.startDate,
+    endDate: row.endDate,
+    reason: row.reason ?? null,
+    createdAt: row.createdAt.toISOString(),
   };
 }

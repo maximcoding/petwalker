@@ -24,9 +24,7 @@ export const CreateBookingDto = z.object({
     ServiceType.Fitness,
   ]),
   scheduledAt: z.string().datetime(),
-  // Bumped from 240 → 1440 (24h) so daycare/boarding fit; per-service caps
-  // can layer on later in a constraints map.
-  durationMin: z.number().int().min(15).max(1440),
+  durationMin: z.number().int().min(1).max(20160), // up to 2 weeks
   notes: z.string().max(2000).nullable().optional(),
   /**
    * Where to perform the service. The backend resolves to a concrete
@@ -47,6 +45,12 @@ export const CreateBookingDto = z.object({
   ]),
   /** Required when `addressSource === 'custom'`. Ignored otherwise. */
   customAddress: AddressInput.optional(),
+  /**
+   * True when the owner provides accommodation at their property for the
+   * duration of a multi-day/overnight service. Only meaningful when
+   * `addressSource` is `owner_pet` or `owner_user`.
+   */
+  withAccommodation: z.boolean().optional(),
 });
 export type CreateBookingDto = z.infer<typeof CreateBookingDto>;
 
@@ -97,7 +101,7 @@ export const CreateRecurringSeriesDto = z.object({
     .max(10, 'Maximum 10 times per day'),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD').optional(),
-  durationMin: z.number().int().min(15).max(1440),
+  durationMin: z.number().int().min(1).max(20160),
   notes: z.string().max(2000).nullable().optional(),
   addressSource: z.enum([
     'owner_user',
