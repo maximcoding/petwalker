@@ -16,12 +16,16 @@ import type {
   ServiceProviderDetail,
 } from '@petwalker/shared/types';
 
-const DURATION_PRESETS = [15, 30, 45, 60, 90, 120, 180, 240] as const;
+const DURATION_PRESETS = [15, 30, 60, 120, 180, 1440, 2880, 4320, 10080] as const;
 
 function fmtDuration(min: number): string {
   if (min < 60) return `${min} min`;
-  const h = min / 60;
-  return Number.isInteger(h) ? `${h} h` : `${h.toFixed(1)} h`;
+  if (min < 1440) {
+    const h = min / 60;
+    return Number.isInteger(h) ? `${h} h` : `${h.toFixed(1)} h`;
+  }
+  const d = min / 1440;
+  return Number.isInteger(d) ? `${d} day${d !== 1 ? 's' : ''}` : `${d.toFixed(1)} days`;
 }
 
 interface Props {
@@ -177,17 +181,17 @@ export function BookingForm({
             <input
               type="number"
               min={1}
-              max={1440}
+              max={20160}
               value={duration}
               onChange={(e) => {
-                const v = Math.max(1, Math.min(1440, Number(e.target.value) || 1));
+                const v = Math.max(1, Math.min(20160, Number(e.target.value) || 1));
                 setDuration(v);
                 setSelectedSlots(new Set());
               }}
               className="w-24 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
             />
             <span className="text-sm text-slate-500">
-              min{duration >= 60 ? ` · ${fmtDuration(duration)}` : ''}
+              min{duration >= 60 ? ` = ${fmtDuration(duration)}` : ''}
             </span>
           </div>
         </div>
