@@ -72,6 +72,10 @@ export class UsersService {
         ...(dto.phone !== undefined ? { phone: dto.phone ?? null } : {}),
         ...(dto.avatarUrl !== undefined ? { avatarUrl: dto.avatarUrl ?? null } : {}),
         ...(dto.role !== undefined ? { role: dto.role } : {}),
+        ...(dto.aboutMe !== undefined ? { aboutMe: dto.aboutMe ?? null } : {}),
+        ...(dto.preferredCurrency !== undefined
+          ? { preferredCurrency: dto.preferredCurrency ?? null }
+          : {}),
         ...addressUpdate,
         updatedAt: sql`now()`,
       })
