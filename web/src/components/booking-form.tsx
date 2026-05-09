@@ -4,6 +4,7 @@ import { type FormEvent, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { AddressField } from './address-field';
+import { DateRangePicker } from './date-range-picker';
 import { FreeSlotPicker } from './free-slot-picker';
 import { Button } from './ui/button';
 import { TextareaField } from './ui/field';
@@ -83,9 +84,12 @@ export function BookingForm({
   );
   const [customAddress, setCustomAddress] = useState<Address | null>(null);
   const [withAccommodation, setWithAccommodation] = useState(false);
+  /** ISO start for day-range bookings (duration ≥ 1 day). */
+  const [dateStart, setDateStart] = useState<string | null>(null);
 
   const isAtOwnerProperty =
     addressSource === 'owner_pet' || addressSource === 'owner_user';
+  const isDayBased = duration >= 1440;
 
   const previewCents = offering ? Math.round(offering.hourlyRateCents * (duration / 60)) : 0;
 
@@ -101,10 +105,21 @@ export function BookingForm({
 
   function handleSubmit(e: FormEvent<HTMLFormElement>): void {
     e.preventDefault();
-    if (!petId || selectedSlots.size === 0) return;
-    if (addressSource === 'custom' && (!customAddress || !customAddress.text.trim())) {
+    if (addressSource === 'custom' && (!customAddress || !customAddress.text.trim())) return;
+    if (isDayBased) {
+      if (!dateStart) return;
+      onSubmit({
+        petId,
+        scheduledAts: [dateStart],
+        durationMin: duration,
+        notes: notes || null,
+        addressSource,
+        customAddress: addressSource === 'custom' ? customAddress ?? undefined : undefined,
+        withAccommodation: isAtOwnerProperty && withAccommodation,
+      });
       return;
     }
+    if (selectedSlots.size === 0) return;
     onSubmit({
       petId,
       scheduledAts: [...selectedSlots].sort(),
@@ -165,7 +180,7 @@ export function BookingForm({
                 key={d}
                 type="button"
                 aria-pressed={duration === d}
-                onClick={() => { setDuration(d); setSelectedSlots(new Set()); }}
+                onClick={() => { setDuration(d); setSelectedSlots(new Set()); setDateStart(null); }}
                 className={[
                   'rounded-full border px-3 py-1 text-sm transition',
                   duration === d
@@ -187,6 +202,7 @@ export function BookingForm({
                 const v = Math.max(1, Math.min(20160, Number(e.target.value) || 1));
                 setDuration(v);
                 setSelectedSlots(new Set());
+                setDateStart(null);
               }}
               className="w-24 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
             />
@@ -304,27 +320,38 @@ export function BookingForm({
         ) : null}
       </div>
 
-      {/* Right column — When + slot picker (grows, slot grid scrolls) */}
+      {/* Right column — When (swaps between date-range and slot picker) */}
       <div className="flex min-h-0 flex-1 flex-col py-4 pb-2">
         <span className="mb-2 block shrink-0 text-sm font-medium">When</span>
-        <FreeSlotPicker
-          providerId={provider.userId}
-          serviceType={serviceType as ServiceType}
-          durationMin={duration}
-          value={selectedSlots}
-          onChange={(start) =>
-            setSelectedSlots((prev) => {
-              const next = new Set(prev);
-              if (next.has(start)) next.delete(start);
-              else next.add(start);
-              return next;
-            })
-          }
-          onClear={() => setSelectedSlots(new Set())}
-        />
-        {selectedSlots.size === 0 ? (
-          <p className="mt-1 shrink-0 text-xs text-slate-400">Select at least one time to continue.</p>
-        ) : null}
+        {isDayBased ? (
+          <DateRangePicker
+            durationMin={duration}
+            value={dateStart}
+            onChange={setDateStart}
+            onClear={() => setDateStart(null)}
+          />
+        ) : (
+          <>
+            <FreeSlotPicker
+              providerId={provider.userId}
+              serviceType={serviceType as ServiceType}
+              durationMin={duration}
+              value={selectedSlots}
+              onChange={(start) =>
+                setSelectedSlots((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(start)) next.delete(start);
+                  else next.add(start);
+                  return next;
+                })
+              }
+              onClear={() => setSelectedSlots(new Set())}
+            />
+            {selectedSlots.size === 0 ? (
+              <p className="mt-1 shrink-0 text-xs text-slate-400">Select at least one time to continue.</p>
+            ) : null}
+          </>
+        )}
       </div>
 
       </div>{/* end body columns */}
@@ -351,12 +378,14 @@ export function BookingForm({
 
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-        <Button type="submit" disabled={busy || selectedSlots.size === 0}>
+        <Button type="submit" disabled={busy || (isDayBased ? !dateStart : selectedSlots.size === 0)}>
           {busy
             ? 'Booking…'
-            : selectedSlots.size > 1
-              ? `Confirm ${selectedSlots.size} bookings`
-              : 'Confirm booking'}
+            : isDayBased
+              ? 'Confirm booking'
+              : selectedSlots.size > 1
+                ? `Confirm ${selectedSlots.size} bookings`
+                : 'Confirm booking'}
         </Button>
       </div>
     </form>
