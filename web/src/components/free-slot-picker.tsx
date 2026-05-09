@@ -18,9 +18,12 @@ interface Props {
   serviceType: ServiceType;
   /** Booking duration in minutes — fed straight to the free-slots query. */
   durationMin: number;
-  /** Selected slot's ISO start, or null. */
-  value: string | null;
-  onChange: (start: string | null) => void;
+  /** Set of selected slot ISO starts. */
+  value: Set<string>;
+  /** Toggle a slot in/out of the selection. */
+  onChange: (start: string) => void;
+  /** Reset the entire selection. */
+  onClear: () => void;
   /** How many days to fetch per page (default 7). */
   daysPerPage?: number;
 }
@@ -71,6 +74,7 @@ export function FreeSlotPicker({
   durationMin,
   value,
   onChange,
+  onClear,
   daysPerPage = 7,
 }: Props): JSX.Element {
   const { t, i18n } = useTranslation();
@@ -104,9 +108,8 @@ export function FreeSlotPicker({
         from: windowStart.toISOString(),
         to: windowEnd.toISOString(),
         durationMin,
-        // Step at 30-min granularity by default so the grid isn't sparse for
-        // long durations. Backend caps at 200 slots regardless.
-        stepMin: Math.min(30, durationMin),
+        // Step equals duration so adjacent slots never create overlapping bookings.
+        stepMin: durationMin,
       }),
     // Slots become stale fast — another booking can fill one any moment.
     staleTime: 30_000,
@@ -132,8 +135,13 @@ export function FreeSlotPicker({
     staleTime: 60_000,
   });
 
-  // Group flat slot list by yyyy-mm-dd (UTC) so the picker shows day headers.
-  const byDay = useMemo(() => groupByDay(q.data ?? []), [q.data]);
+  // Filter slots that are too soon for the backend (< now + 5 min), then group by day.
+  const NOW_BUFFER_MS = 5 * 60 * 1000;
+  const byDay = useMemo(() => {
+    const cutoff = Date.now() + NOW_BUFFER_MS;
+    const future = (q.data ?? []).filter((s) => new Date(s.start).getTime() >= cutoff);
+    return groupByDay(future);
+  }, [q.data]);
 
   const fmtDay = useMemo(
     () =>
@@ -187,7 +195,23 @@ export function FreeSlotPicker({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      {/* Selection chip + Clear All — visible once ≥1 slot is chosen. */}
+      {value.size > 0 ? (
+        <div className="flex items-center justify-between rounded-xl border border-brand-200 bg-brand-50 px-3 py-1.5 text-sm dark:border-brand-900 dark:bg-brand-950">
+          <span className="font-medium text-brand-700 dark:text-brand-200">
+            {value.size} slot{value.size !== 1 ? 's' : ''} selected
+          </span>
+          <button
+            type="button"
+            onClick={onClear}
+            className="text-xs text-brand-600 underline hover:no-underline dark:text-brand-300"
+          >
+            Clear all
+          </button>
+        </div>
+      ) : null}
+
       {/* Earliest-available callout — silent if no slots in next 90 days. */}
       {earliest.data ? (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm dark:border-emerald-900 dark:bg-emerald-950">
@@ -211,15 +235,18 @@ export function FreeSlotPicker({
         <JumpChip label={t('booking.jump.nextWeek')} onClick={() => jump(7)} />
         <JumpChip label={t('booking.jump.in1mo')} onClick={() => jump(30)} />
         <JumpChip label={t('booking.jump.in3mo')} onClick={() => jump(90)} />
-        <input
-          type="date"
-          aria-label={t('booking.pickDate')}
-          min={formatLocalDateInput(new Date())}
-          max={formatLocalDateInput(addDays(new Date(), MAX_HORIZON_DAYS))}
-          value={formatLocalDateInput(windowStart)}
-          onChange={(e) => jumpToDateString(e.target.value)}
-          className="ml-auto rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"
-        />
+        <label className="ml-auto flex items-center gap-1">
+          <span className="text-xs text-slate-500">{t('booking.pickDate')}</span>
+          <input
+            type="date"
+            aria-label={t('booking.pickDate')}
+            min={formatLocalDateInput(new Date())}
+            max={formatLocalDateInput(addDays(new Date(), MAX_HORIZON_DAYS))}
+            value={formatLocalDateInput(windowStart)}
+            onChange={(e) => jumpToDateString(e.target.value)}
+            className="w-36 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"
+          />
+        </label>
       </div>
 
       {/* Window header + paging arrows. */}
@@ -247,64 +274,75 @@ export function FreeSlotPicker({
         </div>
       </div>
 
-      {/* Slot grid (or skeletons / empty state). */}
-      {q.isLoading ? (
-        <div className="flex items-center gap-2 py-4 text-sm text-slate-500">
-          <Spinner size="sm" /> {t('common.loading')}
-        </div>
-      ) : q.error ? (
-        <ErrorState error={q.error as Error} onRetry={() => q.refetch()} />
-      ) : byDay.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700">
-          {t('booking.noSlots')}
-        </div>
-      ) : (
-        <ul className="space-y-3">
-          {byDay.map(([dayKey, slots]) => {
-            const dayDate = new Date(dayKey + 'T00:00:00Z');
-            const groups = groupByPartOfDay(slots);
-            return (
-              <li key={dayKey}>
-                <p className="mb-1 text-xs font-medium text-slate-600 dark:text-slate-300">
-                  {fmtDay.format(dayDate)}
-                </p>
-                <div className="space-y-2">
-                  {groups.map(([partKey, partSlots]) =>
-                    partSlots.length === 0 ? null : (
-                      <div key={partKey}>
-                        <p className="mb-1 text-[10px] uppercase tracking-wide text-slate-400">
-                          {t(`booking.partOfDay.${partKey}`)}
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {partSlots.map((s) => {
-                            const active = value === s.start;
-                            return (
-                              <button
-                                key={s.start}
-                                type="button"
-                                onClick={() => onChange(active ? null : s.start)}
-                                aria-pressed={active}
-                                className={[
-                                  'rounded-lg border px-3 py-1.5 text-sm transition',
-                                  active
-                                    ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-200'
-                                    : 'border-slate-200 hover:border-slate-400 dark:border-slate-800 dark:hover:border-slate-600',
-                                ].join(' ')}
-                              >
-                                {fmtTime.format(new Date(s.start))}
-                              </button>
-                            );
-                          })}
+      {/* Slot grid — scrollable, fills all remaining vertical space. */}
+      <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800">
+        {q.isLoading ? (
+          <div className="flex items-center gap-2 p-4 text-sm text-slate-500">
+            <Spinner size="sm" /> {t('common.loading')}
+          </div>
+        ) : q.error ? (
+          <div className="p-3">
+            <ErrorState error={q.error as Error} onRetry={() => q.refetch()} />
+          </div>
+        ) : byDay.length === 0 ? (
+          <div className="p-6 text-center text-sm text-slate-500">
+            {t('booking.noSlots')}
+          </div>
+        ) : (
+          <ul className="space-y-4 p-3">
+            {byDay.map(([dayKey, slots]) => {
+              const dayDate = new Date(dayKey + 'T00:00:00Z');
+              const groups = groupByPartOfDay(slots);
+              return (
+                <li key={dayKey}>
+                  <p className="mb-1 text-xs font-medium text-slate-600 dark:text-slate-300">
+                    {fmtDay.format(dayDate)}
+                  </p>
+                  <div className="space-y-2">
+                    {groups.map(([partKey, partSlots]) =>
+                      partSlots.length === 0 ? null : (
+                        <div key={partKey}>
+                          <p className="mb-1 text-[10px] uppercase tracking-wide text-slate-400">
+                            {t(`booking.partOfDay.${partKey}`)}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {partSlots.map((s) => {
+                              const active = value.has(s.start);
+                              return (
+                                <button
+                                  key={s.start}
+                                  type="button"
+                                  onClick={() => onChange(s.start)}
+                                  aria-pressed={active}
+                                  className={[
+                                    'rounded-lg border px-3 py-1.5 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
+                                    active
+                                      ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-200'
+                                      : 'border-slate-200 hover:border-slate-400 dark:border-slate-800 dark:hover:border-slate-600',
+                                  ].join(' ')}
+                                >
+                                  {fmtTime.format(new Date(s.start))}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    ),
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                      ),
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      {/* Cap warning — fires when the raw API response hit the 200-slot ceiling. */}
+      {(q.data?.length ?? 0) >= 200 ? (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">
+          Showing the first 200 available slots. Choose a later start date or increase the duration to see more.
+        </p>
+      ) : null}
     </div>
   );
 }
