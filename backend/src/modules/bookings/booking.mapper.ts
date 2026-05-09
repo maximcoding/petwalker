@@ -41,6 +41,7 @@ export function mapBookingRow(row: BookingRow): Booking {
       lng: null,
     },
     addressSource: row.addressSource as AddressSource,
+    withAccommodation: row.withAccommodation,
     cancelledBy: (row.cancelledBy as CancelledBy | null) ?? null,
     cancelledAt: iso(row.cancelledAt),
     cancellationReason: row.cancellationReason ?? null,

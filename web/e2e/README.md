@@ -47,7 +47,7 @@ report under `web/playwright-report/` (open with `pnpm --filter @petwalker/web e
 
 ## What's covered
 
-- `01-smoke-auth.spec.ts` — sign-in form renders; Olivia signs in and lands on `/me`.
+- `01-smoke-auth.spec.ts` — sign-in form renders; Olivia signs in and lands on `/providers` (the post-IA-refactor default landing).
 - `02-account-address.spec.ts` — home address round-trips through save/reload; clearing it persists null.
 - `03-offering-supported-sources.spec.ts` — three supported-source checkboxes per offering; UI blocks unticking the last enabled box; multi-source saves round-trip.
 - `04-booking-where-radio.spec.ts` — booking form shows static label (no radio) when only one source supported; default-seeded providers fall into this case.
