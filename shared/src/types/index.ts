@@ -12,3 +12,4 @@ export * from './push.js';
 export * from './calendar.js';
 export * from './favorite.js';
 export * from './web-notification.js';
+export * from './blackout.js';

@@ -78,6 +78,13 @@
       "when": 1746748800000,
       "tag": "0010_recurring_times_of_day",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1746921600000,
+      "tag": "0011_provider_blackouts",
+      "breakpoints": true
     }
   ]
 }

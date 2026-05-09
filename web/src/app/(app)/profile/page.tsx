@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 import { AccountSection } from '@/components/profile/account-section';
 import { AvailabilitySection } from '@/components/profile/availability-section';
+import { BlackoutsSection } from '@/components/profile/blackouts-section';
 import { CalendarFeedSection } from '@/components/profile/calendar-feed-section';
 import { OfferingsSection } from '@/components/profile/offerings-section';
 import { RoleSection } from '@/components/profile/role-section';
@@ -91,6 +92,10 @@ export default function ProfilePage(): JSX.Element {
 
             <Card title={t('profile.weeklyAvailability')}>
               <AvailabilitySection />
+            </Card>
+
+            <Card title="Unavailability periods" hint="Recurring bookings skip any dates that fall within these windows (e.g. vacations).">
+              <BlackoutsSection />
             </Card>
 
             <Card

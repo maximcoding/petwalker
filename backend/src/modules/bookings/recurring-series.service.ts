@@ -13,6 +13,7 @@ import type { Database } from '../../db/client.js';
 import {
   bookings,
   pets,
+  providerBlackouts,
   providerServiceOfferings,
   providerSlots,
   recurringSeries,
@@ -137,12 +138,19 @@ export class RecurringSeriesService {
     const priceCents = Math.round(offering.hourlyRateCents * (dto.durationMin / 60));
 
     const endDate = dto.endDate ?? addWeeks(dto.startDate, 12);
+
+    const blackoutRows = await this.db
+      .select({ startDate: providerBlackouts.startDate, endDate: providerBlackouts.endDate })
+      .from(providerBlackouts)
+      .where(eq(providerBlackouts.providerId, dto.providerId));
+
     const dates = generateRecurrenceDates({
       recurrence: dto.recurrence,
       daysOfWeek: dto.daysOfWeek,
       timesOfDay: dto.timesOfDay,
       startDate: dto.startDate,
       endDate,
+      blackouts: blackoutRows,
     });
     if (dates.length === 0) {
       throw unprocessable('NO_INSTANCES', 'The recurrence pattern produces no bookings in the date range');

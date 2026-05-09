@@ -1,5 +1,12 @@
 export type RecurrencePattern = 'weekly' | 'biweekly';
 
+export interface BlackoutRange {
+  /** Inclusive, 'YYYY-MM-DD'. */
+  startDate: string;
+  /** Inclusive, 'YYYY-MM-DD'. */
+  endDate: string;
+}
+
 export interface RecurrenceDatesOptions {
   recurrence: RecurrencePattern;
   daysOfWeek: number[];
@@ -7,12 +14,14 @@ export interface RecurrenceDatesOptions {
   timesOfDay: string[];
   startDate: string;
   endDate: string;
+  /** Optional provider blackout windows. Dates falling inside any range are skipped. */
+  blackouts?: BlackoutRange[];
 }
 
 export const MAX_RECURRING_INSTANCES = 52;
 
 export function generateRecurrenceDates(opts: RecurrenceDatesOptions): Date[] {
-  const { recurrence, daysOfWeek, timesOfDay, startDate, endDate } = opts;
+  const { recurrence, daysOfWeek, timesOfDay, startDate, endDate, blackouts = [] } = opts;
 
   const parsedTimes = timesOfDay.map((t) => {
     const [hStr, mStr] = t.split(':');
@@ -31,6 +40,15 @@ export function generateRecurrenceDates(opts: RecurrenceDatesOptions): Date[] {
 
   if (startMs > endMs) return [];
 
+  // Pre-parse blackout ranges as [startMs, endMs] pairs (inclusive days).
+  const blackoutRanges = blackouts.map((b) => ({
+    from: parseDate(b.startDate),
+    to: parseDate(b.endDate) + 23 * 3600_000 + 59 * 60_000 + 59_000,
+  }));
+
+  const isBlackedOut = (dayMs: number): boolean =>
+    blackoutRanges.some((r) => dayMs >= r.from && dayMs <= r.to);
+
   const weekStepMs = (recurrence === 'biweekly' ? 2 : 1) * 7 * 86_400_000;
   const results: Date[] = [];
 
@@ -40,7 +58,7 @@ export function generateRecurrenceDates(opts: RecurrenceDatesOptions): Date[] {
   while (weekCurMs <= endMs) {
     for (const dow of daysOfWeek) {
       const dayMs = weekCurMs + dow * 86_400_000;
-      if (dayMs >= startMs && dayMs <= endMs) {
+      if (dayMs >= startMs && dayMs <= endMs && !isBlackedOut(dayMs)) {
         for (const { h, m } of parsedTimes) {
           results.push(new Date(dayMs + h * 3_600_000 + m * 60_000));
         }
