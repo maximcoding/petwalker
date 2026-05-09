@@ -18,11 +18,7 @@ export default function SignInPage(): JSX.Element {
     setBusy(true);
     try {
       await signIn(email, password);
-      // Default landing post-sign-in. The (app) layout reads view-mode from
-      // localStorage; new sessions seed to 'owner', so /providers is the
-      // natural first screen. Provider-only users will see a Provider
-      // navbar and can navigate from there.
-      router.push('/providers');
+      router.push('/me');
     } catch (e) {
       setErr((e as Error).message);
       setBusy(false);

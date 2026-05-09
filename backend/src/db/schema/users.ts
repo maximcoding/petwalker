@@ -30,17 +30,6 @@ export const users = pgTable(
     fullName: text('full_name'),
     phone: text('phone'),
     avatarUrl: text('avatar_url'),
-    /**
-     * Free-form bio surfaced on the profile and (for providers) the
-     * provider listing card. Capped to 600 chars at the API layer.
-     */
-    aboutMe: text('about_me'),
-    /**
-     * ISO-4217 code (USD/EUR/ILS so far). The CHECK constraint added in
-     * 0013_user_about_currency.sql keeps the column in sync with
-     * SUPPORTED_CURRENCIES from @petwalker/shared/types/user.
-     */
-    preferredCurrency: text('preferred_currency'),
     // Home / billing / default-service address. Free-form text — the
     // optional lat/lng pair lets us deep-link to maps if the owner pastes
     // them; we don't geocode automatically.

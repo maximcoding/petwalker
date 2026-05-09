@@ -6,7 +6,7 @@ describe('generateRecurrenceDates', () => {
     const dates = generateRecurrenceDates({
       recurrence: 'weekly',
       daysOfWeek: [1],
-      timesOfDay: ['09:00'],
+      timeOfDay: '09:00',
       startDate: '2026-06-01',
       endDate: '2026-06-21',
     });
@@ -20,7 +20,7 @@ describe('generateRecurrenceDates', () => {
     const dates = generateRecurrenceDates({
       recurrence: 'weekly',
       daysOfWeek: [1, 3],
-      timesOfDay: ['10:30'],
+      timeOfDay: '10:30',
       startDate: '2026-06-01',
       endDate: '2026-06-07',
     });
@@ -36,7 +36,7 @@ describe('generateRecurrenceDates', () => {
     const dates = generateRecurrenceDates({
       recurrence: 'biweekly',
       daysOfWeek: [1],
-      timesOfDay: ['09:00'],
+      timeOfDay: '09:00',
       startDate: '2026-06-01',
       endDate: '2026-06-28',
     });
@@ -45,27 +45,11 @@ describe('generateRecurrenceDates', () => {
     expect(dates[1]!.toISOString()).toBe('2026-06-15T09:00:00.000Z');
   });
 
-  it('multiple times per day — generates one date per time per qualifying day', () => {
-    const dates = generateRecurrenceDates({
-      recurrence: 'weekly',
-      daysOfWeek: [1],
-      timesOfDay: ['09:00', '17:00'],
-      startDate: '2026-06-01',
-      endDate: '2026-06-08',
-    });
-    // Jun 1 at 09:00 and 17:00, Jun 8 at 09:00 and 17:00
-    expect(dates).toHaveLength(4);
-    expect(dates[0]!.toISOString()).toBe('2026-06-01T09:00:00.000Z');
-    expect(dates[1]!.toISOString()).toBe('2026-06-01T17:00:00.000Z');
-    expect(dates[2]!.toISOString()).toBe('2026-06-08T09:00:00.000Z');
-    expect(dates[3]!.toISOString()).toBe('2026-06-08T17:00:00.000Z');
-  });
-
   it('caps at MAX_INSTANCES (52)', () => {
     const dates = generateRecurrenceDates({
       recurrence: 'weekly',
       daysOfWeek: [1],
-      timesOfDay: ['09:00'],
+      timeOfDay: '09:00',
       startDate: '2026-01-05',
       endDate: '2027-12-31',
     });
@@ -76,7 +60,7 @@ describe('generateRecurrenceDates', () => {
     const dates = generateRecurrenceDates({
       recurrence: 'weekly',
       daysOfWeek: [0],
-      timesOfDay: ['09:00'],
+      timeOfDay: '09:00',
       startDate: '2026-06-01',
       endDate: '2026-05-01',
     });

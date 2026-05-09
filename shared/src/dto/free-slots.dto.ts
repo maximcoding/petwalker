@@ -31,7 +31,7 @@ export const FreeSlotsQuery = z.object({
   ]),
   from: z.string().datetime(),
   to: z.string().datetime(),
-  durationMin: z.coerce.number().int().min(1).max(20160),
-  stepMin: z.coerce.number().int().min(1).max(20160).optional(),
+  durationMin: z.coerce.number().int().min(15).max(1440),
+  stepMin: z.coerce.number().int().min(15).max(720).optional(),
 });
 export type FreeSlotsQuery = z.infer<typeof FreeSlotsQuery>;
