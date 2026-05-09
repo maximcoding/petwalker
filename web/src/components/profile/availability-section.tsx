@@ -74,6 +74,25 @@ export function AvailabilitySection(): JSX.Element {
     m.mutate(slots);
   }
 
+  // Dirty-state detection: shallow-compare the current draft against
+  // the server snapshot so the Save button only appears when there's
+  // an actual change to push. Brand-new users (no slots, no draft) and
+  // saved-but-untouched users see only "+ Add slot" — Save reveals
+  // itself the moment they add or edit a row.
+  const dirty = (() => {
+    const server = q.data ?? [];
+    if (slots.length !== server.length) return true;
+    return slots.some((s, i) => {
+      const r = server[i];
+      return (
+        !r ||
+        s.dayOfWeek !== r.dayOfWeek ||
+        s.startTime !== r.startTime ||
+        s.endTime !== r.endTime
+      );
+    });
+  })();
+
   if (q.isLoading) return <p className="text-sm text-slate-500">Loading…</p>;
   if (q.error) {
     return <p className="text-sm text-red-600">Error: {(q.error as Error).message}</p>;
@@ -87,8 +106,8 @@ export function AvailabilitySection(): JSX.Element {
       </p>
 
       {slots.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700">
-          No availability configured — owners can’t book you yet.
+        <p className="text-sm text-slate-500">
+          No availability configured — owners can’t book you yet. Add at least one slot below.
         </p>
       ) : (
         <ul className="space-y-2">
@@ -142,9 +161,11 @@ export function AvailabilitySection(): JSX.Element {
         <Button type="button" variant="secondary" onClick={add}>
           + Add slot
         </Button>
-        <Button type="button" disabled={m.isPending} onClick={save}>
-          {m.isPending ? 'Saving…' : 'Save schedule'}
-        </Button>
+        {dirty && slots.length > 0 ? (
+          <Button type="button" disabled={m.isPending} onClick={save}>
+            {m.isPending ? 'Saving…' : 'Save schedule'}
+          </Button>
+        ) : null}
       </div>
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}

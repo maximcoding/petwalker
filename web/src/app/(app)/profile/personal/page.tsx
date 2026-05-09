@@ -1,16 +1,16 @@
 'use client';
 
-import { UserRole } from '@petwalker/shared/enums';
 import type { User } from '@petwalker/shared/types';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import { AboutMeSection } from '@/components/profile/about-me-section';
 import { AccountSection } from '@/components/profile/account-section';
-import { CalendarFeedSection } from '@/components/profile/calendar-feed-section';
 import { Card } from '@/components/profile/card';
+import { GoogleCalendarSection } from '@/components/profile/google-calendar-section';
 import { RoleSection } from '@/components/profile/role-section';
 import { ServiceProfileSection } from '@/components/profile/service-profile-section';
+import { useViewMode } from '@/contexts/view-mode-context';
 import { api } from '@/lib/api';
 
 
@@ -28,6 +28,7 @@ import { api } from '@/lib/api';
  */
 export default function PersonalPage(): JSX.Element {
   const { t } = useTranslation();
+  const { mode } = useViewMode();
   const me = useQuery<User>({
     queryKey: ['me'],
     queryFn: () => api.auth.me(),
@@ -44,12 +45,11 @@ export default function PersonalPage(): JSX.Element {
   }
 
   // Role drives which other cards render — putting it first makes the
-  // conditional reveal feel intentional ("here's your role; here's what
-  // else you can edit because of it"). ServiceProfile (bio + base
-  // city/radius + experience year) is the provider's public-facing
-  // profile — parallel to AboutMe/Account and not a "tool".
-  const isProvider =
-    me.data.role === UserRole.Provider || me.data.role === UserRole.Both;
+  // conditional reveal feel intentional. Provider-only cards gate on
+  // the active view mode (not raw role) so a `both` user toggling to
+  // Owner mode in the UserMenu actually hides them; gating by role
+  // would leave them visible regardless of the toggle.
+  const isProviderView = mode === 'provider';
 
   return (
     <div className="space-y-6">
@@ -65,15 +65,15 @@ export default function PersonalPage(): JSX.Element {
         <AccountSection me={me.data} />
       </Card>
 
-      {isProvider ? (
+      {isProviderView ? (
         <Card title={t('profile.providerProfile')} hint={t('profile.providerProfileHint')}>
           <ServiceProfileSection />
         </Card>
       ) : null}
 
-      {isProvider ? (
+      {isProviderView ? (
         <Card title={t('profile.calendar.title')} hint={t('profile.calendar.subtitle')}>
-          <CalendarFeedSection />
+          <GoogleCalendarSection />
         </Card>
       ) : null}
     </div>

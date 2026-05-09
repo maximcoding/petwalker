@@ -3,6 +3,7 @@
 import { ServiceType } from '@petwalker/shared/enums';
 import type { ServiceProviderListing } from '@petwalker/shared/types';
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
+import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -87,11 +88,16 @@ export default function ProvidersPage(): JSX.Element {
     if (!searchFocused) setSearchInput(values.q ?? '');
   }, [values.q, searchFocused]);
 
-  function pushQuery(next: string): void {
+  // Push the query to the URL only — listing follows immediately.
+  // Saving to "recent searches" is a separate commit step (Enter, blur,
+  // chip click) so live debouncing doesn't pollute the recents list
+  // with every partial like "h", "hu", "hud"…
+  function pushQueryToUrl(next: string): void {
     const params = writeSearch({ ...values, q: next });
     router.push(`/providers?${params.toString()}`);
-    // Bump recent list once the search "settles" — i.e. on each push,
-    // not on every keystroke.
+  }
+
+  function commitRecent(next: string): void {
     if (next.trim()) setRecent(pushRecentSearch(next));
   }
 
@@ -99,8 +105,14 @@ export default function ProvidersPage(): JSX.Element {
     setSearchInput(next);
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => {
-      pushQuery(next);
+      pushQueryToUrl(next);
     }, SEARCH_DEBOUNCE_MS);
+  }
+
+  function clearSearch(): void {
+    setSearchInput('');
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    pushQueryToUrl('');
   }
 
   // Always run the query — sensible defaults come from URL or fallbacks.
@@ -148,33 +160,55 @@ export default function ProvidersPage(): JSX.Element {
         </p>
       </header>
 
-      {/* Free-text search. Debounced into the URL so a fresh page-load
-          (or back/forward) hits the same query the user was looking at. */}
-      <div className="shrink-0 space-y-2">
-        <input
-          type="search"
-          inputMode="search"
-          value={searchInput}
-          onChange={(e) => onSearchChange(e.target.value)}
-          onFocus={() => setSearchFocused(true)}
-          onBlur={() => setSearchFocused(false)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              if (debounceTimer.current) clearTimeout(debounceTimer.current);
-              pushQuery(searchInput);
-            }
-          }}
-          placeholder={t('providers.searchPlaceholder')}
-          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-        />
-        {/* Recent searches surface only when the input is empty + focused —
-            once the user starts typing, results below are the answer. */}
+      {/* Free-text search. Debounced into the URL (listing follows live)
+          but commits to recents only on Enter/blur so partial keystrokes
+          don't pollute the recents list. */}
+      <div className="shrink-0 space-y-3">
+        <div className="group relative">
+          <Search
+            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            aria-hidden
+          />
+          <input
+            type="search"
+            inputMode="search"
+            value={searchInput}
+            onChange={(e) => onSearchChange(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => {
+              setSearchFocused(false);
+              commitRecent(searchInput);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                if (debounceTimer.current) clearTimeout(debounceTimer.current);
+                pushQueryToUrl(searchInput);
+                commitRecent(searchInput);
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
+            placeholder={t('providers.searchPlaceholder')}
+            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm shadow-sm transition placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100 dark:border-slate-800 dark:bg-slate-900 dark:focus:ring-brand-900/40"
+          />
+          {searchInput ? (
+            <button
+              type="button"
+              onClick={clearSearch}
+              aria-label={t('common.clear')}
+              className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            >
+              <X className="h-3.5 w-3.5" aria-hidden />
+            </button>
+          ) : null}
+        </div>
+        {/* Recent searches surface only when the input is empty + focused. */}
         {searchFocused && !searchInput.trim() ? (
           <RecentSearchChips
             items={recent}
             onPick={(query) => {
               setSearchInput(query);
-              pushQuery(query);
+              pushQueryToUrl(query);
+              commitRecent(query);
             }}
             onClear={() => {
               clearRecentSearches();
@@ -184,31 +218,34 @@ export default function ProvidersPage(): JSX.Element {
         ) : null}
       </div>
 
-      <div className="shrink-0">
-        <ServiceChipRow
-          value={values.serviceType}
-          onChange={(s) => {
-            const next = writeSearch({ ...values, serviceType: s });
-            router.push(`/providers?${next.toString()}`);
-          }}
-        />
-      </div>
+      <ServiceChipRow
+        value={values.serviceType}
+        onChange={(s) => {
+          const next = writeSearch({ ...values, serviceType: s });
+          router.push(`/providers?${next.toString()}`);
+        }}
+      />
 
-      <div className="shrink-0 rounded-2xl border border-slate-200 dark:border-slate-800">
+      {/* Inline filter toggle — no wrapping card. The form below appears
+          flush with the page when expanded so it doesn't compete with
+          the search/chips above for attention. */}
+      <div className="shrink-0">
         <button
           type="button"
           onClick={() => setFiltersOpen((s) => !s)}
-          className="flex w-full items-center justify-between px-4 py-3 text-start"
+          aria-expanded={filtersOpen}
+          className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50"
         >
-          <span className="text-sm font-medium">
-            {filtersOpen ? t('providers.hideFilters') : t('providers.refineSearch')}
-          </span>
-          <span className="text-xs text-slate-500">
-            {hasActiveFilters && !filtersOpen ? t('providers.filtersActive') : ''}
-          </span>
+          <SlidersHorizontal className="h-4 w-4" aria-hidden />
+          <span>{filtersOpen ? t('providers.hideFilters') : t('providers.refineSearch')}</span>
+          {hasActiveFilters && !filtersOpen ? (
+            <span className="rounded-full bg-brand-100 px-1.5 py-0.5 text-[10px] font-semibold text-brand-700 dark:bg-brand-900/40 dark:text-brand-200">
+              {t('providers.filtersActive')}
+            </span>
+          ) : null}
         </button>
         {filtersOpen ? (
-          <div className="border-t border-slate-200 p-4 dark:border-slate-800">
+          <div className="mt-3">
             <ProviderSearchForm
               initial={values}
               busy={q.isFetching}

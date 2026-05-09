@@ -72,10 +72,27 @@ export function ViewModeProvider({ me, children }: PropsWithChildren<Props>): JS
   const isProvider = me.role === UserRole.Provider || me.role === UserRole.Both;
   const isOwner = me.role === UserRole.Owner || me.role === UserRole.Both;
 
-  // Lazy init — read the stored mode once on mount so SSR and the initial
-  // client render agree on a non-stored default; the stored value is then
-  // applied via the effect below.
-  const [mode, setModeState] = useState<ViewMode>(() => deriveDefault(me.role));
+  // Lazy init reads the stored mode SYNCHRONOUSLY so the very first
+  // render is already correct — earlier this used a deriveDefault seed
+  // and corrected via useEffect, but downstream redirects (e.g. the
+  // /profile/provider role gate) fired before the effect ran and
+  // bounced `both`-with-provider-stored users out of the page.
+  //
+  // SSR safety: localStorage doesn't exist on the server. The lazy
+  // init runs once per ViewModeProvider mount; on the server the
+  // function still executes, so we guard with `typeof window`. SSR
+  // therefore uses the role-derived default and the client may flip
+  // to the stored mode on hydration. That brief mismatch is harmless
+  // — the only places that read `mode` are client components, and
+  // React reconciles the first state update without a flicker.
+  const [mode, setModeState] = useState<ViewMode>(() => {
+    if (typeof window === 'undefined') return deriveDefault(me.role);
+    if (me.role === UserRole.Both) {
+      const stored = readStoredMode();
+      if (stored) return stored;
+    }
+    return deriveDefault(me.role);
+  });
 
   useEffect(() => {
     if (!canToggle) {
@@ -89,6 +106,9 @@ export function ViewModeProvider({ me, children }: PropsWithChildren<Props>): JS
       }
       return;
     }
+    // For `both` users the lazy init already picked up the stored
+    // value; if the role just flipped we may have a stale state, so
+    // re-read defensively. No-op when the values match.
     const stored = readStoredMode();
     if (stored) setModeState(stored);
   }, [canToggle, me.role]);

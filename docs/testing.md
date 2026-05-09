@@ -1,6 +1,9 @@
-# TODO_TEST
+# Manual smoke-test checklist
 
-Manual smoke tests. Tick as you verify. Append new tasks here as features land.
+Tick as you verify. Append new tasks here as features land.
+
+For automated tests see `web/e2e/README.md` (Playwright).
+For setup/keys see [`setup.md`](./setup.md).
 
 ---
 

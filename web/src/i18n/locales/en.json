@@ -5,8 +5,8 @@
     "favorites": "Favorites",
     "bookings": "Bookings",
     "myBookings": "My bookings",
-    "managedBookings": "Managed bookings",
-    "feed": "Order feed",
+    "managedBookings": "Bookings",
+    "feed": "Requests",
     "messages": "Messages",
     "profile": "Profile",
     "signOut": "Sign out",
@@ -25,10 +25,14 @@
     "currentMode": {
       "owner": "Owner",
       "provider": "Provider"
-    }
+    },
+    "preferences": "Preferences",
+    "units": "Units",
+    "unitsMetric": "Metric (m, kg)",
+    "unitsImperial": "Imperial (ft, lb)"
   },
   "feed": {
-    "title": "Order feed",
+    "title": "Requests",
     "comingSoonTag": "Coming soon",
     "placeholderBody": "Open booking requests from owners will appear here. You'll be able to review the request, see the dog and the owner's profile, and submit a bid."
   },
@@ -62,6 +66,7 @@
     "close": "Close",
     "loading": "Loading…",
     "search": "Search",
+    "clear": "Clear",
     "back": "Back",
     "name": "Name",
     "email": "Email",
@@ -106,7 +111,24 @@
     "experienceSince": "Walking since {{year}}",
     "noReviewsYet": "No reviews yet",
     "reviewCount_one": "{{count}} review",
-    "reviewCount_other": "{{count}} reviews"
+    "reviewCount_other": "{{count}} reviews",
+    "form": {
+      "service": "Service",
+      "location": "Location",
+      "locationHint": "Set the centre of your search. Defaults to NYC for the seed dataset.",
+      "useDevice": "Use my location",
+      "useSeed": "Use NYC (seed)",
+      "locating": "Locating…",
+      "lat": "Latitude",
+      "lng": "Longitude",
+      "radius": "Radius (km)",
+      "maxPrice": "Max $/hour",
+      "scheduledAt": "When (optional)",
+      "duration": "Duration",
+      "minutes": "min",
+      "apply": "Apply filters",
+      "searching": "Searching…"
+    }
   },
   "reviews": {
     "title": "Reviews",
@@ -166,7 +188,7 @@
     "current": "current",
     "switchRoleHint": "Switch to Provider or Both to expose your service-provider sections.",
     "providerProfile": "Provider profile",
-    "offerings": "Services",
+    "offerings": "Your services",
     "weeklyAvailability": "Working hours",
     "payouts": "Payouts (Stripe Connect)",
     "becomeProvider": "Become a provider",
@@ -191,28 +213,30 @@
     "supportsProvider": "At my location",
     "supportsCustom": "Anywhere the owner picks",
     "calendar": {
-      "title": "External calendar",
-      "subtitle": "Connect a calendar feed so busy times are excluded from booking slots.",
-      "hint": "Paste an iCal URL from Google, Apple, or Outlook. We'll re-sync every 30 minutes; you can also trigger a sync now.",
-      "icalUrl": "iCal URL",
-      "urlHint": "Public iCal URL ending in .ics. webcal:// links are accepted.",
-      "enabled": "Enabled",
-      "testFetch": "Sync now",
+      "title": "Google Calendar",
+      "subtitle": "Connect your Google Calendar so busy times are excluded from booking slots.",
+      "hint": "We'll only see when you're busy — not what's on your calendar. Re-syncs every 30 minutes; you can also trigger a sync now.",
+      "connect": "Connect Google Calendar",
+      "connected": "Connected to Google Calendar",
+      "syncNow": "Sync now",
       "disconnect": "Disconnect",
-      "disconnectTitle": "Disconnect calendar?",
-      "disconnectBody": "We'll delete the URL and any synced busy times. Bookings already taken stay.",
+      "disconnectTitle": "Disconnect Google Calendar?",
+      "disconnectBody": "We'll delete the saved tokens and any synced busy times. Bookings already taken stay.",
       "lastSyncedAt": "Last synced",
-      "lastError": "Last error",
-      "syncedCount_one": "Synced {{count}} event",
-      "syncedCount_other": "Synced {{count}} events"
+      "notConfigured": "Google Calendar isn't set up on this server yet — ask the admin to configure GOOGLE_OAUTH_* env vars.",
+      "syncedCount_one": "Synced {{count}} busy window",
+      "syncedCount_other": "Synced {{count}} busy windows",
+      "toastConnected": "Google Calendar connected",
+      "toastCancelled": "Google Calendar connection cancelled",
+      "toastDisconnected": "Google Calendar disconnected",
+      "toastError": "Couldn't connect Google Calendar — {{reason}}"
     },
     "tabsLabel": "Profile sections",
     "tabs": {
       "personal": "Personal",
-      "security": "Security",
+      "security": "Account & security",
       "provider": "Services",
-      "finances": "Finances",
-      "preferences": "Preferences"
+      "finances": "Finances"
     },
     "aboutMe": "About me",
     "security": "Account & security",
@@ -221,8 +245,9 @@
       "hint": "Recurring bookings skip dates that fall in these windows (vacations, etc.)."
     },
     "providerProfileHint": "Public info shown on your provider listing card and detail page.",
-    "showUnconfiguredServices": "Show {{count}} more services",
-    "hideUnconfiguredServices": "Hide {{count}} unconfigured services"
+    "addService": "+ Add a service",
+    "addServicePlaceholder": "Search by name…",
+    "addServiceEmpty": "No matches."
   },
   "errors": {
     "generic": "Something went wrong",
@@ -398,16 +423,6 @@
     "invoice": "Invoice",
     "invoicePdf": "Download PDF",
     "loadMore": "Load more"
-  },
-  "preferences": {
-    "language": {
-      "title": "Language",
-      "hint": "Sets the language across the entire app. Hebrew switches the layout to right-to-left."
-    },
-    "currency": {
-      "title": "Display currency",
-      "hint": "Sets the currency shown for prices and invoices. Conversion rates are not applied."
-    }
   },
   "language": {
     "hint": "Saved on this device — picked up on every page load."

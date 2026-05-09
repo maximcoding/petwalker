@@ -1,14 +1,11 @@
 'use client';
 
-import { UserRole } from '@petwalker/shared/enums';
-import type { User } from '@petwalker/shared/types';
-import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useMemo, type PropsWithChildren } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { api } from '@/lib/api';
+import { useViewMode } from '@/contexts/view-mode-context';
 
 
 /**
@@ -29,8 +26,13 @@ import { api } from '@/lib/api';
 interface TabDef {
   href: string;
   i18nKey: string;
-  /** Predicate gating visibility. Defaults to always-visible. */
-  show?: (me: User) => boolean;
+  /**
+   * Visibility predicate. Receives the active view mode so toggling
+   * Owner ↔ Provider in the UserMenu actually hides/shows provider-only
+   * surfaces — gating by raw role would leave provider tabs visible
+   * even when the user explicitly switched to Owner view.
+   */
+  show?: (mode: 'owner' | 'provider') => boolean;
 }
 
 const TABS: TabDef[] = [
@@ -39,26 +41,22 @@ const TABS: TabDef[] = [
   {
     href: '/profile/provider',
     i18nKey: 'profile.tabs.provider',
-    show: (me) => me.role === UserRole.Provider || me.role === UserRole.Both,
+    show: (mode) => mode === 'provider',
   },
   { href: '/profile/finances', i18nKey: 'profile.tabs.finances' },
-  { href: '/profile/preferences', i18nKey: 'profile.tabs.preferences' },
+  // Display preferences moved into the avatar UserMenu — Language /
+  // Currency / Units are accessed often enough that a top-level
+  // dropdown is friendlier than a buried tab.
 ];
 
 export default function ProfileLayout({ children }: PropsWithChildren): JSX.Element {
   const pathname = usePathname();
   const { t } = useTranslation();
-
-  const me = useQuery<User>({
-    queryKey: ['me'],
-    queryFn: () => api.auth.me(),
-    staleTime: 30_000,
-  });
+  const { mode } = useViewMode();
 
   const visibleTabs = useMemo(() => {
-    if (!me.data) return TABS.filter((tab) => !tab.show);
-    return TABS.filter((tab) => !tab.show || tab.show(me.data!));
-  }, [me.data]);
+    return TABS.filter((tab) => !tab.show || tab.show(mode));
+  }, [mode]);
 
   // Custom scroll layout (NOT ScrollPage). Why: we need the sticky tab
   // bar to stick flush with the top of the scroll viewport. ScrollPage

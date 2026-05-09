@@ -34,7 +34,7 @@ interface NavItem {
  * additions are:
  *
  *  - Owner mode → Pets, Find a provider, My Bookings, Favorites, Messages
- *  - Provider mode → Order Feed, Managed Bookings, Messages
+ *  - Provider mode → Requests, Bookings, Messages
  *
  * Bookings appears for both modes; the page already filters rows by
  * ownerId vs providerId so it works as-is.
