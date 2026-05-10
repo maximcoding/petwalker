@@ -1,0 +1,37 @@
+Dogwalk — responsive web (mobile/tablet/desktop). Two-sided pet care marketplace, 11 categories: walking, sitting, grooming, boarding, training, daycare, fitness, vet, photography, massage, senior care. One account toggles Owner ↔ Provider.
+
+SHELL: tablet/desktop header (logo, nav, messages, bell, avatar). Mobile bottom tab bar replaces it. Footer (logo, social, support, language, currency).
+AUTH (one screen): Email+Password / Email Link / Phone+OTP / Social (hosted). First-run: skippable name + first pet.
+SHARED: Personal Info; Address book (default flag); Account & Security (password, 2FA, blocked, Delete); Preferences (en/ru/es/zh/he, USD/EUR/ILS, metric/imperial, RTL Hebrew); Notifications (inbox + push, mute); Messages (inbox + threads — bubbles, inline booking card, attachments, read+typing+online).
+
+CATEGORY → FLOW: Live-tracked (walking/fitness/senior) → GPS + polyline + arrival ping + photo stream. Single-location (grooming/vet/massage/training/sitting) → Start/End check-in. Multi-day (boarding/daycare) → daily check-in feed, date-range. Deliverable (photography) → 10–100-photo gallery. Vet/senior add medical-history at booking step 4. Provider sets coverage radius; off-coverage hidden.
+
+OWNER HOME: hero search → Upcoming, Recently booked, Favorites, Suggested, Browse by category. PROVIDER HOME: tiles (Today / Pending / Week / Month earnings), today's schedule, top 3 Pending inline Confirm/Decline, banner if onboarding/payouts incomplete.
+SEARCH+DISCOVERY: filters + sort + saved/recent; List/Map toggle. Cards: photo, distance, rating, services, rate, years, Verified, response-time, heart. Time-off → "Back on Mar 12" badge; "Available now" hides. Map: pin ↔ carousel sync.
+PUBLIC PROFILE: hero (cover or muted intro video) + sticky Book CTA, About, Services & rates (tap pre-selects), availability calendar (month/week + Next-available), reviews with indented provider reply, Favorite/Share/Report.
+
+BOOKING (5 steps + progress bar): Time (slot or date-range) → Pet(s) (multi-select + quick-add) → Location (address book / Provider's / Custom) → Notes (text + photos, prefilled allergies/meds) → Checkout (summary, promo, card / Apple Pay / Google Pay / PayPal / new card via Stripe hosted sheet).
+LIFECYCLE: Pending → Confirmed (charged + reminders) → In progress → Completed/Cancelled. Recurring weekly/bi-weekly/monthly auto-skip.
+
+IN-PROGRESS: Live Tracking (map + GPS + polyline + timer + chat + arrival check + photo stream) for live-tracked; Simple (check-in + chat + multi-day feed) for rest. Owner "Something's wrong" → support; only provider taps End.
+POST-SERVICE: provider summary → rating 1–5 → review + photos → tip (10/15/20% or custom).
+
+PETS: photo, basics (species/breed/DOB/weight/sex/neutered), microchip, feeding, meds, allergies, behavior, vet + emergency contacts. ACCOUNT: Pets, Favorites, Recurring, Saved searches, Promos.
+
+PROVIDER ONBOARDING (resumable wizard): Basic / Video 15–60s / Catalog / Credentials / Availability / Payouts (Stripe Connect hosted). Live after Basic + Catalog.
+CREDENTIALS: Vet gated (license + doc scan, hidden until Verified); optional badge for training/grooming/fitness/senior.
+PROFILE SETUP (tabs): Basics / Photos & video / Services & rates / Coverage / Schedule / Credentials / Payouts. Auto-save; "Preview public profile" sheet.
+SCHEDULE BUILDER (4 layers on one calendar): Weekly Hours · Time-Off · Google Calendar (OAuth, busy-elsewhere overlay) · Existing bookings.
+PIPELINE (4 tabs): Requests (Confirm/Decline + reason); Upcoming (directions, message, pet info, Start, Cancel); Active (in-progress + End + photo/note + "I'm here"); Past (rating + payout).
+EARNINGS: MTD + lifetime; gross − fee − refunds = net; pending + next payout; Cancelled-on-you. PAYOUTS: Stripe Connect status Not connected / Pending / Active.
+
+TRUST & SAFETY: Report, Block, Verified-owner badge, Suspended banner, "In dispute" status pill.
+HELP + LEGAL: Help Center, support chat, status indicator, footer Terms/Privacy/Cookie, EU cookie banner, data export, two-step account deletion.
+
+EMPTY: illustration → headline → subcopy → primary action.
+ERROR: offline banner; 5xx page or retry toast; inline validation; 404/403; payment declined; permission denied; upload retry; silent re-auth; rate-limit countdown.
+LOADING: row-shaped skeletons; in-button spinners; cached-first; heavy lists → top progress bar on refilter, paginated skeletons, retry row.
+
+COMMON: forms (label-above, dot-required, disabled submit + tooltip); destructive dialog spells out exact consequence + red primary; optimistic UI + rollback toast; toasts 1 max; modals (sheet mobile / dialog desktop); dates/currency/distance per Preferences; accessibility (focus ring, 44px targets, alt text).
+
+TONE: energetic, playful, warm. Bold colors, rounded shapes, friendly icons, joyful empty states, generous spacing — outdoors, one-handed. Phone → tablet → desktop, thumb-reachable.
