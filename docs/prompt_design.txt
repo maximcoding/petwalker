@@ -1,0 +1,287 @@
+Project: Dogwalk.
+Platform: Responsive web and mobile app.
+Core: Two-sided pet care marketplace covering 11 service categories — dog walking, sitting, grooming, boarding, training, daycare, fitness, veterinary visits, photography, massage and wellness, senior pet care. Single user account toggles between Owner and Provider modes.
+
+App Shell (every signed-in screen):
+* Header (tablet + desktop): logo on the left, primary nav in the middle, messages icon, notification bell, avatar menu on the right.
+* Bottom tab bar (mobile, replaces the header): primary destinations as icons + labels, thumb-reachable.
+* Footer: logo on the left, social platforms, support contact, language switcher, currency switcher.
+* Layout: shell sticks; only the page body scrolls. List pages keep their title + filters pinned at the top and scroll only the items.
+
+Shared (both roles):
+* Auth (single screen, no separate sign-in vs sign-up — same flow handles new and returning users):
+  - Email + Password: classic email field, password field, "Forgot password?" link.
+  - Email Link (passwordless): enter email → magic link emailed → tap link → signed in.
+  - Phone + SMS OTP: enter phone → 6-digit code SMS'd → enter code → signed in. "Didn't receive it? Resend" appears after 30 s. Up to 3 resends per 10 minutes; further attempts show a countdown until the next resend is allowed.
+  - Social: Continue with Google, Continue with Apple, Continue with Facebook — native one-tap each. Each launches the respective provider's hosted login / consent screen (owned by Google / Apple / Facebook — we do NOT redesign those screens). User returns to our app on completion or hits a friendly fallback (see Auth edge cases) on cancel.
+  - Auth edge cases (every one has a friendly screen, never a stack trace):
+      • Email already registered through a different method ("This email is signed up with Google. Continue with Google?")
+      • Magic link expired ("This link has expired — request a new one")
+      • OTP wrong / expired ("Code didn't work — Resend or try a different method")
+      • Password wrong 5 times in a row → human-check (CAPTCHA) on next attempt; 10 in a row → 15-minute lockout with "Reset password" CTA
+      • Social provider returned an error → fallback to email + password on the same screen, retains the typed email
+  - First-time onboarding (after the very first sign-in): optional name + avatar prompt, then a soft prompt to add a first pet. Both steps have a Skip link; nothing blocks the user from reaching the home screen (the booking flow can quick-add a pet later).
+  - Sign Out: from avatar menu, with confirmation dialog.
+  - Become a Provider: any signed-in user can enable Provider mode from the avatar menu (an account can run as Owner only, Provider only, or both at the same time); provider screens unlock immediately.
+  - Account deletion: entry point from Account & Security → "Delete account". Data semantics described in Legal & Compliance.
+* Personal Info: name, phone, avatar.
+* Addresses: an address book — multiple saved addresses per user (e.g. "Home", "Work", "Parents' place"). Each entry has label, full address (with map picker), unit/floor, gate code/notes, and a "Default" flag. Exactly one address is marked default at any time; setting another as default automatically unmarks the previous. Used everywhere a booking, profile, or service location asks for an address — the picker pre-selects the default. Add / edit / delete from Account.
+* Account & Security: password change, two-factor auth, active sessions.
+* Preferences: languages (English, Russian, Spanish, Chinese, Hebrew), currency (USD / EUR / ILS), metric/imperial units.
+* Notifications: inbox with unread badge. Push notifications on mobile, in-app toasts on web. Categories with filter tabs: All / Bookings / Messages / Payments / System. Per-category mute toggle in Preferences. Tapping a notification deep-links to the relevant screen. Notification types (each has its own deep-link target, copy, and per-type mute):
+  - Bookings: booking-requested (provider), booking-confirmed (owner), booking-cancelled (both), booking-modified (both), booking-reminder-24h (both), booking-reminder-1h (both), service-started (owner), service-arrived (owner — provider tapped "I'm here"), check-in-posted (owner — multi-day), service-completed (owner), provider-no-response-warning (owner — request about to expire), child-booking-skipped (owner — recurring auto-skip).
+  - Messages: new-message (recipient).
+  - Payments: payment-succeeded (owner), payment-failed (owner), refund-issued (owner), payout-sent (provider), payout-failed (provider).
+  - Reviews: review-received (provider), review-reply-posted (owner).
+  - System: account-verified, credential-approved (provider), credential-rejected (provider), listing-suspended (provider), policy-update, planned-downtime, security-alert (new sign-in from a new device).
+* Messages:
+  - Inbox screen: list of conversation threads, sorted by most recent activity. Each row shows counterparty avatar + name, last message preview, timestamp, unread badge. Pinned thread for the support team always at the top. Filter chips: All / Unread / Bookings / Support. Search bar above the list.
+  - Conversation view: message bubbles (user-right, counterparty-left), inline booking summary card pinned at the top of the thread (service + time + status), timestamps grouped per day. System messages rendered as centered text without a bubble: "Booking confirmed", "Service started", "Service completed", "Cancelled — refund issued".
+  - Composer: text field, "+" attachment button (photo / location pin), send button. Max 10 attachments per message. Failed sends show a retry icon next to the message.
+  - Indicators: read receipt under sent messages ("Seen 14:02"), live "typing…" dot below the counterparty avatar, online dot on avatar.
+  - Per-booking entry points from the booking detail screen, the in-progress view's chat overlay, and the provider/owner profile.
+* RTL layout support (Hebrew).
+
+Service categories — UX variations (each of the 11 categories falls into one of these four patterns; the pattern shapes the booking flow, the in-progress view, and the post-service flow):
+* Live-tracked (walking, fitness, senior care): full GPS tracking + route polyline + arrival ping + photo stream while the service is happening.
+* Single-location (grooming, vet, massage, training, sitting): no continuous GPS. Provider taps Start / End at the location; map shows the static service address, not a moving marker. Photo stream optional.
+* Multi-day (boarding, daycare): no continuous GPS. The system prompts the provider for a daily check-in (photo + short note) at preset times (morning / afternoon / evening); the owner sees the feed on the booking detail. Date-range booking mode mandatory.
+* Deliverable (photography): service ends with the provider uploading a gallery (minimum 10, max 100 photos). The owner is notified "Your photos are ready" and opens a Gallery on the booking detail with download-all and per-photo download. Photos remain available for at least one year, with a banner warning 30 days before scheduled removal.
+* Step 4 of the booking flow shows an additional "medical history / recent concerns" prompt for vet and senior-care bookings.
+
+Service Radius / Coverage Area (provider-side):
+* In Provider profile setup, alongside base address, the provider declares either a global service radius (e.g. 10 km) or per-service radii (a different radius per service category). Free-text "Service area description" optional.
+* On owner Discovery: a provider listing only appears if the owner's pin is inside the provider's coverage.
+* On the Map view: tapping a pin draws an outlined circle for that provider's coverage; providers whose coverage doesn't reach the visible map area are hidden.
+* For services that happen at the provider's location (grooming and clinic-based vet visits), the radius is informational — the owner travels to the provider.
+
+Home Screens (signed-in landing):
+* Owner home: hero search bar at the top (service + location + date), one tap opens the full Search. Below the hero, ordered sections: "Upcoming" (next 1–2 confirmed bookings as actionable cards with Get directions / Message / Cancel), "Recently booked" (re-book with one tap), "Favorites" (horizontal carousel of saved providers, "View all"), "Suggested near you" (proximity-sorted, mixed categories), "Browse by category" (chips for all 11 categories, leads into Search filtered by category). Empty-state version (first-time owner, no bookings yet) replaces Upcoming/Recent with "Find your first provider" CTA. Pull-to-refresh on mobile, manual refresh on desktop.
+* Provider home (when in Provider mode): dashboard with overview tiles at the top — Today's bookings count, Pending requests count (clickable to Requests tab), This-week earnings, This-month earnings. Below, ordered sections: "Today's schedule" (timeline view of today's bookings in chronological order), "New requests" (top 3 Pending — Confirm/Decline inline), "Quick actions" (Edit availability / Message all upcoming / Add off-platform booking). Sticky banner at the top if onboarding incomplete or payouts not connected.
+
+Owner Features:
+* Search:
+  - Filters: service, location, max distance, max hourly rate, time slot, languages spoken, accommodation supported (overnight at owner's home).
+  - Sort options: Recommended (default — relevance × proximity × rating), Distance, Price (low → high / high → low), Rating, Most experienced, Newest.
+  - Recent searches as quick-access chips above results.
+  - Saved searches: optional "Save this search" — re-runnable from Account → Saved searches.
+  - First-visit empty state (no recent searches yet): hero illustration, prompt "Find a sitter, walker, vet, or groomer near you", category chip grid (all 11 categories), "Use my location" button, suggested popular services for the user's region.
+* Discovery (results):
+  - Two view toggles: List (default) and Map.
+  - List: proximity-sorted cards. Each card shows photo, name, location & distance, rating + review count, services as chips, hourly rate (or "from $X/hr" if multiple), years of experience, "Verified" badge for credentialed categories, response-time hint ("Replies in ~2 h" — derived from the provider's actual average), favorites heart in the top-right corner.
+  - Map: full-width map with provider pins. Tapping a pin highlights the matching card in a horizontal carousel at the bottom; the carousel is swipeable. Hovering a card on desktop highlights the pin.
+  - Provider currently on time-off: card shows a "Back on Mar 12" badge and is sorted to the bottom by default; a filter chip "Available now" hides them entirely.
+  - "Verified" badge surfaces here when a provider has at least one approved credential — see Provider Features → Credential Verification for the rules.
+* Provider Profile (public view, what an owner sees when tapping a card):
+  - Hero block: cover photo OR auto-playing intro video (muted, looping; tap to unmute) with the provider's name, primary service, and rating + review count overlaid. "Book now" CTA sticks to the bottom of the screen as the page scrolls.
+  - About: bio paragraph, years of experience, languages spoken, location.
+  - Services & rates: list of service entries, each row showing icon + name + booking modes supported (Time slot / Date range / Both), accommodation flag, hourly rate or per-stay rate, default duration. Tapping a row pre-selects that service in the booking flow.
+  - Availability calendar widget: month view by default with a Week toggle; available slots are highlighted, taken/blocked slots are dimmed, today is outlined. Navigation arrows for previous/next period. "Next available: Tue 9:00 AM" hint appears when the visible window has nothing free. Tapping a slot opens the booking flow with that time pre-selected.
+  - Reviews: paginated list with star + comment + reviewer name + date + the booked service. Provider's reply (when present) renders indented under the review. Filters: All / 5★ / 4★ and below.
+  - Footer actions: Favorite (heart toggle), Share (copies a public profile link), Report (opens the Report flow — see Trust & Safety below).
+* Booking flow (Owner side, 5 steps with progress bar; back button on every step except checkout):
+  - Step 1 — Time. Booking mode depends on the Service category and what the provider declares for that service. Multi-day categories (boarding, daycare) force Date range; live-tracked and single-location categories typically use Time slot; some providers offer both — when both are offered, the user picks.
+      • Time slot: single appointment — pick a date, start time from the provider's available slots, and duration. Slots that conflict with existing bookings, time-off, or external busy windows are greyed out.
+      • Date range: pick check-in date + check-out date. Optional Accommodation toggle when the provider supports both — "Pet stays at provider's place" vs. "Provider stays at owner's home".
+  - Step 2 — Pet(s). Pick one or multiple pets from the owner's roster (multi-select; provider's per-pet surcharge, if any, applies and is shown inline). If the roster is empty, an inline quick-add card appears in the same step (name, species, breed minimum) so the booking is never blocked by a missing pet.
+  - Step 3 — Location. Three options, limited to what the selected provider supports per service:
+      • Pet's home address — picker pulls from the owner's address book (default address pre-selected; "Use a different address" reveals the rest with an "Add new" option that saves it back to the book).
+      • Provider's location (shown read-only)
+      • Custom address — one-off, not saved to the book unless the owner ticks "Save to my addresses".
+  - Step 4 — Notes. Free-text instructions to the provider (gate code, harness location, behavioral quirks, etc.). Optional photo attachments. Pre-filled with relevant pet notes (allergies, medications) the owner can edit before sending.
+  - Step 5 — Checkout. Order summary (service, pet(s), location, time, subtotal, optional promo / referral code discount, platform fee shown as a line item, total). Pick a saved card, Apple Pay, Google Pay, PayPal, or add a new card (availability matrix in Payment Methods). "Have a code?" expandable row applies a promo or referral code. "Confirm and pay" places a hold on the card; the actual charge runs at the moment the provider confirms (see Lifecycle). The hold lasts up to 24 h; if the request expires unanswered, the hold is released without a charge.
+* Booking Lifecycle (Owner and Provider see different actions per state):
+  - Pending — waiting on provider. Owner sees "Awaiting confirmation" + Cancel; Provider sees the request in the Requests tab with Confirm / Decline. The 24 h response timer auto-expires the request and releases the card hold.
+  - Confirmed — provider accepted. Owner's card is charged at this moment. Both sides get a notification + email receipt. Owner sees a countdown to start time + a "Get directions" link if the service is at the provider's location. Provider sees the booking in Upcoming with the full notes and pet card.
+  - In progress — provider tapped Start. The owner's screen switches to the in-progress view (Live Tracking or Simple In-Progress, per Service category). In-app chat opens.
+  - Completed — provider tapped End. Owner gets the post-service flow. Provider sees the booking move to Past with payout status.
+  - Cancelled — surfaces in Past with a "Cancelled" tag and reason. Cancellation rules below.
+* Cancellation rules:
+  - Owner cancels ≥ 2 hours before start → full refund, no platform fee charged.
+  - Owner cancels < 2 hours before start → no refund.
+  - Provider cancels (any time) → full refund to owner, provider charged a no-show fee. Repeat-offender consequences in Trust & Safety → Provider auto-pause.
+  - Cancellation reason is required (dropdown: schedule conflict, illness, emergency, other). The reason is shared with support, never with the counterparty.
+  - The cancel action follows the standard Destructive-actions pattern (confirmation dialog with the exact refund amount).
+* After-confirmation rails (what each side does between Confirmed and In progress):
+  - Owner: receives reminder push 24 h and 1 h before. Can edit notes, message the provider, or cancel. Can NOT change pet / location / time after confirm — those require cancellation + re-book.
+  - Provider: receives reminder push 24 h and 1 h before. Can message the owner, view route to the location, see pet info card, or cancel (refund + no-show fee per Cancellation rules). Start button stays locked until 15 minutes before the scheduled time.
+* Recurring bookings: owner can mark a confirmed booking as "Repeat weekly / bi-weekly / monthly". The series spawns child bookings on the schedule; each child is independently cancellable. A child whose date falls inside the provider's time-off, public holidays, or external-calendar busy window is skipped automatically; the owner gets a "Skipped on Mar 12" notification with a "Reschedule" link.
+* Payment Methods: list of saved cards with brand + last 4 + expiry, Apple Pay / Google Pay shown as native one-tap on supported devices, optional PayPal connection. Add / remove / set default. Adding a card opens Stripe's hosted card form embedded as a sheet/modal — that surface is owned by Stripe (we do not redesign the inputs); we only design the wrapping sheet (header, "Add card" title, Cancel button) and the success/failure states around it. PayPal connection opens PayPal's hosted login. Apple Pay / Google Pay availability matrix:
+  - Apple Pay: iOS app, Safari on iOS/iPadOS, Safari on macOS (with paired iPhone/Watch). Hidden on other browsers/platforms.
+  - Google Pay: Android app, Chrome on any platform with a saved Google payment method. Hidden in Safari and Firefox.
+  - When neither one-tap method is available, the card sheet is the primary option; the UI silently hides the unavailable buttons rather than showing a "not supported" error.
+* Billing History: chronological list of past bookings with amount, date, status (paid / refunded / partial refund), and a "Download invoice" link per row. Filter by date range, status, or service.
+* Booking Detail (the static screen owners and providers land on when tapping a booking from any list — distinct from the in-progress view, which only renders while the service is happening):
+  - Header: status pill (Pending / Confirmed / In progress / Completed / Cancelled), service name, scheduled date+time (or check-in/check-out range), countdown to start when relevant.
+  - Counterparty card: avatar, name, rating, "Message" button. On owner side it's the provider; on provider side it's the owner.
+  - Pet card(s): each pet booked, with key info expandable (allergies, medications, behavioral notes).
+  - Location card: address (or provider's location), small static map snippet with a pin, "Get directions" link (opens native maps).
+  - Notes: the free-text + photos the owner sent at booking time, plus any post-confirmation edits with a "(edited)" tag.
+  - Payment summary: subtotal, platform fee, promo discount if any, total, payment method last 4 / brand / Apple Pay / Google Pay / PayPal, "Download invoice" button (Completed only).
+  - Timeline (Multi-day stays only): chronological feed of provider check-ins (photo + note, time-stamped), expandable for full-size photos.
+  - Gallery (Photography only): grid of delivered photos with download-all and per-photo download. Visible after Completed.
+  - Service summary card (shown on Completed): provider's summary text + photos. For live-tracked services it also shows auto-collected stats (distance, duration, weather) and a "Replay route" button that opens the polyline on a static map.
+  - Action footer (varies by state and role):
+      • Owner Pending → Cancel booking
+      • Owner Confirmed → Cancel booking, Get help, Edit notes, Open in-progress view when In progress
+      • Owner Completed → Leave a review (if not yet), View invoice
+      • Provider Pending (in Requests tab context) → Confirm, Decline
+      • Provider Confirmed → Cancel, Get directions, Start (when the start window opens)
+      • Provider In progress → Open in-progress view, End
+      • Both, on Confirmed and later → Get help (opens a support thread pre-loaded with this booking), Report
+* In-progress views (during In progress state). Two variants depending on Service category:
+  - Live Tracking (live-tracked categories — walking, fitness, senior care): full-screen map with the provider's live GPS marker, animated route polyline, elapsed timer. In-app chat panel slides up from the bottom and does not leave the map. "Service started at HH:MM" timestamp at the top. "Arrived at location" event surfaces as a check on the map + a chat entry when the provider taps the arrival ping. Service photo stream: provider uploads appear as small thumbnails on a timeline rail; tap to expand; owner sees them in real time.
+  - Simple In-Progress (single-location and multi-day categories): no map. A single check-in card at the top ("Started at HH:MM"), chat overlay, daily check-ins feed (multi-day only). Provider posts "I've finished" instead of a GPS-driven End.
+  - Both variants: only the provider can end the service. Owner has a "Something's wrong" button that opens an immediate support thread and flags the booking.
+* Post-Service (Completed state). Step-by-step flow (skippable except the rating):
+  - Step 1 — Provider's service summary (read-only): the provider's end-of-service note, photos taken during the service, plus auto-collected stats for live-tracked services (distance, duration, weather).
+  - Step 2 — Mandatory 1–5 star rating.
+  - Step 3 — Optional written review (max 1000 characters).
+  - Step 4 — Optional pet photos from the owner's side (max 10).
+  - Step 5 — Tip. Three preset percentages (10 / 15 / 20 %) or a custom amount in the user's currency, from a $1 equivalent up to 50 % of the booking total. Tips go directly to the provider, no platform fee.
+  - Review is editable for 7 days after submission, then locked. The provider may post one public reply within 30 days; that reply is not editable once posted.
+* Pets: per-owner pet roster used everywhere a booking references "which pet". Each pet has photo, name, species (dog / cat / bird / rabbit / reptile / other), breed, date of birth (age computed), weight, sex, spayed/neutered flag, color/markings, microchip ID, feeding notes, medications, allergies, behavioral notes (good with kids, reactive on leash, etc.), and two contact slots — vet contact (clinic name + phone) and emergency contact (person name + phone + relationship). Add / edit / remove from Account; quick-add inline during the booking flow if the pet doesn't exist yet.
+* Account: Pets list, favorites list (saved providers), recurring bookings (e.g. every Monday at 8am), saved searches (re-run with one tap), promo codes (applied / expired / available — if any).
+
+Provider Features:
+* Onboarding (first-time, when user becomes a provider): multi-step wizard with progress bar.
+  - Step 1 — Basic info: bio, base address, experience start year.
+  - Step 2 — Video Resume: record or upload a short intro video (15–60 seconds). Encouraged, not required. Plays as the cover on the public profile.
+  - Step 3 — Service Catalog: pick categories, set rates, booking modes, accommodation flag.
+  - Step 4 — Credential Verification (shown only when picked categories require or allow credentials — see Credential Verification below).
+  - Step 5 — Availability: set weekly working hours per day and any upcoming time-off ranges (see Schedule Builder below).
+  - Step 6 — Payouts: launches Stripe Connect's hosted onboarding (bank details, ID verification, tax info — owned by Stripe, not redesigned by us). Can be deferred (the listing goes live without it but earnings hold as a pending balance until Stripe activates).
+  Wizard is resumable: every step persists partial progress, the user can leave at any point and finish later from Profile. Step 1 (Basic info) and Step 3 (Service Catalog) must be complete before the listing goes live; Steps 2, 4, 5, 6 can be skipped or filled in later.
+* Credential Verification:
+  - Veterinary (gated category): license number + jurisdiction + scan of the license document required. The service stays hidden from owner search until verified.
+  - Optional badge categories (training, grooming, fitness, senior care): credentials are optional; uploading approved credentials awards a "Verified" badge on the listing card. Listing remains visible regardless of badge.
+  - Status states: Not Submitted / Pending Review / Verified / Rejected (with reason). Re-submit available after rejection.
+* Profile Setup (the provider's own edit view, distinct from the public profile in Owner Features):
+  - Tabbed layout under Provider mode: Basics / Photos & video / Services & rates / Coverage / Schedule / Credentials / Payouts.
+  - Basics: bio, base address (with map picker), experience start year, languages spoken, read-only response-time hint computed from the provider's past reply speed.
+  - Photos & video: profile photo, gallery (1–12 images, drag-to-reorder), intro video (replace / re-record), all with crop tools. "Preview public profile" button shows the public version in a sheet without leaving edit mode.
+  - Services & rates: list of service entries with add / remove / reorder. Per service: name, hourly or per-stay rate, default duration, booking modes (Time slot / Date range / Both), accommodation flag, optional per-pet surcharge. Inactive toggle hides a service from search without deleting it.
+  - Coverage: see the cross-cutting Service Radius / Coverage Area section above.
+  - Schedule: opens the Schedule Builder.
+  - Credentials: see Credential Verification.
+  - Payouts: see Payouts Setup.
+  - Text fields auto-save on blur with a brief "Saved" indicator; toggles save explicitly via a confirm action. Leaving with unsaved text triggers a "Discard changes?" dialog.
+* Schedule Builder: four layers stacked on the same calendar surface.
+  - Weekly Hours: 7-day matrix (Mon → Sun). Per day, add one or more time windows (e.g. Mon 9–12 and 14–18). Empty day = "Unavailable". Editing the template auto-regenerates future bookable slots.
+  - Time-Off: list of date ranges with optional reason (vacations, holidays, sick days). Recurring booking series skip dates that fall inside these windows.
+  - Connect Google Calendar: button on the Schedule surface launches Google's OAuth consent screen (owned by Google — we do NOT redesign it). On return, status banner shows Connected (green) / Disconnected (grey) / Reconnect needed (yellow — Google access has lapsed; provider clicks to re-authorise). External busy times overlay as read-only dimmed bars labeled "busy elsewhere", in the provider's local timezone (provider edits them in their Google Calendar). Disconnect button removes the integration.
+  - Existing bookings: rendered as solid colored blocks on the same calendar — automatically block their own slots; provider does not edit them here.
+* Booking Pipeline: 4 tabs reflecting lifecycle state.
+  - Requests: incoming Pending bookings. Card shows owner name + photo, pet card, time, location, total payout (after platform fee). Two primary actions: Confirm / Decline. Decline requires a reason (selectable: time conflict, can't accommodate this pet, etc.); shared with support, not with the owner. The card has a 24 h countdown and auto-expires when it runs out (same timer as Lifecycle → Pending).
+  - Upcoming: Confirmed bookings, sorted by scheduled time ascending. Each card shows a "Get directions" link, message owner button, view pet info button. The Start button unlocks 15 min before scheduled time and stays available for the booking duration. Cancel button is here too — see Cancellation rules.
+  - Active: bookings In progress. Same in-progress view the owner sees, with the End button + "Add note / photo" / "I'm here" controls layered on. Provider must tap End to complete the service — there is no auto-end on time elapsed.
+  - Past: Completed and Cancelled bookings. Filterable by service type and date. Each row shows the rating + review (if owner left one) and the payout amount.
+* Provider booking actions (per state):
+  - On Pending request → Confirm (charges the owner's card, moves to Upcoming) or Decline (releases the hold).
+  - On Confirmed booking → Start (unlocks 15 min before scheduled time, opens the in-progress view, begins GPS broadcast on live-tracked categories), Cancel (full refund to owner + no-show fee on provider — Destructive-actions confirmation dialog).
+  - On In progress booking:
+      • "I'm here" arrival ping — provider taps on arrival at the location; surfaces to the owner as a check on the live map and an entry in chat. Optional but encouraged.
+      • Add photo / add note — uploads stream into the in-progress timeline so the owner sees them in real time. Multiple allowed during the service.
+      • End — closes tracking, finalises the route polyline (live-tracked services), queues the post-service flow for the owner.
+      • Service summary — required short text + optional photos before tapping End. Pre-filled with auto-collected data (distance, duration, weather) where available; the provider can edit.
+  - At any state: message the owner inline.
+* Earnings Dashboard:
+  - Month-to-date and lifetime totals at the top.
+  - Breakdown line: gross bookings — platform fee — refunds = net payout.
+  - Per-booking list: date, owner, service, gross, fee, net.
+  - Pending payout balance + next payout date (depends on the connected payment account's schedule).
+  - Cancelled-on-you list: bookings an owner cancelled, shown as a separate row so the provider knows why an Upcoming slot freed up.
+* Payouts Setup: connect a Stripe Connect account to receive earnings. Onboarding is handled by Stripe's hosted flow (bank details, ID verification, tax info — described in Provider Onboarding Step 6 and not redesigned by us). Status banner: Not connected (red) / Pending verification (yellow — Stripe is still reviewing) / Active (green — payouts enabled). Until Active, bookings can still be accepted; earnings hold as a pending balance and release on the next payout cycle once Stripe activates.
+
+Trust & Safety (cross-cutting):
+* Report user: available from any provider profile, owner profile (visible only when there's a shared booking), and any chat thread. Categorized reasons (inappropriate behavior, safety concern, harassment, scam, other) + free-text + optional screenshots. Submission opens a support ticket and silently flags the reported user for moderation.
+* Block user: from chat thread or profile. Blocking hides their listings from the owner's search and prevents new bookings or messages either way. Reversible from Account & Security → Blocked users.
+* In-progress safety: during an active service the owner has a "Something's wrong" button (see In-progress views) that opens an immediate support chat thread + flags the booking.
+* Provider auto-pause: 3 provider cancellations or 1 substantiated safety report in a 30-day rolling window auto-pauses the listing pending human review. The provider sees a Suspended banner on every Provider screen with a "Contact support" CTA.
+* Owner verification: optional from Account & Security → "Verify identity". Owner uploads a government photo ID + a selfie; on approval a "Verified owner" badge appears next to the owner's name on the reviews they leave and in chat threads with providers. Not required for booking.
+* Disputes (post-service): if either side reports a substantive problem after Completed (provider no-show, animal injury, property damage), a Dispute is opened from the booking detail "Get help" → "Open a dispute". Flow: pick category (no-show, harm to animal, damage, late, other) → describe → upload evidence → submit. Booking moves to "In dispute" status; refund paused, payout to provider held until resolution. Both sides chat with support in a dedicated thread; resolution outcomes are full refund / partial refund / no refund + provider penalty / no penalty. SLA hint shown to both sides ("First response within 24 h").
+
+Help & Support:
+* Help Center: searchable articles (booking how-to, payments, cancellations, becoming a provider, safety). Reachable from the avatar menu, the footer, and an empty-state link on every error page.
+* Contact Support: in-app chat with the support team. Pre-filled with current screen context when opened from a "Get help" link inside a booking, payment, or error state. SLA hint shown at the top of the thread ("Replies within 4 h on weekdays").
+* Status indicator (operational status of the platform — green / partial outage / degraded) shown at the top of Help when relevant.
+* FAQ snippets surface inline at the points users ask the question (e.g. "Why am I being charged now?" tooltip on the booking confirm screen).
+
+Legal & Compliance:
+* Footer links: Terms of Service, Privacy Policy, Cookie Policy, About, Careers (optional), Press (optional).
+* Cookie banner (web, EU regions): bottom-fixed sheet with Accept / Reject / Customize. Customize opens a panel with categorized toggles (Necessary always on, Analytics, Marketing). User's choice is remembered; "Manage cookies" link in the footer re-opens the panel any time.
+* GDPR / data export: from Account & Security → "Download my data" produces a zip with profile, bookings, messages, reviews, and account history (a chronological list of profile and security events the user can audit). One export per 24 h; further attempts show "Available again at HH:MM". Also offered as an opt-in step inside the Delete account flow.
+* Account deletion: two-step confirmation from Account & Security → "Delete account". Soft-delete with anonymisation of public artifacts (reviews remain but author name becomes "Deleted user"); booking and payment records retained for legal periods, then purged.
+* Age requirement: 18+ to register, declared on signup. Veterinary providers verify age 18+ as part of license document review.
+
+First Impression:
+* Cold load: above-the-fold app shell + skeleton hero immediately — never a full-page spinner. Auth redirect reads as a route change, not a flash.
+* Signed-out → signed-in handoff: the "Sign up to book" entry point on a marketing page lands the user back on the same intended action after auth (e.g. continue to provider profile or booking flow).
+
+Empty States (every list, search, or feed gets one — never a blank screen):
+* Search no results: friendly illustration, copy that names what was searched ("No groomers found within 5 km"), one primary action ("Expand the radius") and one secondary ("Change service").
+* Pets list empty: illustration of a dog/cat silhouette, "Add your first pet to start booking" + Add Pet primary button.
+* Bookings (any tab) empty: tab-specific copy — Requests "No requests yet — your listing goes live once you finish onboarding"; Upcoming "Nothing booked yet"; Past "Your completed bookings will live here".
+* Favorites empty: "Tap the heart on any provider to save them here."
+* Messages empty: "No conversations yet — messaging unlocks once a booking is confirmed."
+* Notifications empty: "You're all caught up."
+* Address book empty: "Add an address to speed up checkout."
+* Payment methods empty: "Add a card to book in one tap." (no fear copy about saving cards)
+* Schedule (provider, no hours set): "Set your weekly hours so owners can book you" + Set Hours primary button.
+* Earnings empty (provider, no payouts yet): "Earnings will show up here once your first booking completes."
+* Reviews on profile (no reviews yet): "Be the first to book and review."
+* All empty states share the same vertical rhythm: illustration → headline → one-line subcopy → primary action (optional secondary as text link).
+
+Error States:
+* Network offline: persistent banner at the top of the app — "You're offline — some actions are paused." Form submits queue and retry on reconnect; reads fall back to last-cached data with a "Showing cached data" tag where relevant.
+* Server 5xx on a list/page: full-page error with illustration, "Something went wrong on our end" + Retry button. Never just a stack trace.
+* Server 5xx on a button (booking confirm, send message, etc.): inline toast at the bottom — "Couldn't send. Try again?" with a Retry action; the originating control re-enables. Form fields keep their values.
+* Validation errors: inline under the field, red icon + concise text ("Phone number must include country code"). Never a top-of-form generic error block.
+* Not found (404): friendly page, illustration, "We couldn't find this" + buttons back to Home / Search.
+* Forbidden (403): "You don't have access to this" + Switch role / Sign in as someone else.
+* Payment declined: dialog with the bank's reason text + Try another method / Edit card / Cancel.
+* Geolocation denied: gentle banner explaining what won't work + a "Use a manual address" fallback.
+* Camera/mic/notification permission denied: deep-link button to system settings + plain-English explanation of what the app uses it for.
+* Photo upload failed: thumbnail shows a red retry icon overlay; tap to re-upload. The rest of the form is not blocked.
+* Session expired: silent re-auth attempt; if that fails, surface a "Please sign in again" dialog without losing typed-in form data.
+* Too many requests: "You're going a bit fast — try again in 30 seconds." Visible countdown that re-enables the action when it reaches zero.
+
+Loading & Skeletons:
+* Lists render skeleton rows that match the eventual layout (avatar + 2 lines + chip), not spinners.
+* Maps show a static placeholder tile while the live map loads.
+* Buttons that trigger network calls show an in-button spinner + go disabled (don't shrink — keep label width stable).
+* Background refresh on focus: silent. No spinners on stale-but-shown data.
+* Heavy lists (provider search results, booking history, earnings, messages):
+  - Initial load: 6–10 skeleton rows immediately (no full-screen spinner — perceived speed > truthfulness).
+  - Skeleton row matches the real row's height and column structure exactly so there's zero layout shift when content swaps in.
+  - Pull-to-refresh on mobile and a refresh icon on desktop reveal a thin top bar with a determinate progress indicator while a refetch runs; existing rows stay visible underneath.
+  - Pagination ("load more" / infinite scroll) appends 3 skeleton rows at the bottom while the next page fetches; replaces them in-place when the page resolves.
+  - Filtering or changing sort: keep the existing rows visible at 60 % opacity with a subtle top progress bar — don't blank the list. Swap when the new page resolves.
+  - Slow request (>2 s): the top progress bar switches from determinate to indeterminate; if it goes >5 s, surface a small inline note ("Still loading — slow connection?") with a Cancel link.
+  - Empty page after filter: the filter chips stay; the list area shows the search-no-results empty state with a "Clear filters" action.
+  - Image-heavy rows (provider cards): show a low-quality colour placeholder until the real photo decodes, then crossfade. Never reflow when the image arrives.
+  - Cached-first: lists render last-cached data instantly on revisit, then quietly reconcile with the server in the background; only show the progress bar if the request takes >250 ms.
+  - Hard failure mid-pagination: append an inline "Couldn't load more — Retry" row at the end, don't blow away rows already shown.
+
+Common Patterns (apply everywhere):
+* Forms: labels above fields, helper text below, errors replace helper text. Required fields marked with a subtle dot — never an asterisk. Submit button stays disabled until the form is valid; on hover (desktop) or tap (mobile) a tooltip lists what's still missing.
+* Destructive actions: confirmation dialog with the exact consequence spelled out ("Cancel this booking? You'll receive a refund of $24.50"), red primary button, "Keep booking" as the default-focused secondary. Never a single "Are you sure?".
+* Optimistic UI: rating, favoriting, reading a notification — apply instantly, reconcile on response, roll back with a toast on failure.
+* Toasts: bottom-center on mobile, bottom-right on desktop; auto-dismiss after 5 s for success, sticky-with-Close for errors. Max 1 toast at a time — newer replaces older.
+* Confirmations: any irreversible or money-moving action gets a dialog. Reversible actions (favorite, archive a chat) get a toast with Undo.
+* Sticky context: long forms (provider onboarding, booking flow) keep a sticky header with the step title and a sticky footer with Back/Continue, both above the keyboard on mobile.
+* Pagination: infinite scroll for feeds and lists with a clear "End of list" affordance.
+* Modals: full-screen sheet on mobile (drag-down to dismiss), centred dialog on desktop. Never both at the same time.
+* Dates and times: always shown in the user's locale + timezone with a relative hint ("Tomorrow, 9:00 AM"). Currency formatted per Preferences. Distances per units preference (km vs mi).
+* Read receipts and unread badges: badges on the bell, the Messages tab, and per-thread rows. Tapping clears them with a tiny fade.
+* Accessibility: every interactive surface keyboard-reachable; visible focus ring; min 44 px tap targets on mobile; live regions for toast announcements; alt text required and editable on every uploaded photo.
+* Cross-device handoff: a session opened on web stays signed in on mobile and vice versa; deep links from push notifications open the same screen.
+
+Tone & Visual Direction:
+* Energetic, playful, warm.
+* Bold colors, rounded shapes, friendly icons, joyful empty states.
+* Generous spacing — used outdoors, one-handed.
+
+Responsive Behavior:
+* Layouts adapt phone → tablet → desktop.
+* Primary actions thumb-reachable on mobile.
