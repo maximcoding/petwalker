@@ -4,7 +4,7 @@
 // Run after `make db-fresh` (or against an existing DB — Olivia's owner-side
 // data is wiped first; provider-side data uses ON CONFLICT DO NOTHING).
 //
-// After it runs, sign in as `olivia@petwalker.test` (Password123!) and you'll
+// After it runs, sign in as `admin@admin` (Password123!) and you'll
 // see infinite-scroll-grade data on every screen: providers list paginates,
 // bookings list spans every status with hundreds in each tab, search filters
 // are actually meaningful.

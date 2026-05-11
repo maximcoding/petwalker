@@ -2,14 +2,19 @@ import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
 /**
- * Default credentials for the seeded test owner — created by
- * `pnpm --filter @petwalker/backend db:bulk-seed`. Override via env if
- * you want to reuse this helper on a different account.
+ * Default credentials for the seeded test owner — sub stays the same
+ * (so backend seeds still attach pets+bookings to this row), only the
+ * email attribute on the cognito-local user was renamed. The Olivia*
+ * exports are kept for historical clarity; new specs may import the
+ * neutral aliases (TEST_EMAIL / TEST_PASSWORD) below.
+ *
+ * Override via E2E_EMAIL / E2E_PASSWORD env if you've changed seed
+ * credentials.
  */
-export const OLIVIA_EMAIL =
-  process.env.E2E_EMAIL ?? 'olivia@petwalker.test';
-export const OLIVIA_PASSWORD =
-  process.env.E2E_PASSWORD ?? 'Password123!';
+export const TEST_EMAIL = process.env.E2E_EMAIL ?? 'admin@admin';
+export const TEST_PASSWORD = process.env.E2E_PASSWORD ?? 'Password123!';
+export const OLIVIA_EMAIL = TEST_EMAIL;
+export const OLIVIA_PASSWORD = TEST_PASSWORD;
 
 /**
  * Sign in via the UI. Uses the email/password fields directly — selectors

@@ -1,0 +1,11 @@
+{
+  "$schema": "./photo-manifest.schema.json",
+  "$comment": "List of photos to fetch from Unsplash. Each entry maps to a file under web/public/images/<group>/<slug>.jpg. The fetch script (scripts/fetch-photos.ts) downloads only entries whose target file is missing, unless run with --refresh. Real entries land in PR #2 (M3 Owner core); this list is intentionally near-empty for the M1 Foundation PR.",
+  "groups": {
+    "providers": [],
+    "pets": [],
+    "heroes": [],
+    "empty-states": [],
+    "categories": []
+  }
+}

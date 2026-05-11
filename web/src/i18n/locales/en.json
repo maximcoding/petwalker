@@ -13,7 +13,8 @@
     "signIn": "Sign in",
     "signUp": "Sign up",
     "createOne": "Create one",
-    "noAccount": "No account?"
+    "noAccount": "No account?",
+    "primary": "Primary"
   },
   "userMenu": {
     "openLabel": "Open user menu",
@@ -75,7 +76,8 @@
     "language": "Language",
     "add": "Add",
     "remove": "Remove",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "offline": "You're offline — some actions are paused."
   },
   "pets": {
     "title": "My pets",
@@ -321,7 +323,15 @@
     "atOtherAddress": "Other address",
     "ownerHome": "(Set a home address on this pet or your account)",
     "providerLocation": "(Provider hasn't published an address)",
-    "customAddressHint": "Where the service should happen — street, neighborhood, anything that helps the provider find it."
+    "customAddressHint": "Where the service should happen — street, neighborhood, anything that helps the provider find it.",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "inProgress": "In progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "inDispute": "In dispute"
+    }
   },
   "address": {
     "label": "Address",
@@ -426,5 +436,31 @@
   },
   "language": {
     "hint": "Saved on this device — picked up on every page load."
+  },
+  "footer": {
+    "copyright": "© {{year}} PetWalker, Inc.",
+    "about": "About",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "contact": "Contact",
+    "legal": "Legal",
+    "social": "Social media"
+  },
+  "empty": {
+    "comingSoon": "More on this screen is coming soon."
+  },
+  "actions": {
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "decline": "Decline",
+    "retry": "Try again",
+    "dismiss": "Dismiss",
+    "undo": "Undo",
+    "getDirections": "Get directions",
+    "message": "Message",
+    "share": "Share",
+    "report": "Report",
+    "favorite": "Favorite",
+    "unfavorite": "Remove favorite"
   }
 }
