@@ -55,7 +55,59 @@
     "signingIn": "Signing in…",
     "creating": "Creating…",
     "confirming": "Confirming…",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "welcomeTitle": "Welcome",
+    "welcomeSubtitle": "Sign in or create your account.",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "phoneLabel": "Phone",
+    "forgotPassword": "Forgot password?",
+    "continue": "Continue",
+    "continueWith": "or continue with",
+    "googleCta": "Continue with Google",
+    "appleCta": "Continue with Apple",
+    "facebookCta": "Continue with Facebook",
+    "emailPlaceholder": "you@petwalker.app",
+    "passwordPlaceholder": "••••••••",
+    "phonePlaceholder": "+1 (415) 555-0172",
+    "agreement": "By continuing you agree to our",
+    "terms": "Terms",
+    "and": "and",
+    "privacy": "Privacy Policy",
+    "noAccountQuestion": "New here?",
+    "haveAccountQuestion": "Already have an account?",
+    "modes": {
+      "email": "Email",
+      "magicLink": "Magic link",
+      "phone": "Phone",
+      "emailHint": "Use your email and password.",
+      "magicLinkHint": "We'll email a magic link. Tap it to sign in — no password needed.",
+      "phoneHint": "We'll text you a 6-digit code."
+    },
+    "magic": {
+      "sendCta": "Send me a link",
+      "sentHeadline": "Check your email",
+      "sentSubcopy": "We sent a sign-in link to {{email}}. It expires in 15 minutes.",
+      "resendCta": "Resend link",
+      "openInbox": "Open inbox"
+    },
+    "otp": {
+      "codeLabel": "6-digit code",
+      "verifyCta": "Verify",
+      "sentTo": "We sent a code to {{phone}}.",
+      "resendIn": "Resend in {{seconds}}s",
+      "resendCta": "Resend code",
+      "wrongCode": "Code didn't work — try again or send a new one."
+    },
+    "authErrors": {
+      "invalidCredentials": "Email or password didn't match.",
+      "linkExpired": "This link has expired — request a new one.",
+      "accountExistsElsewhere": "This email is signed up with {{method}}. Continue with {{method}}?",
+      "captcha": "A few wrong tries — confirm you're human.",
+      "lockout": "Too many attempts. Try again in {{minutes}} minutes or reset your password.",
+      "socialFailed": "Couldn't sign in with that. Try email instead.",
+      "genericRetry": "Something went wrong. Try again?"
+    }
   },
   "common": {
     "save": "Save",
