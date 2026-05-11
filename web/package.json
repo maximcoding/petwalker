@@ -13,6 +13,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:install": "playwright install chromium",
+    "photos:fetch": "tsx --env-file=.env.local scripts/fetch-photos.ts",
+    "photos:refresh": "tsx --env-file=.env.local scripts/fetch-photos.ts -- --refresh",
     "clean": "rm -rf .next .turbo test-results playwright-report"
   },
   "dependencies": {
@@ -41,6 +43,7 @@
     "eslint-config-next": "^14.2.13",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
+    "tsx": "^4.21.0",
     "typescript": "^5.5.4"
   }
 }
