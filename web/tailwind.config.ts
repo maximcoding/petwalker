@@ -16,6 +16,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        /* === Hue families (50..900) === */
         brand: {
           50: 'var(--color-brand-50)',
           100: 'var(--color-brand-100)',

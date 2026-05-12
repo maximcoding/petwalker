@@ -54,7 +54,7 @@ report under `web/playwright-report/` (open with `pnpm --filter @petwalker/web e
 
 ## Test data assumptions
 
-- `olivia@petwalker.test` / `Password123!` exists with `role: 'owner'`. Override via `E2E_EMAIL` / `E2E_PASSWORD` env if you've changed seed credentials.
+- `admin@admin` / `Password123!` exists with `role: 'owner'` (same underlying cognito-local user as the prior `olivia@petwalker.test`; sub is unchanged so backend seeds still attach). Override via `E2E_EMAIL` / `E2E_PASSWORD` env if you've changed seed credentials.
 - The bulk seed has run, so `/providers` has at least one Walking provider.
 - Tests that flip Olivia's role to `Both` are idempotent (clicking Both twice is fine).
 - Tests share Olivia's account — workers are pinned to 1 to avoid races on her profile/offerings. Tests that touch separate data can opt in via `test.describe.parallel`.

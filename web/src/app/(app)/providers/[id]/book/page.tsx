@@ -11,7 +11,6 @@ import { useTranslation } from 'react-i18next';
 
 import { BookingForm } from '@/components/booking-form';
 import { ScrollPage } from '@/components/scroll-page';
-import { SiteFooter } from '@/components/site-footer';
 import { api } from '@/lib/api';
 
 export default function BookProviderPage(): JSX.Element {
@@ -147,7 +146,6 @@ export default function BookProviderPage(): JSX.Element {
             error={err}
             onSubmit={(v) => void createBookings(v)}
           />
-          <SiteFooter />
         </div>
       </div>
     </div>

@@ -87,7 +87,8 @@
     "language": "Language",
     "add": "Add",
     "remove": "Remove",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "offline": "You're offline — some actions are paused."
   },
   "pets": {
     "title": "My pets",
@@ -449,5 +450,31 @@
   },
   "language": {
     "hint": "Saved on this device — picked up on every page load."
+  },
+  "footer": {
+    "copyright": "© {{year}} PetWalker, Inc.",
+    "about": "About",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "contact": "Contact",
+    "legal": "Legal",
+    "social": "Social media"
+  },
+  "empty": {
+    "comingSoon": "More on this screen is coming soon."
+  },
+  "actions": {
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "decline": "Decline",
+    "retry": "Try again",
+    "dismiss": "Dismiss",
+    "undo": "Undo",
+    "getDirections": "Get directions",
+    "message": "Message",
+    "share": "Share",
+    "report": "Report",
+    "favorite": "Favorite",
+    "unfavorite": "Remove favorite"
   }
 }

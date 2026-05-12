@@ -37,6 +37,17 @@ const SOCIAL_INSTAGRAM = 'https://instagram.com/petwalker';
 const SOCIAL_TWITTER = 'https://twitter.com/petwalker';
 const SOCIAL_TIKTOK = 'https://tiktok.com/@petwalker';
 
+/**
+ * `/` — guest-facing entry point.
+ *
+ * This is NOT the full marketing site (per docs/roadmap.md line 664,
+ * marketing landing pages live in a separate marketing surface).
+ * It's a stylistic minimum so the dev-mode root URL doesn't look
+ * like a leftover scaffold while the real marketing site is built.
+ *
+ * Once a user signs in, the (app) layout takes over and routes to
+ * `/providers` (owner) or `/feed` (provider) per view-mode.
+ */
 export default function LandingPage(): JSX.Element {
   return (
     <div className="relative flex min-h-screen flex-col bg-surface-base">

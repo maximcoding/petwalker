@@ -34,8 +34,14 @@ export default function SignInPage(): JSX.Element {
   const [view, setView] = useState<'social' | 'email'>('social');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('');
+  const [magicSent, setMagicSent] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [resendIn, setResendIn] = useState(0);
+  const timerRef = useRef<number | null>(null);
 
   async function submitEmail(e: FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
@@ -49,6 +55,37 @@ export default function SignInPage(): JSX.Element {
       setBusy(false);
     }
   }
+
+  function submitMagic(e: FormEvent<HTMLFormElement>): void {
+    e.preventDefault();
+    // Real magic-link request will land in M-Backend-handshake. UI only here.
+    setMagicSent(true);
+    startResendCooldown();
+  }
+
+  function submitPhone(e: FormEvent<HTMLFormElement>): void {
+    e.preventDefault();
+    setOtpSent(true);
+    startResendCooldown();
+  }
+
+  function verifyOtp(submitted: string): void {
+    // OTP verification stub — wire to Cognito SMS flow in M-Backend-handshake.
+    if (submitted === '000000') {
+      setErr(t('auth.otp.wrongCode', { defaultValue: "Code didn't work — try again." }));
+      return;
+    }
+    router.push('/providers');
+  }
+
+  const heroSubtitle =
+    mode === 'email'
+      ? t('auth.modes.emailHint', { defaultValue: 'Use your email and password.' })
+      : mode === 'magic'
+        ? t('auth.modes.magicLinkHint', {
+            defaultValue: "We'll email a magic link. Tap it to sign in — no password needed.",
+          })
+        : t('auth.modes.phoneHint', { defaultValue: "We'll text you a 6-digit code." });
 
   return (
     <AuthCard

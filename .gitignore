@@ -64,3 +64,7 @@ memory/
 !.claude/skills/
 docs/superpowers/
 tsx
+
+# Helper scripts
+start-m1.sh
+finalize-m1.sh

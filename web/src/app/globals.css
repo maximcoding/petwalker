@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+ * Dogwalk design tokens — colorful pets, light mode only.
+ *
+ * • Multi-hue palette: brand-blue (anchor), coral, sunshine,
+ *   mint, sky, lavender, peach. Each 50..900.
+ * • Warm-tinted neutrals (not cold grey).
+ * • Semantic aliases for surfaces, ink, borders, statuses.
+ * • Radii lean larger (rounded-xl/2xl as everyday surface,
+ *   pill for primary CTAs).
+ * • Soft warm-tinted shadows.
+ *
+ * Light mode only — no .dark overrides anywhere.
+ * (See .claude/skills/dogwalk-design — direction locked.)
+ * ============================================================ */
+
 :root {
   color-scheme: light;
 

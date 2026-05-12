@@ -22,6 +22,9 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'placedog.net' },
       { protocol: 'https', hostname: 'i.pravatar.cc' },
+      // Unsplash CDN — used by the photo pipeline (web/scripts/fetch-photos.ts)
+      // and tolerated as a direct <Image src> source if needed.
+      { protocol: 'https', hostname: 'images.unsplash.com' },
       // MinIO bucket served by the dev backend.
       { protocol: 'http', hostname: 'localhost' },
     ],
