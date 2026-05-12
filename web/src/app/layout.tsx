@@ -36,10 +36,8 @@ export const viewport: Viewport = {
   themeColor: '#5b6dff',
   width: 'device-width',
   initialScale: 1,
-  // Respect user pinch-zoom for accessibility — never lock to 1.0.
   maximumScale: 5,
   viewportFit: 'cover',
-  // Light mode only — explicitly opt out of dark colour scheme.
   colorScheme: 'light',
 };
 

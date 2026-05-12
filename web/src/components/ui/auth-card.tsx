@@ -1,3 +1,6 @@
+'use client';
+
+import { ArrowLeft } from 'lucide-react';
 import type { JSX, PropsWithChildren, ReactNode } from 'react';
 
 /**
@@ -18,6 +21,14 @@ export interface AuthCardProps extends PropsWithChildren {
   subcopy?: ReactNode;
   /** Optional content rendered below the children (footer-style links). */
   footer?: ReactNode;
+  /**
+   * When provided, renders a "Back" button in the top-start corner
+   * of the card. The button sits above the headline so the header
+   * remains centered. Clicking calls `onBack`.
+   */
+  onBack?: () => void;
+  /** Visible label for the back button (defaults to "Back"). */
+  backLabel?: string;
   className?: string;
 }
 
@@ -26,30 +37,49 @@ export function AuthCard({
   headline,
   subcopy,
   footer,
+  onBack,
+  backLabel = 'Back',
   className = '',
   children,
 }: AuthCardProps): JSX.Element {
   return (
-    <div
-      className={
-        'mx-auto w-full max-w-md rounded-2xl border border-border-subtle bg-surface-raised p-6 shadow-card sm:p-8 ' +
-        className
-      }
-    >
+    <div className={'mx-auto w-full max-w-md ' + className}>
+      {/* Top-of-card back nav slot — height is reserved unconditionally
+          (h-9 + mb-4 = 52px) so flipping `onBack` between false/true
+          between views doesn't bounce the card. Button is rendered
+          inside only when `onBack` is set. */}
+      <div className="mb-4 flex h-9">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="-ms-2 inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-ink-secondary transition-colors hover:bg-warm-100 hover:text-ink-primary"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden />
+            {backLabel}
+          </button>
+        )}
+      </div>
+
       {(eyebrow || headline || subcopy) && (
-        <header className="mb-6">
+        <header className="mb-6 text-center">
           {eyebrow && (
             <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-ink-tertiary">
               {eyebrow}
             </p>
           )}
           {headline && (
-            <h1 className="text-2xl font-bold tracking-tight text-ink-primary sm:text-3xl">
+            // Locked to a single size across breakpoints — the
+            // previous `text-2xl sm:text-3xl` bumped the headline at
+            // 640px, which made the card visibly jump on resize.
+            <h1 className="text-3xl font-bold tracking-tight text-ink-primary">
               {headline}
             </h1>
           )}
-          {subcopy && (
-            <p className="mt-2 text-sm text-ink-secondary">{subcopy}</p>
+          {subcopy !== undefined && (
+            <p className="mt-2 text-sm leading-snug text-ink-secondary">
+              {subcopy}
+            </p>
           )}
         </header>
       )}

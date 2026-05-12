@@ -1,9 +1,9 @@
 import {
   Calendar,
   Heart,
+  Home,
   LayoutDashboard,
   MessageCircle,
-  PawPrint,
   Search,
   type LucideIcon,
 } from 'lucide-react';
@@ -39,8 +39,8 @@ export function buildNav(mode: ViewMode): NavItem[] {
     ];
   }
   return [
-    { href: '/pets', i18nKey: 'nav.pets', icon: PawPrint },
-    { href: '/providers', i18nKey: 'nav.providers', icon: Search },
+    { href: '/home', i18nKey: 'nav.home', icon: Home },
+    { href: '/search', i18nKey: 'nav.providers', icon: Search },
     { href: '/bookings', i18nKey: 'nav.myBookings', icon: Calendar },
     { href: '/favorites', i18nKey: 'nav.favorites', icon: Heart },
     { href: '/messages', i18nKey: 'nav.messages', icon: MessageCircle },
@@ -49,7 +49,7 @@ export function buildNav(mode: ViewMode): NavItem[] {
 
 /** Home href per role — mirrors AppLayout's logic. */
 export function homeHref(mode: ViewMode): string {
-  return mode === 'provider' ? '/feed' : '/providers';
+  return mode === 'provider' ? '/feed' : '/home';
 }
 
 /** Robust active-route check that handles nested segments. */

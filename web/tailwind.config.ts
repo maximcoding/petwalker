@@ -113,8 +113,6 @@ const config: Config = {
           800: 'var(--color-warm-800)',
           900: 'var(--color-warm-900)',
         },
-
-        /* === Semantic surfaces === */
         surface: {
           base: 'var(--surface-base)',
           raised: 'var(--surface-raised)',
@@ -122,8 +120,6 @@ const config: Config = {
           overlay: 'var(--surface-overlay)',
           inverse: 'var(--surface-inverse)',
         },
-
-        /* === Semantic ink === */
         ink: {
           primary: 'var(--ink-primary)',
           secondary: 'var(--ink-secondary)',
@@ -133,16 +129,12 @@ const config: Config = {
           link: 'var(--ink-link)',
           'link-hover': 'var(--ink-link-hover)',
         },
-
-        /* === Semantic borders === */
         border: {
           subtle: 'var(--border-subtle)',
           DEFAULT: 'var(--border-default)',
           strong: 'var(--border-strong)',
           focus: 'var(--border-focus)',
         },
-
-        /* === Semantic status === */
         status: {
           success: 'var(--status-success)',
           warning: 'var(--status-warning)',
@@ -156,11 +148,9 @@ const config: Config = {
           'in-dispute': 'var(--status-in-dispute)',
         },
       },
-
       fontFamily: {
         sans: ['var(--font-sans)'],
       },
-
       borderRadius: {
         xs: 'var(--radius-xs)',
         sm: 'var(--radius-sm)',
@@ -172,26 +162,22 @@ const config: Config = {
         pill: 'var(--radius-pill)',
         full: '9999px',
       },
-
       boxShadow: {
         subtle: 'var(--shadow-subtle)',
         card: 'var(--shadow-card)',
         overlay: 'var(--shadow-overlay)',
         focus: 'var(--shadow-focus)',
       },
-
       transitionDuration: {
         fast: 'var(--motion-fast)',
         DEFAULT: 'var(--motion-base)',
         slow: 'var(--motion-slow)',
         spring: 'var(--motion-spring)',
       },
-
       transitionTimingFunction: {
         out: 'var(--ease-out)',
         spring: 'var(--ease-spring)',
       },
-
       zIndex: {
         base: 'var(--z-base)',
         elevated: 'var(--z-elevated)',
@@ -201,22 +187,18 @@ const config: Config = {
         modal: 'var(--z-modal)',
         toast: 'var(--z-toast)',
       },
-
       spacing: {
         touch: 'var(--size-touch)',
         'touch-lg': 'var(--size-touch-lg)',
       },
-
       minHeight: {
         touch: 'var(--size-touch)',
         'touch-lg': 'var(--size-touch-lg)',
       },
-
       minWidth: {
         touch: 'var(--size-touch)',
         'touch-lg': 'var(--size-touch-lg)',
       },
-
       backgroundImage: {
         'gradient-sunset': 'var(--gradient-sunset)',
         'gradient-meadow': 'var(--gradient-meadow)',

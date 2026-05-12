@@ -19,33 +19,15 @@ import { ViewModeProvider } from '@/contexts/view-mode-context';
 import { api } from '@/lib/api';
 import { getMe } from '@/lib/auth';
 
-/**
- * App Shell — sticky chrome around every signed-in route.
- *
- *   Desktop (md+):   Header  →  body  →  Footer
- *   Mobile (< md):   MobileTopBar  →  body  →  BottomTabBar
- *
- * Only the body scrolls; the chrome rows are sticky. List pages keep
- * their own pinned title/filter row inside the body and scroll only
- * the items list (per the brief).
- *
- * Light mode only. No dark variants. Tokens come from
- * `web/src/app/globals.css`.
- */
 export default function AppLayout({ children }: PropsWithChildren): JSX.Element {
   const router = useRouter();
 
-  // Cognito identity gate — bounce unauthenticated visitors out before
-  // attempting any backend call.
   const session = useQuery({
     queryKey: ['cognito-me'],
     queryFn: () => getMe(),
     staleTime: 60_000,
   });
 
-  // Backend `User` row — required by the avatar menu, role-aware nav
-  // and the view-mode provider. Only enabled once Cognito identity
-  // confirms.
   const me = useQuery<User>({
     queryKey: ['me'],
     queryFn: () => api.auth.me(),
@@ -59,10 +41,6 @@ export default function AppLayout({ children }: PropsWithChildren): JSX.Element 
     }
   }, [session.data, session.isLoading, router]);
 
-  // Hard-fail surface: the `me` query failed after react-query retries.
-  // Without this, the user gets stuck on PageLoading forever when the
-  // backend is down, cognito-local is unreachable, or the JWT can't be
-  // verified. Always show a recovery option.
   if (session.data != null && me.isError && !me.data) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-surface-base p-6">
@@ -73,9 +51,9 @@ export default function AppLayout({ children }: PropsWithChildren): JSX.Element 
             onRetry={() => void me.refetch()}
           />
           <div className="mt-3 text-center text-xs text-ink-tertiary">
-            If this keeps failing, the backend on :3001 may be down. Check
-            <code className="mx-1 rounded bg-warm-100 px-1 py-0.5 font-mono">pnpm --filter @petwalker/backend dev</code>
-            is running.
+            If this keeps failing, the backend on :3001 may be down. Run
+            <code className="mx-1 rounded bg-warm-100 px-1 py-0.5 font-mono">pnpm dev</code>
+            from the repo root.
           </div>
         </div>
       </div>
@@ -97,8 +75,6 @@ export default function AppLayout({ children }: PropsWithChildren): JSX.Element 
             <Container>{children}</Container>
           </main>
 
-          {/* Footer is desktop-only; on mobile the BottomTabBar
-              replaces the header and takes the bottom anchor. */}
           <div className="hidden md:block">
             <Footer />
           </div>

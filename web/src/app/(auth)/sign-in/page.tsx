@@ -1,32 +1,37 @@
 'use client';
 
-import { ArrowRight, Link as LinkIcon, Mail, Smartphone } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { AuthCard } from '@/components/ui/auth-card';
 import { Divider } from '@/components/ui/divider';
 import { Input } from '@/components/ui/input';
-import { OtpInput } from '@/components/ui/otp-input';
 import { SocialButton } from '@/components/ui/social-button';
-import { Tabs } from '@/components/ui/tabs';
 import { signIn } from '@/lib/auth';
 
-type Mode = 'email' | 'magic' | 'phone';
-
 /**
- * /sign-in — single unified entry point for new and returning users.
+ * /sign-in — social-first auth entry.
  *
- * Three mode tabs (Email, Magic link, Phone OTP) over one persistent
- * email-or-phone identity. Social buttons live below the divider.
- * /sign-up is collapsed into this same screen — see (auth)/sign-up.
+ * One sign-in surface for everyone. The earlier owner/walker pivot
+ * was removed because the auth flow is identical for both audiences
+ * (per Maxim 2026-05-12): the marketplace-side distinction lives in
+ * post-auth onboarding (M2a #16), not on the auth screen.
+ *
+ * Default view shows three vertically-stacked social buttons as the
+ * primary path. A small text link beneath them switches the same
+ * card over to the email + password form — feels like a new screen
+ * but happens in place (no route change) for a seamless transition.
+ *
+ * No Magic-link, no Phone-OTP in this PR. Email is hidden behind a
+ * small link to keep the default surface social-first.
  */
 export default function SignInPage(): JSX.Element {
   const router = useRouter();
   const { t } = useTranslation();
-  const [mode, setMode] = useState<Mode>('email');
+  const [view, setView] = useState<'social' | 'email'>('social');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
@@ -38,28 +43,13 @@ export default function SignInPage(): JSX.Element {
   const [resendIn, setResendIn] = useState(0);
   const timerRef = useRef<number | null>(null);
 
-  // Countdown for "Resend in Ns"
-  useEffect(() => {
-    if (resendIn <= 0) return;
-    timerRef.current = window.setInterval(() => {
-      setResendIn((s) => Math.max(0, s - 1));
-    }, 1000);
-    return () => {
-      if (timerRef.current) window.clearInterval(timerRef.current);
-    };
-  }, [resendIn]);
-
-  function startResendCooldown(): void {
-    setResendIn(30);
-  }
-
   async function submitEmail(e: FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
     setErr(null);
     setBusy(true);
     try {
       await signIn(email, password);
-      router.push('/providers');
+      router.push('/home');
     } catch (e) {
       setErr((e as Error).message);
       setBusy(false);
@@ -99,68 +89,99 @@ export default function SignInPage(): JSX.Element {
 
   return (
     <AuthCard
+      onBack={view === 'email' ? () => { setErr(null); setView('social'); } : undefined}
+      backLabel={t('auth.backToOptions', { defaultValue: 'Back to sign-in options' })}
       headline={t('auth.welcomeTitle', { defaultValue: 'Welcome' })}
-      subcopy={heroSubtitle}
+      subcopy={
+        view === 'social'
+          ? t('auth.welcomeSubtitle', {
+              defaultValue: 'Sign in or create your account.',
+            })
+          : t('auth.modes.emailHint', {
+              defaultValue: 'Use your email and password.',
+            })
+      }
       footer={
-        <p className="text-center text-xs text-ink-tertiary">
-          {t('auth.agreement', { defaultValue: 'By continuing you agree to our' })}{' '}
-          <Link href="/terms" className="font-medium text-ink-link hover:underline">
-            {t('auth.terms', { defaultValue: 'Terms' })}
+        <p className="text-center text-xs leading-relaxed text-ink-tertiary">
+          {t('auth.agreementLead', {
+            defaultValue: "By continuing, you agree to PetWalker's",
+          })}{' '}
+          <Link
+            href="/terms"
+            className="font-medium text-ink-link underline-offset-2 hover:underline"
+          >
+            {t('auth.termsOfService', { defaultValue: 'Terms of Service' })}
           </Link>{' '}
-          {t('auth.and', { defaultValue: 'and' })}{' '}
-          <Link href="/privacy" className="font-medium text-ink-link hover:underline">
-            {t('auth.privacy', { defaultValue: 'Privacy Policy' })}
-          </Link>
-          .
+          {t('auth.agreementMid', {
+            defaultValue: 'and to occasionally receive emails from us. Please read our',
+          })}{' '}
+          <Link
+            href="/privacy"
+            className="font-medium text-ink-link underline-offset-2 hover:underline"
+          >
+            {t('auth.privacyPolicy', { defaultValue: 'Privacy Policy' })}
+          </Link>{' '}
+          {t('auth.agreementTail', {
+            defaultValue: 'to learn how we use your personal data.',
+          })}
         </p>
       }
     >
-      <Tabs
-        ariaLabel={t('auth.modes.email', { defaultValue: 'Sign-in method' })}
-        value={mode}
-        onChange={(m) => {
-          setMode(m);
-          setErr(null);
-          setMagicSent(false);
-          setOtpSent(false);
-          setCode('');
-        }}
-        items={[
-          {
-            value: 'email',
-            label: t('auth.modes.email', { defaultValue: 'Email' }),
-            icon: <Mail className="h-4 w-4" aria-hidden />,
-          },
-          {
-            value: 'magic',
-            label: t('auth.modes.magicLink', { defaultValue: 'Magic link' }),
-            icon: <LinkIcon className="h-4 w-4" aria-hidden />,
-          },
-          {
-            value: 'phone',
-            label: t('auth.modes.phone', { defaultValue: 'Phone' }),
-            icon: <Smartphone className="h-4 w-4" aria-hidden />,
-          },
-        ]}
-      />
+      {view === 'social' && (
+        <div className="min-h-[280px] space-y-6">
+          {/* Three full-width social buttons — primary path. */}
+          <div className="space-y-2">
+            <SocialButton provider="google">
+              {t('auth.googleCta', { defaultValue: 'Continue with Google' })}
+            </SocialButton>
+            <SocialButton provider="apple">
+              {t('auth.appleCta', { defaultValue: 'Continue with Apple' })}
+            </SocialButton>
+            <SocialButton provider="facebook">
+              {t('auth.facebookCta', { defaultValue: 'Continue with Facebook' })}
+            </SocialButton>
+          </div>
 
-      <div className="mt-6 space-y-4">
-        {mode === 'email' && (
+          <Divider>{t('auth.or', { defaultValue: 'or' })}</Divider>
+
+          {/* Small secondary link — swaps the card over to the email form. */}
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setErr(null);
+                setView('email');
+              }}
+              className="text-sm font-medium text-ink-link transition-colors hover:text-ink-link-hover"
+            >
+              {t('auth.continueWithEmailLink', {
+                defaultValue: 'Continue with your email or username →',
+              })}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {view === 'email' && (
+        <div className="min-h-[280px] space-y-5">
           <form onSubmit={submitEmail} className="space-y-4">
             <Input
-              label={t('auth.emailLabel', { defaultValue: 'Email' })}
-              type="email"
-              autoComplete="email"
-              placeholder={t('auth.emailPlaceholder', { defaultValue: 'you@petwalker.app' })}
+              label={t('auth.emailOrUsernameLabel', {
+                defaultValue: 'Email or username',
+              })}
+              type="text"
+              autoComplete="username"
+              placeholder="you@petwalker.app or @yourname"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoFocus
             />
             <Input
               label={t('auth.passwordLabel', { defaultValue: 'Password' })}
               type="password"
               autoComplete="current-password"
-              placeholder={t('auth.passwordPlaceholder', { defaultValue: '••••••••' })}
+              placeholder="••••••••"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -186,124 +207,14 @@ export default function SignInPage(): JSX.Element {
               disabled={busy}
               className="inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-5 text-base font-semibold text-ink-inverse transition-colors hover:bg-brand-700 disabled:opacity-60"
             >
-              {busy ? t('auth.signingIn', { defaultValue: 'Signing in…' }) : t('auth.continue', { defaultValue: 'Continue' })}
+              {busy
+                ? t('auth.signingIn', { defaultValue: 'Signing in…' })
+                : t('auth.continue', { defaultValue: 'Continue' })}
               {!busy && <ArrowRight className="h-4 w-4" aria-hidden />}
             </button>
           </form>
-        )}
-
-        {mode === 'magic' && !magicSent && (
-          <form onSubmit={submitMagic} className="space-y-4">
-            <Input
-              label={t('auth.emailLabel', { defaultValue: 'Email' })}
-              type="email"
-              autoComplete="email"
-              placeholder={t('auth.emailPlaceholder', { defaultValue: 'you@petwalker.app' })}
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <button
-              type="submit"
-              className="inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-5 text-base font-semibold text-ink-inverse transition-colors hover:bg-brand-700"
-            >
-              {t('auth.magic.sendCta', { defaultValue: 'Send me a link' })}
-            </button>
-          </form>
-        )}
-
-        {mode === 'magic' && magicSent && (
-          <div className="space-y-4 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-meadow text-ink-inverse">
-              <Mail className="h-7 w-7" aria-hidden />
-            </div>
-            <h2 className="text-lg font-semibold text-ink-primary">
-              {t('auth.magic.sentHeadline', { defaultValue: 'Check your email' })}
-            </h2>
-            <p className="text-sm text-ink-secondary">
-              {t('auth.magic.sentSubcopy', {
-                defaultValue: 'We sent a sign-in link to {{email}}. It expires in 15 minutes.',
-                email,
-              })}
-            </p>
-            <button
-              type="button"
-              disabled={resendIn > 0}
-              onClick={() => {
-                setMagicSent(false);
-                startResendCooldown();
-              }}
-              className="text-sm font-medium text-ink-link hover:underline disabled:opacity-60"
-            >
-              {resendIn > 0
-                ? t('auth.otp.resendIn', { defaultValue: 'Resend in {{seconds}}s', seconds: resendIn })
-                : t('auth.magic.resendCta', { defaultValue: 'Resend link' })}
-            </button>
-          </div>
-        )}
-
-        {mode === 'phone' && !otpSent && (
-          <form onSubmit={submitPhone} className="space-y-4">
-            <Input
-              label={t('auth.phoneLabel', { defaultValue: 'Phone' })}
-              type="tel"
-              autoComplete="tel"
-              placeholder={t('auth.phonePlaceholder', { defaultValue: '+1 (415) 555-0172' })}
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              prefix={<Smartphone className="h-4 w-4" aria-hidden />}
-            />
-            <button
-              type="submit"
-              className="inline-flex min-h-touch w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-5 text-base font-semibold text-ink-inverse transition-colors hover:bg-brand-700"
-            >
-              {t('auth.continue', { defaultValue: 'Continue' })}
-            </button>
-          </form>
-        )}
-
-        {mode === 'phone' && otpSent && (
-          <div className="space-y-4">
-            <p className="text-center text-sm text-ink-secondary">
-              {t('auth.otp.sentTo', { defaultValue: 'We sent a code to {{phone}}.', phone })}
-            </p>
-            <OtpInput
-              ariaLabel={t('auth.otp.codeLabel', { defaultValue: '6-digit code' })}
-              length={6}
-              value={code}
-              onChange={setCode}
-              onComplete={verifyOtp}
-              error={err}
-              autoFocus
-            />
-            <div className="text-center">
-              <button
-                type="button"
-                disabled={resendIn > 0}
-                onClick={() => {
-                  setCode('');
-                  setErr(null);
-                  startResendCooldown();
-                }}
-                className="text-sm font-medium text-ink-link hover:underline disabled:opacity-60"
-              >
-                {resendIn > 0
-                  ? t('auth.otp.resendIn', { defaultValue: 'Resend in {{seconds}}s', seconds: resendIn })
-                  : t('auth.otp.resendCta', { defaultValue: 'Resend code' })}
-              </button>
-            </div>
-          </div>
-        )}
-
-        <Divider>{t('auth.continueWith', { defaultValue: 'or continue with' })}</Divider>
-
-        <div className="grid grid-cols-3 gap-2">
-          <SocialButton provider="google" compact aria-label={t('auth.googleCta', { defaultValue: 'Continue with Google' })} />
-          <SocialButton provider="apple" compact aria-label={t('auth.appleCta', { defaultValue: 'Continue with Apple' })} />
-          <SocialButton provider="facebook" compact aria-label={t('auth.facebookCta', { defaultValue: 'Continue with Facebook' })} />
         </div>
-      </div>
+      )}
     </AuthCard>
   );
 }
