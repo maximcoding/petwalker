@@ -13,7 +13,8 @@
     "signIn": "Sign in",
     "signUp": "Sign up",
     "createOne": "Create one",
-    "noAccount": "No account?"
+    "noAccount": "No account?",
+    "home": "Home"
   },
   "userMenu": {
     "openLabel": "Open user menu",
@@ -54,7 +55,18 @@
     "signingIn": "Signing in…",
     "creating": "Creating…",
     "confirming": "Confirming…",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "orWithEmail": "or use email",
+    "continue": "Continue",
+    "continueWithEmailLink": "Continue with your email or username →",
+    "backToOptions": "Back to sign-in options",
+    "or": "or",
+    "agreementLead": "By continuing, you agree to PetWalker's",
+    "agreementMid": "and to occasionally receive emails from us. Please read our",
+    "agreementTail": "to learn how we use your personal data.",
+    "termsOfService": "Terms of Service",
+    "privacyPolicy": "Privacy Policy",
+    "emailOrUsernameLabel": "Email or username"
   },
   "common": {
     "save": "Save",
@@ -321,7 +333,18 @@
     "atOtherAddress": "Other address",
     "ownerHome": "(Set a home address on this pet or your account)",
     "providerLocation": "(Provider hasn't published an address)",
-    "customAddressHint": "Where the service should happen — street, neighborhood, anything that helps the provider find it."
+    "customAddressHint": "Where the service should happen — street, neighborhood, anything that helps the provider find it.",
+    "actions": {
+      "cancel": "Cancel booking",
+      "editNotes": "Edit notes",
+      "openLive": "Open live view",
+      "somethingWrong": "Something's wrong",
+      "leaveReview": "Leave a review",
+      "viewInvoice": "View invoice",
+      "getHelp": "Get help",
+      "start": "Start",
+      "end": "End"
+    }
   },
   "address": {
     "label": "Address",
