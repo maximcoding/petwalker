@@ -69,15 +69,15 @@ export default function AuthLayout({ children }: PropsWithChildren): JSX.Element
           className="pointer-events-none absolute -bottom-40 -start-40 h-[28rem] w-[28rem] rounded-full bg-gradient-sky opacity-50 blur-3xl"
         />
 
-        {/* Top — logo. Bare paw icon + wordmark, identical to the
-            mobile mini-header logo so crossing the lg breakpoint
-            doesn't morph the logo. */}
-        <div className="relative z-elevated shrink-0 px-6 py-5">
+        {/* Top — big wordmark hero. Per Maxim 2026-05-12: the
+            wordmark should look like the brand poster — huge,
+            extrabold, tight-tracked, all-lowercase white type on
+            the gradient. No paw icon at this size. */}
+        <div className="relative z-elevated shrink-0 px-8 pb-2 pt-10 lg:px-12">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xl font-bold tracking-tight text-ink-inverse"
+            className="block text-6xl font-extrabold leading-none tracking-tight text-ink-inverse xl:text-7xl"
           >
-            <PawPrint className="h-6 w-6" aria-hidden />
             petwalker
           </Link>
         </div>

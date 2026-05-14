@@ -196,28 +196,22 @@ export function FreeSlotPicker({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
-      {/* Selection chip + Clear All — visible once ≥1 slot is chosen. */}
-      {value.size > 0 ? (
-        <div className="flex items-center justify-between rounded-xl border border-brand-200 bg-brand-50 px-3 py-1.5 text-sm dark:border-brand-900 dark:bg-brand-950">
-          <span className="font-medium text-brand-700 dark:text-brand-200">
-            {value.size} slot{value.size !== 1 ? 's' : ''} selected
-          </span>
-          <button
-            type="button"
-            onClick={onClear}
-            className="text-xs text-brand-600 underline hover:no-underline dark:text-brand-300"
-          >
-            Clear all
-          </button>
-        </div>
-      ) : null}
+      {/* The earlier "✓ N slot(s) selected" chip lived here. Removed
+          because it conditionally added a row to the picker, making
+          the entire layout jump every time the user tapped a slot.
+          The wizard's sticky bottom footer already shows the count
+          and live price ("{slotCount} slots · $X") so no info is
+          lost. Clear-all action is available via re-tapping selected
+          slots; we can add a small inline "Clear" link next to the
+          earliest-available row later if users actually ask. */}
 
-      {/* Earliest-available callout — silent if no slots in next 90 days. */}
+      {/* Earliest-available callout — silent if no slots in next 90 days.
+          Mint tokens match the rest of the booking-wizard palette. */}
       {earliest.data ? (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm dark:border-emerald-900 dark:bg-emerald-950">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-mint-200 bg-mint-50 p-3 text-sm">
           <span>
-            <span className="text-slate-500">{t('booking.earliestAvailable')}: </span>
-            <span className="font-medium">
+            <span className="text-ink-secondary">{t('booking.earliestAvailable')}: </span>
+            <span className="font-semibold text-mint-800">
               {fmtDayLong.format(new Date(earliest.data.start))} ·{' '}
               {fmtTime.format(new Date(earliest.data.start))}
             </span>
@@ -228,15 +222,15 @@ export function FreeSlotPicker({
         </div>
       ) : null}
 
-      {/* Quick-jump chips — covers the common targets users type into search. */}
+      {/* Quick-jump chips */}
       <div className="flex flex-wrap items-center gap-2">
         <JumpChip label={t('booking.jump.today')} onClick={() => jump(0)} active={isOnFirstWindow} />
         <JumpChip label={t('booking.jump.tomorrow')} onClick={() => jump(1)} />
         <JumpChip label={t('booking.jump.nextWeek')} onClick={() => jump(7)} />
         <JumpChip label={t('booking.jump.in1mo')} onClick={() => jump(30)} />
         <JumpChip label={t('booking.jump.in3mo')} onClick={() => jump(90)} />
-        <label className="ml-auto flex items-center gap-1">
-          <span className="text-xs text-slate-500">{t('booking.pickDate')}</span>
+        <label className="ms-auto flex items-center gap-2">
+          <span className="text-xs text-ink-tertiary">{t('booking.pickDate')}</span>
           <input
             type="date"
             aria-label={t('booking.pickDate')}
@@ -244,14 +238,14 @@ export function FreeSlotPicker({
             max={formatLocalDateInput(addDays(new Date(), MAX_HORIZON_DAYS))}
             value={formatLocalDateInput(windowStart)}
             onChange={(e) => jumpToDateString(e.target.value)}
-            className="w-36 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"
+            className="w-36 rounded-lg border border-border-default bg-surface-raised px-2 py-1 text-sm text-ink-primary focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-200"
           />
         </label>
       </div>
 
       {/* Window header + paging arrows. */}
-      <div className="flex items-center justify-between text-xs text-slate-500">
-        <span>
+      <div className="flex items-center justify-between text-xs text-ink-tertiary">
+        <span className="font-medium">
           {fmtDay.format(windowStart)} – {fmtDay.format(addDays(windowEnd, -1))}
         </span>
         <div className="flex items-center gap-3">
@@ -259,7 +253,7 @@ export function FreeSlotPicker({
             <button
               type="button"
               onClick={() => setWindowStart(addDays(windowStart, -daysPerPage))}
-              className="hover:text-slate-900 dark:hover:text-slate-100"
+              className="font-medium hover:text-ink-primary"
             >
               ← {t('booking.prevDays', { count: daysPerPage })}
             </button>
@@ -267,7 +261,7 @@ export function FreeSlotPicker({
           <button
             type="button"
             onClick={() => setWindowStart(addDays(windowStart, daysPerPage))}
-            className="hover:text-slate-900 dark:hover:text-slate-100"
+            className="font-medium hover:text-ink-primary"
           >
             {t('booking.nextDays', { count: daysPerPage })} →
           </button>
@@ -275,9 +269,9 @@ export function FreeSlotPicker({
       </div>
 
       {/* Slot grid — scrollable, fills all remaining vertical space. */}
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {q.isLoading ? (
-          <div className="flex items-center gap-2 p-4 text-sm text-slate-500">
+          <div className="flex items-center gap-2 p-4 text-sm text-ink-tertiary">
             <Spinner size="sm" /> {t('common.loading')}
           </div>
         ) : q.error ? (
@@ -285,24 +279,39 @@ export function FreeSlotPicker({
             <ErrorState error={q.error as Error} onRetry={() => q.refetch()} />
           </div>
         ) : byDay.length === 0 ? (
-          <div className="p-6 text-center text-sm text-slate-500">
+          <div className="p-8 text-center text-sm text-ink-tertiary">
             {t('booking.noSlots')}
           </div>
         ) : (
-          <ul className="space-y-4 p-3">
+          <ul className="space-y-3">
             {byDay.map(([dayKey, slots]) => {
               const dayDate = new Date(dayKey + 'T00:00:00Z');
               const groups = groupByPartOfDay(slots);
               return (
-                <li key={dayKey}>
-                  <p className="mb-1 text-xs font-medium text-slate-600 dark:text-slate-300">
-                    {fmtDay.format(dayDate)}
-                  </p>
-                  <div className="space-y-2">
+                <li
+                  key={dayKey}
+                  className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-raised shadow-subtle"
+                >
+                  {/* Day header — colored pill style, contrasts cleanly
+                      against the white card so users can scan dates. */}
+                  <div className="flex items-center justify-between gap-2 border-b border-border-subtle bg-warm-50 px-4 py-2">
+                    <p className="text-sm font-bold text-ink-primary">
+                      {fmtDay.format(dayDate)}
+                    </p>
+                    <p className="text-[11px] font-medium text-ink-tertiary">
+                      {slots.length} slot{slots.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <div className="space-y-3 p-4">
                     {groups.map(([partKey, partSlots]) =>
                       partSlots.length === 0 ? null : (
                         <div key={partKey}>
-                          <p className="mb-1 text-[10px] uppercase tracking-wide text-slate-400">
+                          <p
+                            className={[
+                              'mb-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest',
+                              PART_TONE[partKey] ?? 'bg-warm-100 text-warm-800',
+                            ].join(' ')}
+                          >
                             {t(`booking.partOfDay.${partKey}`)}
                           </p>
                           <div className="flex flex-wrap gap-2">
@@ -315,10 +324,10 @@ export function FreeSlotPicker({
                                   onClick={() => onChange(s.start)}
                                   aria-pressed={active}
                                   className={[
-                                    'rounded-lg border px-3 py-1.5 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
+                                    'rounded-full border-2 px-3.5 py-1 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300',
                                     active
-                                      ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-200'
-                                      : 'border-slate-200 hover:border-slate-400 dark:border-slate-800 dark:hover:border-slate-600',
+                                      ? 'border-brand-600 bg-brand-600 text-ink-inverse shadow-subtle'
+                                      : 'border-border-subtle bg-surface-base text-ink-primary hover:border-brand-400 hover:text-brand-700',
                                   ].join(' ')}
                                 >
                                   {fmtTime.format(new Date(s.start))}
@@ -337,9 +346,9 @@ export function FreeSlotPicker({
         )}
       </div>
 
-      {/* Cap warning — fires when the raw API response hit the 200-slot ceiling. */}
+      {/* Cap warning — sunshine tokens to match the M1 palette. */}
       {(q.data?.length ?? 0) >= 200 ? (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">
+        <p className="rounded-xl border border-sunshine-200 bg-sunshine-50 px-3 py-2 text-xs font-medium text-sunshine-800">
           Showing the first 200 available slots. Choose a later start date or increase the duration to see more.
         </p>
       ) : null}
@@ -360,16 +369,27 @@ function JumpChip({ label, onClick, active }: JumpChipProps): JSX.Element {
       onClick={onClick}
       aria-pressed={!!active}
       className={[
-        'rounded-full border px-3 py-1 text-xs transition',
+        'rounded-full border-2 px-3 py-1 text-xs font-medium transition-colors',
         active
-          ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-200'
-          : 'border-slate-200 text-slate-600 hover:border-slate-400 dark:border-slate-800 dark:text-slate-300',
+          ? 'border-brand-600 bg-brand-600 text-ink-inverse'
+          : 'border-border-subtle bg-surface-raised text-ink-secondary hover:border-border-strong hover:text-ink-primary',
       ].join(' ')}
     >
       {label}
     </button>
   );
 }
+
+/**
+ * Tone map for the time-of-day pill — sunshine = morning, peach =
+ * afternoon, lavender = evening. Static so Tailwind JIT keeps the
+ * classes in the safelist.
+ */
+const PART_TONE: Record<PartOfDay, string> = {
+  morning: 'bg-sunshine-100 text-sunshine-800',
+  afternoon: 'bg-peach-100 text-peach-800',
+  evening: 'bg-lavender-100 text-lavender-800',
+};
 
 function groupByDay(slots: FreeSlot[]): [string, FreeSlot[]][] {
   const map = new Map<string, FreeSlot[]>();

@@ -3,8 +3,10 @@
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+
+type Mode = 'social' | 'email' | 'magic' | 'phone';
 
 import { AuthCard } from '@/components/ui/auth-card';
 import { Divider } from '@/components/ui/divider';
@@ -32,6 +34,7 @@ export default function SignInPage(): JSX.Element {
   const router = useRouter();
   const { t } = useTranslation();
   const [view, setView] = useState<'social' | 'email'>('social');
+  const [mode, setMode] = useState<Mode>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
@@ -42,6 +45,32 @@ export default function SignInPage(): JSX.Element {
   const [err, setErr] = useState<string | null>(null);
   const [resendIn, setResendIn] = useState(0);
   const timerRef = useRef<number | null>(null);
+
+  // Resend-cooldown helper. Counts down `resendIn` once per second.
+  function startResendCooldown(): void {
+    setResendIn(60);
+    if (timerRef.current !== null) {
+      window.clearInterval(timerRef.current);
+    }
+    timerRef.current = window.setInterval(() => {
+      setResendIn((s) => {
+        if (s <= 1) {
+          if (timerRef.current !== null) window.clearInterval(timerRef.current);
+          timerRef.current = null;
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+  }
+
+  // Clean up any pending interval on unmount.
+  useEffect(
+    () => () => {
+      if (timerRef.current !== null) window.clearInterval(timerRef.current);
+    },
+    [],
+  );
 
   async function submitEmail(e: FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();

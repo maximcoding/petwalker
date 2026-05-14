@@ -317,9 +317,15 @@ async function main(): Promise<void> {
   await db.delete(pets).where(eq(pets.ownerId, olivia.id));
 
   // ---- pets --------------------------------------------------------------
+  // Real owners have 1-5 pets, rarely more. Give the demo owner a
+  // small realistic set so the booking-wizard pet step doesn't
+  // render as a wall of 100 cards. We still generate `N_PETS` so
+  // bookings and reviews have inventory to reference; we just stop
+  // assigning all of them to Olivia.
+  const OLIVIA_PET_COUNT = 5;
   await chunkInsert(
     pets,
-    PETS_GEN.map((p) => ({
+    PETS_GEN.slice(0, OLIVIA_PET_COUNT).map((p) => ({
       ownerId: olivia.id,
       name: p.name,
       breed: p.breed,
