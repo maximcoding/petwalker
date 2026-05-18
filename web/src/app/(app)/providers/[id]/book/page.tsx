@@ -3,16 +3,25 @@
 import { ServiceType } from '@petwalker/shared/enums';
 import type { Pet, ServiceProviderDetail } from '@petwalker/shared/types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useState, type JSX } from 'react';
 
-import { useTranslation } from 'react-i18next';
-
-import { BookingForm } from '@/components/booking-form';
+import { BookingWizard } from '@/components/booking-wizard';
 import { ScrollPage } from '@/components/scroll-page';
 import { api } from '@/lib/api';
 
+/**
+ * /providers/[id]/book — step-based booking wizard.
+ *
+ * The page is now a thin shell: it fetches the provider + pets, then
+ * hands everything to <BookingWizard>. The wizard owns the step
+ * state and renders its own top bar / progress / sticky footer (via
+ * WizardShell).
+ *
+ * The submit contract is unchanged from the previous <BookingForm>:
+ * `scheduledAts: string[]` so multi-slot bookings still create N
+ * bookings one-by-one with partial-success handling.
+ */
 export default function BookProviderPage(): JSX.Element {
   const router = useRouter();
   const qc = useQueryClient();
@@ -21,16 +30,21 @@ export default function BookProviderPage(): JSX.Element {
   const serviceType = (sp.get('service') as ServiceType) || ServiceType.Walking;
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const { t } = useTranslation();
 
   const provider = useQuery<ServiceProviderDetail>({
     queryKey: ['provider', id],
     queryFn: () => api.providers.get(id),
     enabled: Boolean(id),
   });
+  // Real owners have 1-5 pets; very rarely up to ~10. The seed
+  // script over-provisions for testing (admin@admin has 20+) which
+  // makes the wizard's pet step a wall of cards. Cap the picker at
+  // 10 — if a real owner has more, they manage them in /pets and
+  // can still pick from the cap; we can grow this later if data
+  // shows it's actually needed.
   const pets = useQuery({
     queryKey: ['pets', 'first-page-for-booking'],
-    queryFn: () => api.pets.list({ limit: 100 }),
+    queryFn: () => api.pets.list({ limit: 10 }),
     select: (page) => page.items as Pet[],
   });
 
@@ -99,62 +113,41 @@ export default function BookProviderPage(): JSX.Element {
   if (provider.isLoading || pets.isLoading) {
     return (
       <ScrollPage>
-        <p className="text-sm text-slate-500">Loading…</p>
+        <p className="text-sm text-ink-tertiary">Loading…</p>
       </ScrollPage>
     );
   }
   if (provider.error) {
     return (
       <ScrollPage>
-        <p className="text-sm text-red-600">{(provider.error as Error).message}</p>
+        <p className="text-sm text-coral-700">{(provider.error as Error).message}</p>
       </ScrollPage>
     );
   }
   if (!provider.data) {
     return (
       <ScrollPage>
-        <p className="text-sm text-slate-500">Not found.</p>
+        <p className="text-sm text-ink-tertiary">Not found.</p>
       </ScrollPage>
     );
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
-      {/* Pinned page header */}
-      <div className="shrink-0 border-b border-slate-200 px-4 py-4 dark:border-slate-800 sm:px-8">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-          <Link
-            href={`/providers/${id}`}
-            className="text-xs text-slate-400 hover:text-slate-600 hover:underline dark:hover:text-slate-300"
-          >
-            ← Back to {provider.data.fullName}
-          </Link>
-          <h1 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Book {t(`services.${serviceType}`)} · {provider.data.fullName}
-          </h1>
-        </div>
-      </div>
-
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-x-hidden overflow-y-auto">
-        <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-8">
-          <BookingForm
-            provider={provider.data}
-            serviceType={serviceType}
-            pets={pets.data ?? []}
-            busy={busy}
-            error={err}
-            onSubmit={(v) => void createBookings(v)}
-          />
-        </div>
-      </div>
-    </div>
+    <BookingWizard
+      provider={provider.data}
+      serviceType={serviceType}
+      pets={pets.data ?? []}
+      busy={busy}
+      error={err}
+      onSubmit={(v) => void createBookings(v)}
+    />
   );
 }
 
 function prettifyError(raw: string): string {
   if (raw.includes('OUTSIDE_AVAILABILITY')) return 'Provider is not available at this time.';
-  if (raw.includes('OVERLAPPING_BOOKING')) return 'That slot is already booked. Pick another time.';
+  if (raw.includes('OVERLAPPING_BOOKING'))
+    return 'That slot is already booked. Pick another time.';
   if (raw.includes('PROVIDER_NO_OFFERING')) return "Provider doesn't offer this service.";
   if (raw.includes('SCHEDULED_AT_TOO_SOON')) return 'Pick a time at least 5 minutes from now.';
   return raw;

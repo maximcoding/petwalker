@@ -24,19 +24,26 @@ const DACHSHUND_PHOTO = '/images/auth/dachshund-curlers.jpg';
  *                    orbs around it, "Get the mobile app" badges.
  *                    Form pane: form on white surface, frameless.
  *
- *   Mobile  (<lg):   Single column, form-focused. Gradient backdrop,
- *                    mini-header with logo at top, the form
- *                    centered (no white card frame, white text on
- *                    the gradient), and Privacy · Terms · Help in
- *                    the footer. Marketing content (hero copy, phone
- *                    showcase, dog orbs, app badges, copyright) lives
- *                    on `/`, not here — see docs/landing-page-spec.md
- *                    for the merge-unwind history.
+ *   Mobile  (<lg):   Single column, form-focused. Gradient backdrop
+ *                    with decorative dog photos behind the form, a
+ *                    mini-header with logo at top, the form centered
+ *                    (no white card frame, white text on the
+ *                    gradient), a "Get the mobile app" badge row,
+ *                    and Privacy · Terms · Help in the footer.
  *
  * `h-[100dvh] overflow-hidden` on `main` locks the page to the
  * dynamic viewport height on every viewport, so the auth screen
  * never scrolls regardless of browser-chrome state.
  */
+
+/** Decorative dog photos for the mobile background layer. */
+const MOBILE_DOGS = [
+  { src: 'https://placedog.net/240/240?id=58', cls: '-start-10 top-24 h-28 w-28 rounded-full', rot: -8 },
+  { src: 'https://placedog.net/240/240?id=12', cls: '-end-8 top-36 h-24 w-24 rounded-3xl', rot: 8 },
+  { src: 'https://placedog.net/240/240?id=33', cls: '-start-12 bottom-44 h-32 w-32 rounded-full', rot: -4 },
+  { src: 'https://placedog.net/240/240?id=77', cls: '-end-12 bottom-56 h-28 w-28 rounded-3xl', rot: 6 },
+] as const;
+
 export default function AuthLayout({ children }: PropsWithChildren): JSX.Element {
   return (
     <main className="relative flex h-[100dvh] flex-col overflow-hidden bg-gradient-sunset lg:flex-row lg:bg-surface-base">
@@ -57,6 +64,29 @@ export default function AuthLayout({ children }: PropsWithChildren): JSX.Element
         />
       </div>
 
+      {/* ─── MOBILE-ONLY: decorative dog photos on the background ───
+          Sits at z-base — behind the form (z-sticky) — and is
+          pushed to the edges so it frames the form without
+          clashing with the white-on-gradient form text. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-base lg:hidden">
+        {MOBILE_DOGS.map((d) => (
+          <div
+            key={d.src}
+            className={`absolute overflow-hidden shadow-overlay ring-4 ring-ink-inverse ${d.cls}`}
+            style={{ transform: `rotate(${d.rot}deg)` }}
+          >
+            <Image
+              src={d.src}
+              alt=""
+              width={180}
+              height={180}
+              className="h-full w-full object-cover"
+              unoptimized
+            />
+          </div>
+        ))}
+      </div>
+
       {/* ─── DESKTOP brand pane (hidden on mobile) ─── */}
       <aside className="relative hidden h-screen overflow-hidden bg-gradient-sunset lg:flex lg:w-1/2 lg:flex-col xl:w-[55%]">
         {/* Decorative blur orbs */}
@@ -69,15 +99,15 @@ export default function AuthLayout({ children }: PropsWithChildren): JSX.Element
           className="pointer-events-none absolute -bottom-40 -start-40 h-[28rem] w-[28rem] rounded-full bg-gradient-sky opacity-50 blur-3xl"
         />
 
-        {/* Top — logo. Bare paw icon + wordmark, identical to the
-            mobile mini-header logo so crossing the lg breakpoint
-            doesn't morph the logo. */}
-        <div className="relative z-elevated shrink-0 px-6 py-5">
+        {/* Top — big wordmark hero. Per Maxim 2026-05-12: the
+            wordmark should look like the brand poster — huge,
+            extrabold, tight-tracked, all-lowercase white type on
+            the gradient. No paw icon at this size. */}
+        <div className="relative z-elevated shrink-0 px-8 pb-2 pt-10 lg:px-12">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xl font-bold tracking-tight text-ink-inverse"
+            className="block text-6xl font-extrabold leading-none tracking-tight text-ink-inverse xl:text-7xl"
           >
-            <PawPrint className="h-6 w-6" aria-hidden />
             petwalker
           </Link>
         </div>
@@ -141,6 +171,24 @@ export default function AuthLayout({ children }: PropsWithChildren): JSX.Element
             AuthCard's hardcoded text colors per breakpoint without
             changing the AuthCard API. */}
         <div className="relative flex flex-1 items-center justify-center px-4 py-4 sm:px-6 lg:px-12 lg:py-10">
+          {/* Gray-dog backdrop behind the Welcome form, 50% opacity.
+              z-base keeps it under the form (z-sticky). Aligned to
+              the TOP of the form area so the dog's muzzle peeks out
+              above the form content instead of being covered by it. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-base flex items-start justify-center pt-2"
+          >
+            <Image
+              src="/images/auth/gray-dog.jpg"
+              alt=""
+              width={1000}
+              height={500}
+              className="max-w-none shrink-0 opacity-20"
+              style={{ width: 1000, height: 'auto' }}
+              unoptimized
+            />
+          </div>
           <div
             className={[
               'relative z-sticky w-full max-w-md',
@@ -155,6 +203,35 @@ export default function AuthLayout({ children }: PropsWithChildren): JSX.Element
             ].join(' ')}
           >
             {children}
+
+            {/* Mobile-only "Get the mobile app" badge row — rendered
+                inside the centered form group so it sits right
+                under the form instead of being pushed down to the
+                footer. On desktop the badges live in the brand
+                pane, so this is `lg:hidden`. */}
+            <div className="mt-40 lg:hidden">
+              <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-widest text-ink-inverse/80">
+                Get the mobile app
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  href="https://apps.apple.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Download on the App Store"
+                >
+                  <AppStoreBadge />
+                </Link>
+                <Link
+                  href="https://play.google.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Get it on Google Play"
+                >
+                  <GooglePlayBadge />
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -162,7 +239,7 @@ export default function AuthLayout({ children }: PropsWithChildren): JSX.Element
             viewports. Copyright is NOT here — it lives in the `/`
             footer (marketing surface). Keeping auth footer minimal
             keeps the surface focused on the form. */}
-        <footer className="px-6 pb-6 lg:px-12">
+        <footer className="relative z-sticky px-6 pb-6 lg:px-12">
           <div className="mx-auto flex w-full max-w-md items-center justify-center gap-4 text-xs text-ink-inverse/85 lg:text-ink-tertiary">
             <Link href="/privacy" className="hover:text-ink-inverse lg:hover:text-ink-primary">
               Privacy
