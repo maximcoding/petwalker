@@ -67,7 +67,14 @@ export default function SearchPage(): JSX.Element {
   }));
 
   return (
-    <div className="py-2">
+    <div className="pb-2">
+      {/* Pinned filter chrome — sticks to the top of the app-shell
+          main scroller, so the search bar + category chips + sort bar
+          stay put while only the provider list scrolls underneath.
+          No outer top padding above this sticky element: any gap
+          would collapse on scroll and the chrome would jump up ~Npx
+          when sticky engages. */}
+      <div className="sticky top-0 z-sticky -mx-4 bg-surface-base px-4 pt-3 sm:-mx-6 sm:px-6">
       <HeroSearch
         compact
         initialService={initialService}
@@ -84,7 +91,7 @@ export default function SearchPage(): JSX.Element {
               hue={CATEGORY_HUE[c] as never}
               selected={c === service}
               onClick={() => setService(c)}
-              size="md"
+              size="lg"
             >
               {CATEGORY_LABELS[c]}
             </Tag>
@@ -93,7 +100,7 @@ export default function SearchPage(): JSX.Element {
       </div>
 
       {/* Result count + sort + view toggle */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 pb-3">
         <p className="text-sm text-ink-secondary">
           <span className="font-semibold text-ink-primary">{results.length}</span>{' '}
           {service === 'walking' ? 'walkers' : 'providers'} near you
@@ -149,8 +156,9 @@ export default function SearchPage(): JSX.Element {
           </div>
         </div>
       </div>
+      </div>{/* /sticky filter chrome */}
 
-      {/* Results */}
+      {/* Results — scroll under the sticky chrome */}
       {results.length === 0 ? (
         <p className="mt-12 text-center text-sm text-ink-secondary">
           No {CATEGORY_LABELS[service].toLowerCase()} providers in this area.{' '}

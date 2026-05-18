@@ -5,9 +5,10 @@ import type { MockProvider, MockProviderService, ServiceCategory } from './types
  * bios, and pricing reflect typical NYC-area market rates so the
  * Owner home looks credible during design QA.
  *
- * Photo paths point at /public/images/providers/<slug>.jpg — populated
- * by `pnpm photos:fetch` (Unsplash, free). If files are missing, the
- * `next/image` fallback renders the warm-200 placeholder.
+ * Photos use placedog.net (allow-listed in web/next.config.mjs) with
+ * a stable `?id=` per image so each provider keeps a distinct, cached
+ * photo. Swap to local /public/images/providers/<slug>.jpg once real
+ * cutouts exist.
  */
 
 function provider(
@@ -38,8 +39,8 @@ function svc(
 export const PROVIDERS: MockProvider[] = [
   provider('p_001', {
     name: 'Sara Khan',
-    avatar: '/images/providers/sara.jpg',
-    coverPhoto: '/images/providers/sara-cover.jpg',
+    avatar: "https://placedog.net/300/300?id=101",
+    coverPhoto: "https://placedog.net/640/360?id=102",
     rating: 4.96,
     reviewCount: 184,
     baseAddress: 'Park Slope, Brooklyn',
@@ -60,15 +61,15 @@ export const PROVIDERS: MockProvider[] = [
       svc('training', 65, 60, { modes: ['timeSlot'] }),
     ],
     photos: [
-      '/images/providers/sara-1.jpg',
-      '/images/providers/sara-2.jpg',
-      '/images/providers/sara-3.jpg',
+      "https://placedog.net/300/300?id=103",
+      "https://placedog.net/300/300?id=104",
+      "https://placedog.net/300/300?id=105",
     ],
   }),
   provider('p_002', {
     name: 'Marcus Reed',
-    avatar: '/images/providers/marcus.jpg',
-    coverPhoto: '/images/providers/marcus-cover.jpg',
+    avatar: "https://placedog.net/300/300?id=106",
+    coverPhoto: "https://placedog.net/640/360?id=107",
     rating: 4.88,
     reviewCount: 92,
     baseAddress: 'Williamsburg, Brooklyn',
@@ -87,12 +88,12 @@ export const PROVIDERS: MockProvider[] = [
       svc('walking', 42, 45),
       svc('fitness', 55, 60),
     ],
-    photos: ['/images/providers/marcus-1.jpg', '/images/providers/marcus-2.jpg'],
+    photos: ["https://placedog.net/300/300?id=108", "https://placedog.net/300/300?id=109"],
   }),
   provider('p_003', {
     name: 'Jamie Groomer',
-    avatar: '/images/providers/jamie.jpg',
-    coverPhoto: '/images/providers/jamie-cover.jpg',
+    avatar: "https://placedog.net/300/300?id=110",
+    coverPhoto: "https://placedog.net/640/360?id=111",
     rating: 5.0,
     reviewCount: 31,
     baseAddress: 'Queens',
@@ -109,12 +110,12 @@ export const PROVIDERS: MockProvider[] = [
     services: [
       svc('grooming', 75, 90, { modes: ['timeSlot'] }),
     ],
-    photos: ['/images/providers/jamie-1.jpg'],
+    photos: ["https://placedog.net/300/300?id=112"],
   }),
   provider('p_004', {
     name: 'Olivia Patel',
-    avatar: '/images/providers/olivia.jpg',
-    coverPhoto: '/images/providers/olivia-cover.jpg',
+    avatar: "https://placedog.net/300/300?id=113",
+    coverPhoto: "https://placedog.net/640/360?id=114",
     rating: 4.92,
     reviewCount: 67,
     baseAddress: 'Upper West Side, Manhattan',
@@ -133,12 +134,12 @@ export const PROVIDERS: MockProvider[] = [
       svc('seniorCare', 35, 60),
       svc('walking', 22, 30),
     ],
-    photos: ['/images/providers/olivia-1.jpg'],
+    photos: ["https://placedog.net/300/300?id=115"],
   }),
   provider('p_005', {
     name: 'Diego Cruz',
-    avatar: '/images/providers/diego.jpg',
-    coverPhoto: '/images/providers/diego-cover.jpg',
+    avatar: "https://placedog.net/300/300?id=116",
+    coverPhoto: "https://placedog.net/640/360?id=117",
     rating: 4.79,
     reviewCount: 142,
     baseAddress: 'Long Island City',
@@ -156,12 +157,12 @@ export const PROVIDERS: MockProvider[] = [
       { ...svc('boarding', 75, 24 * 60), perStayRateCents: $(75), modes: ['dateRange'], accommodation: ['atProviderLocation'] },
       { ...svc('daycare', 55, 8 * 60), modes: ['timeSlot'], accommodation: ['atProviderLocation'] },
     ],
-    photos: ['/images/providers/diego-1.jpg', '/images/providers/diego-2.jpg'],
+    photos: ["https://placedog.net/300/300?id=118", "https://placedog.net/300/300?id=119"],
   }),
   provider('p_006', {
     name: 'Hayden Clark',
-    avatar: '/images/providers/hayden.jpg',
-    coverPhoto: '/images/providers/hayden-cover.jpg',
+    avatar: "https://placedog.net/300/300?id=120",
+    coverPhoto: "https://placedog.net/640/360?id=121",
     rating: 4.85,
     reviewCount: 58,
     baseAddress: 'Astoria, Queens',
@@ -176,12 +177,12 @@ export const PROVIDERS: MockProvider[] = [
     shortBio: 'Stay-at-home wellness specialist. Undivided attention.',
     bio: 'I work from home, so your dog gets a real day — yard play, two walks, mid-day nap on the couch. Camera-on for nervous owners.',
     services: [svc('daycare', 60, 8 * 60), svc('walking', 26, 30)],
-    photos: ['/images/providers/hayden-1.jpg'],
+    photos: ["https://placedog.net/300/300?id=122"],
   }),
   provider('p_007', {
     name: 'Indigo Khan',
-    avatar: '/images/providers/indigo.jpg',
-    coverPhoto: '/images/providers/indigo-cover.jpg',
+    avatar: "https://placedog.net/300/300?id=123",
+    coverPhoto: "https://placedog.net/640/360?id=124",
     rating: 4.9,
     reviewCount: 110,
     baseAddress: 'Williamsburg, Brooklyn',
@@ -198,12 +199,12 @@ export const PROVIDERS: MockProvider[] = [
     services: [
       { ...svc('photography', 0, 60), perStayRateCents: $(180), modes: ['timeSlot'] },
     ],
-    photos: ['/images/providers/indigo-1.jpg', '/images/providers/indigo-2.jpg'],
+    photos: ["https://placedog.net/300/300?id=125", "https://placedog.net/300/300?id=126"],
   }),
   provider('p_008', {
     name: 'Caleb Reed',
-    avatar: '/images/providers/caleb.jpg',
-    coverPhoto: '/images/providers/caleb-cover.jpg',
+    avatar: "https://placedog.net/300/300?id=127",
+    coverPhoto: "https://placedog.net/640/360?id=128",
     rating: 4.74,
     reviewCount: 23,
     baseAddress: 'Bronx',
@@ -218,12 +219,12 @@ export const PROVIDERS: MockProvider[] = [
     shortBio: 'Certified trainer. Reactive, fear-based, pulling.',
     bio: 'CPDT-KA certified. Specialise in reactivity, leash pulling, separation anxiety. Sessions at your home or in a quiet park.',
     services: [svc('training', 85, 60), svc('walking', 30, 30)],
-    photos: ['/images/providers/caleb-1.jpg'],
+    photos: ["https://placedog.net/300/300?id=129"],
   }),
   provider('p_009', {
     name: 'Ella Reed',
-    avatar: '/images/providers/ella.jpg',
-    coverPhoto: '/images/providers/ella-cover.jpg',
+    avatar: "https://placedog.net/300/300?id=130",
+    coverPhoto: "https://placedog.net/640/360?id=131",
     rating: 4.97,
     reviewCount: 201,
     baseAddress: 'Staten Island',
@@ -241,12 +242,12 @@ export const PROVIDERS: MockProvider[] = [
       svc('massage', 95, 60, { modes: ['timeSlot'] }),
       svc('seniorCare', 45, 60),
     ],
-    photos: ['/images/providers/ella-1.jpg'],
+    photos: ["https://placedog.net/300/300?id=132"],
   }),
   provider('p_010', {
     name: 'David Wright',
-    avatar: '/images/providers/david.jpg',
-    coverPhoto: '/images/providers/david-cover.jpg',
+    avatar: "https://placedog.net/300/300?id=133",
+    coverPhoto: "https://placedog.net/640/360?id=134",
     rating: 4.81,
     reviewCount: 74,
     baseAddress: 'Jersey City',
@@ -261,13 +262,13 @@ export const PROVIDERS: MockProvider[] = [
     shortBio: 'Large-breed specialist. Calm, patient, undramatic.',
     bio: 'Big dogs are my thing — danes, mastiffs, shepherds, ridgebacks. 9 years no incidents. Owns two great danes himself.',
     services: [svc('walking', 32, 45), svc('boarding', 85, 24 * 60, { modes: ['dateRange'], accommodation: ['atProviderLocation'] })],
-    photos: ['/images/providers/david-1.jpg'],
+    photos: ["https://placedog.net/300/300?id=135"],
     onTimeOff: false,
   }),
   provider('p_011', {
     name: 'Gray Booker',
-    avatar: '/images/providers/gray.jpg',
-    coverPhoto: '/images/providers/gray-cover.jpg',
+    avatar: "https://placedog.net/300/300?id=136",
+    coverPhoto: "https://placedog.net/640/360?id=137",
     rating: 4.69,
     reviewCount: 38,
     baseAddress: 'Hoboken',
@@ -282,12 +283,12 @@ export const PROVIDERS: MockProvider[] = [
     shortBio: 'Sitter for shy + retired dogs.',
     bio: "Patient, quiet, treat-driven. I specialise in shy or retired dogs who don't want stranger energy. Calm sit-and-stay sessions on the couch.",
     services: [svc('sitting', 26, 60), svc('walking', 22, 30)],
-    photos: ['/images/providers/gray-1.jpg'],
+    photos: ["https://placedog.net/300/300?id=138"],
   }),
   provider('p_012', {
     name: 'Oakley Field',
-    avatar: '/images/providers/oakley.jpg',
-    coverPhoto: '/images/providers/oakley-cover.jpg',
+    avatar: "https://placedog.net/300/300?id=139",
+    coverPhoto: "https://placedog.net/640/360?id=140",
     rating: 4.92,
     reviewCount: 156,
     baseAddress: 'Long Island City',
@@ -306,7 +307,7 @@ export const PROVIDERS: MockProvider[] = [
       svc('seniorCare', 38, 60),
       svc('vetVisit', 55, 60, { accommodation: ['atOwnerHome', 'atProviderLocation'] }),
     ],
-    photos: ['/images/providers/oakley-1.jpg'],
+    photos: ["https://placedog.net/300/300?id=141"],
   }),
 ];
 

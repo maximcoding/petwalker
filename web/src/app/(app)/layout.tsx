@@ -67,11 +67,16 @@ export default function AppLayout({ children }: PropsWithChildren): JSX.Element 
   return (
     <ViewModeProvider me={me.data}>
       <NotificationsProvider>
-        <div className="flex min-h-screen flex-col bg-surface-base">
+        {/* App-shell: viewport-locked column with top/bottom chrome
+            pinned (shrink-0) and <main> as the SINGLE scroller. The
+            page itself never scrolls — only the content area does —
+            so the header, offline banner, desktop footer and mobile
+            bottom-chrome stay put while lists scroll inside. */}
+        <div className="flex h-[100dvh] flex-col overflow-hidden bg-surface-base">
           <OfflineBanner />
           <ResponsiveTopChrome me={me.data} />
 
-          <main className="flex-1">
+          <main className="min-h-0 flex-1 overflow-y-auto">
             <Container>{children}</Container>
           </main>
 

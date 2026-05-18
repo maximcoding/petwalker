@@ -22,12 +22,13 @@ export interface TagProps
   selected?: boolean;
   removable?: boolean;
   onRemove?: () => void;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
 }
 
 const SIZE_CLASS = {
   sm: 'h-7 px-2.5 text-xs gap-1',
   md: 'h-9 px-3 text-sm gap-1.5',
+  lg: 'h-11 px-4 text-base gap-2',
 } as const;
 
 /* Selected: solid hue background, inverse ink. */
@@ -70,7 +71,7 @@ export function Tag({
     <button
       type={type}
       aria-pressed={!removable ? selected : undefined}
-      className={`inline-flex items-center rounded-pill border font-medium transition-colors ${palette} ${SIZE_CLASS[size]} ${className}`}
+      className={`inline-flex shrink-0 items-center whitespace-nowrap rounded-pill border font-medium transition-colors ${palette} ${SIZE_CLASS[size]} ${className}`}
       {...rest}
     >
       <span>{children}</span>

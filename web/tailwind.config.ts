@@ -150,6 +150,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['var(--font-sans)'],
+        display: ['var(--font-display-stack)'],
       },
       borderRadius: {
         xs: 'var(--radius-xs)',

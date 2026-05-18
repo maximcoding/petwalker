@@ -58,13 +58,12 @@ export default function ProfileLayout({ children }: PropsWithChildren): JSX.Elem
     return TABS.filter((tab) => !tab.show || tab.show(mode));
   }, [mode]);
 
-  // Custom scroll layout (NOT ScrollPage). Why: we need the sticky tab
-  // bar to stick flush with the top of the scroll viewport. ScrollPage
-  // adds `pt-8` which creates a void above any sticky child where
-  // scrolling content bleeds through. Here we own the scroll container
-  // and apply spacing inside the children area only.
+  // App-shell main (set by `(app)/layout.tsx`) is now the single
+  // scroll context, so this layout no longer owns its own
+  // `h-full overflow-y-auto`. `sticky top-0` on the tab bar still
+  // pins it relative to the main scroller.
   return (
-    <div className="flex h-full flex-col overflow-y-auto">
+    <div className="flex flex-col">
       <header className="bg-white px-1 pb-3 pt-6 dark:bg-slate-950">
         <h1 className="text-2xl font-semibold">{t('profile.title')}</h1>
         <p className="mt-1 text-sm text-slate-500">{t('profile.subtitle')}</p>
